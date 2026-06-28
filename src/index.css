@@ -178,9 +178,25 @@ body {
   padding: 2rem;
 }
 
-/* Flex Utilities */
-.flex-between { display: flex; justify-content: space-between; align-items: center; }
-.flex-center { display: flex; justify-content: center; align-items: center; }
+/* Footer / Utility styles */
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.search-item {
+  color: var(--text-main);
+}
+.search-item:hover {
+  background: var(--secondary);
+}
 .gap-1 { gap: 0.5rem; } .gap-2 { gap: 1rem; } .gap-3 { gap: 1.5rem; } .gap-4 { gap: 2rem; }
 
 /* Table Styling */
