@@ -622,6 +622,60 @@ app.get('/api/whatsapp/status', authenticateToken, (req, res) => {
   res.json({ status: waStatus, qr: waQrDataUrl });
 });
 
+// Restart WhatsApp Client (Re-generate QR code)
+app.post('/api/whatsapp/restart', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  try {
+    console.log('[WhatsApp] Re-initializing WhatsApp Web client...');
+    waStatus = 'INITIALIZING';
+    waQrDataUrl = null;
+    
+    if (waClient) {
+      try {
+        await waClient.destroy();
+      } catch (err) {
+        console.error('Error destroying old client:', err);
+      }
+    }
+    
+    waClient = new Client({
+      authStrategy: new LocalAuth(),
+      puppeteer: {
+        headless: true,
+        executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      }
+    });
+
+    waClient.on('qr', async (qr) => {
+      waStatus = 'AWAITING_SCAN';
+      waQrDataUrl = await qrcode.toDataURL(qr);
+      console.log('[WhatsApp] QR Code re-generated.');
+    });
+
+    waClient.on('ready', () => {
+      waStatus = 'CONNECTED';
+      waQrDataUrl = null;
+      console.log('[WhatsApp] Connected and ready!');
+    });
+
+    waClient.on('disconnected', (reason) => {
+      waStatus = 'DISCONNECTED';
+      waQrDataUrl = null;
+      console.log('[WhatsApp] Client disconnected:', reason);
+    });
+
+    waClient.initialize().catch(err => {
+      console.error('Init error:', err);
+    });
+    
+    res.json({ success: true, message: 'WhatsApp Web is restarting...' });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Send message via SMS (cellular) or Auto-WhatsApp
 app.post('/api/sms', authenticateToken, async (req, res) => {
   const { to, message, channel } = req.body;
