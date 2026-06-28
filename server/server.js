@@ -236,11 +236,25 @@ app.post('/api/auth/request-register', async (req, res) => {
   const { role, name, username, password, phone, className, admissionNumber, fees } = req.body;
   
   const hashedPassword = await bcrypt.hash(password, 10);
-  
+  const formattedName = name ? name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : name;
+
   db.run(`INSERT INTO registration_requests (role, name, username, password, parentPhone, className, admission_number, fees, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`, 
-    [role, name, username, hashedPassword, phone, className, admissionNumber || null, fees || 0], 
+    [role, formattedName, username, hashedPassword, phone, className, admissionNumber || null, fees || 0], 
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
+      
+      // Alert Admin via Email
+      db.get(`SELECT email FROM users WHERE role = 'admin'`, [], (err, admin) => {
+        if (!err && admin && admin.email && transporter) {
+          transporter.sendMail({
+            from: '"Aarambh Alerts" <alerts@aarambh.edu>',
+            to: admin.email,
+            subject: `🔔 New Registration Request: ${formattedName}`,
+            text: `Hello Admin,\n\nA new registration request has been submitted by ${formattedName} for the role of ${role.toUpperCase()}.\n\nPlease log into your dashboard to approve or reject this request.`
+          }).catch(e => console.error('[Alert Email Error]', e.message));
+        }
+      });
+
       res.json({ success: true, message: 'Registration requested successfully! Waiting for Admin approval.' });
   });
 });
@@ -361,16 +375,18 @@ app.post('/api/students', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   const { name, className, parentPhone } = req.body;
   const hashedPassword = await bcrypt.hash('pass', 10); // default password
+  const formattedName = name ? name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : name;
+
   db.run(`INSERT INTO users (name, role, className, parentPhone, password) VALUES (?, ?, ?, ?, ?)`, 
-    [name, 'student', className, parentPhone, hashedPassword], 
+    [formattedName, 'student', className, parentPhone, hashedPassword], 
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
       // Create initial fee record for student
       db.run(`INSERT INTO fees (student_id, total, paid, status, due_date) VALUES (?, 5000, 0, 'Pending', '2024-01-01')`, [this.lastID]);
       
-      logAction('STUDENT_ADDED', `Admin added new student: ${name} to class ${className}`);
+      logAction('STUDENT_ADDED', `Admin added new student: ${formattedName} to class ${className}`);
       
-      res.json({ id: this.lastID, name, class: className, parentPhone });
+      res.json({ id: this.lastID, name: formattedName, class: className, parentPhone });
   });
 });
 
@@ -812,6 +828,165 @@ app.post('/api/chat', async (req, res) => {
     res.status(500).json({ success: false, error: 'Failed to contact AI provider' });
   }
 });
+
+// Update Profile Details (Admin and others)
+app.put('/api/users/profile', authenticateToken, (req, res) => {
+  const { name, email } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name is required' });
+  
+  db.run(`UPDATE users SET name = ?, email = ? WHERE id = ?`, [name, email, req.user.id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true, name, email });
+  });
+});
+
+// Email Database Backup
+app.post('/api/admin/backup', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  
+  db.get(`SELECT email FROM users WHERE id = ?`, [req.user.id], async (err, row) => {
+    if (err || !row || !row.email) {
+      return res.status(400).json({ error: 'Please save your email ID in profile settings first.' });
+    }
+    
+    if (!transporter) {
+      return res.status(500).json({ error: 'Email service is offline.' });
+    }
+    
+    try {
+      const info = await transporter.sendMail({
+        from: '"Aarambh Backup" <backup@aarambh.edu>',
+        to: row.email,
+        subject: `💾 Aarambh System Backup: ${new Date().toLocaleDateString()}`,
+        text: 'Hello Admin,\n\nAttached is the automated database backup file (aarambh.db) for your tuition system.',
+        attachments: [
+          {
+            filename: 'aarambh.db',
+            path: path.resolve(__dirname, 'aarambh.db')
+          }
+        ]
+      });
+      
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      console.log(`[Backup Emailed] Preview: ${previewUrl}`);
+      res.json({ success: true, previewUrl });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Failed to send email: ' + e.message });
+    }
+  });
+});
+
+// Trigger Weekly Summary & CSV Roster Report
+app.post('/api/admin/report', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  
+  db.get(`SELECT email FROM users WHERE id = ?`, [req.user.id], (err, adminUser) => {
+    if (err || !adminUser || !adminUser.email) {
+      return res.status(400).json({ error: 'Please save your email ID in profile settings first.' });
+    }
+    
+    db.all(`SELECT name, className as class, parentPhone FROM users WHERE role = 'student'`, [], (err, students) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      db.all(`SELECT paid FROM fees`, [], (err, feesList) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        db.all(`SELECT amount FROM expenses`, [], async (err, expensesList) => {
+          if (err) return res.status(500).json({ error: err.message });
+          
+          const totalIncome = feesList.reduce((sum, f) => sum + f.paid, 0);
+          const totalExpenses = expensesList.reduce((sum, e) => sum + e.amount, 0);
+          const netProfit = totalIncome - totalExpenses;
+          
+          // Generate CSV content
+          let csvContent = 'Name,Class,Parent Phone\n';
+          students.forEach(s => {
+            csvContent += `"${s.name}","${s.class || 'No Class'}","${s.parentPhone || ''}"\n`;
+          });
+          
+          const reportHtml = `
+            <h2>📊 Aarambh Weekly Operational Report</h2>
+            <p>Here is your weekly summary of system activities:</p>
+            <table border="1" cellpadding="8" style="border-collapse: collapse; border-color: #e2e8f0; font-family: sans-serif;">
+              <tr style="background-color: #f8fafc; font-weight: bold;"><th>Metric</th><th>Value</th></tr>
+              <tr><td>Total Enrolled Students</td><td>${students.length}</td></tr>
+              <tr><td>Total Income (Fees Collected)</td><td>Rs. ${totalIncome}</td></tr>
+              <tr><td>Total Operating Expenses</td><td>Rs. ${totalExpenses}</td></tr>
+              <tr style="font-weight: bold; color: ${netProfit >= 0 ? '#059669' : '#dc2626'};">
+                <td>Net Profit</td>
+                <td>Rs. ${netProfit}</td>
+              </tr>
+            </table>
+            <p>Attached is the current active student roster in CSV format.</p>
+          `;
+          
+          if (!transporter) {
+            return res.status(500).json({ error: 'Email service is offline.' });
+          }
+          
+          try {
+            const info = await transporter.sendMail({
+              from: '"Aarambh Reports" <reports@aarambh.edu>',
+              to: adminUser.email,
+              subject: `📈 Weekly Operational Report - ${new Date().toLocaleDateString()}`,
+              html: reportHtml,
+              attachments: [
+                {
+                  filename: 'student_roster.csv',
+                  content: csvContent
+                }
+              ]
+            });
+            
+            const previewUrl = nodemailer.getTestMessageUrl(info);
+            console.log(`[Weekly Report Emailed] Preview: ${previewUrl}`);
+            res.json({ success: true, previewUrl });
+          } catch(e) {
+            console.error(e);
+            res.status(500).json({ error: 'Failed to send report: ' + e.message });
+          }
+        });
+      });
+    });
+  });
+});
+
+// Storage Size Checking Utility (Warns if SQLite database is over 50MB)
+const checkDatabaseStorageSize = () => {
+  try {
+    const dbFilePath = path.resolve(__dirname, 'aarambh.db');
+    if (fs.existsSync(dbFilePath)) {
+      const stats = fs.statSync(dbFilePath);
+      const sizeInMB = stats.size / (1024 * 1024);
+      console.log(`[Storage Monitor] SQLite database size is ${sizeInMB.toFixed(2)} MB`);
+      
+      if (sizeInMB > 50) {
+        db.get(`SELECT email FROM users WHERE role = 'admin'`, [], async (err, admin) => {
+          if (!err && admin && admin.email && transporter) {
+            try {
+              await transporter.sendMail({
+                from: '"Aarambh Alerts" <alerts@aarambh.edu>',
+                to: admin.email,
+                subject: '⚠️ LOW STORAGE WARNING: Aarambh System database size exceeded limit',
+                text: `Warning: Your SQLite database size has reached ${sizeInMB.toFixed(2)} MB. Please trigger a database backup email and clean up system logs to prevent write failures.`
+              });
+              console.log('[Storage Monitor] Sent low storage email alert to admin.');
+            } catch (mailErr) {
+              console.error('[Storage Monitor Alert Fail]', mailErr);
+            }
+          }
+        });
+      }
+    }
+  } catch (err) {
+    console.error('[Storage Monitor Error]', err.message);
+  }
+};
+// Check every 3 hours
+setInterval(checkDatabaseStorageSize, 3 * 60 * 60 * 1000);
+// Also trigger alert check once on boot
+setTimeout(checkDatabaseStorageSize, 10000);
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

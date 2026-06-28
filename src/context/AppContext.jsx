@@ -258,7 +258,25 @@ export const AppProvider = ({ children }) => {
         const student = students.find(s => s.id === studentId);
         if (student) sendMessage(student.parentPhone, 'SMS', `Payment of Rs.${amount} received. Thank you!`);
       }
+  };
+
+  const updateProfile = async (name, email) => {
+    try {
+      const res = await fetch(`${API_URL}/users/profile`, {
+        method: 'PUT', headers: authHeaders,
+        body: JSON.stringify({ name, email })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const updatedUser = { ...loggedInUser, name: data.name, email: data.email };
+        setLoggedInUser(updatedUser);
+        localStorage.setItem('loggedInUser', JSON.stringify(updatedUser));
+        addToast('Profile updated successfully!', 'success');
+        return true;
+      }
     } catch (e) { console.error(e); }
+    addToast('Failed to update profile', 'danger');
+    return false;
   };
 
   const requestRegistration = async (data) => {
@@ -373,7 +391,7 @@ export const AppProvider = ({ children }) => {
       students, teachers, fees, messages, toasts, classes,
       assignments, submissions, calendarEvents, library, history,
       sendMessage, recordFeePayment, addToast, addStudent, removeStudent, removeBatch, authHeaders, API_URL,
-      addAssignment, addLibraryMaterial, fetchHistory
+      addAssignment, addLibraryMaterial, fetchHistory, updateProfile
     }}>
       {children}
     </AppContext.Provider>

@@ -19,8 +19,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
         role TEXT NOT NULL,
         parentPhone TEXT,
         className TEXT,
-        admission_number TEXT
+        admission_number TEXT,
+        email TEXT
       )`);
+
+      // Migration: Add email column if not exists
+      db.run(`ALTER TABLE users ADD COLUMN email TEXT`, (err) => {
+        // Ignore error if column already exists
+      });
 
       // Classes Table
       db.run(`CREATE TABLE IF NOT EXISTS classes (

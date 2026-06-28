@@ -48,6 +48,17 @@ const Settings = () => {
     return () => clearInterval(interval);
   }, [waStatus, authHeaders, API_URL]);
 
+  // Profile States
+  const [profileName, setProfileName] = useState(loggedInUser?.name || '');
+  const [profileEmail, setProfileEmail] = useState(loggedInUser?.email || '');
+
+  useEffect(() => {
+    if (loggedInUser) {
+      setProfileName(loggedInUser.name || '');
+      setProfileEmail(loggedInUser.email || '');
+    }
+  }, [loggedInUser]);
+
   const handleSavePreferences = () => {
     addToast('Preferences saved successfully!', 'success');
   };
@@ -61,6 +72,55 @@ const Settings = () => {
     addToast('Password updated successfully!', 'success');
     setCurrentPassword('');
     setNewPassword('');
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    if (!profileName) return;
+    const success = await updateProfile(profileName, profileEmail);
+    if (success) {
+      // Nothing else to do, AppContext toast handles message
+    }
+  };
+
+  const handleEmailBackup = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/backup`, {
+        method: 'POST',
+        headers: authHeaders
+      });
+      const data = await res.json();
+      if (res.ok) {
+        addToast('Database backup sent to your email!', 'success');
+        if (data.previewUrl) {
+          window.open(data.previewUrl, '_blank');
+        }
+      } else {
+        addToast(data.error || 'Failed to email backup', 'danger');
+      }
+    } catch(e) {
+      addToast('Network error triggering backup', 'danger');
+    }
+  };
+
+  const handleSendWeeklyReport = async () => {
+    try {
+      const res = await fetch(`${API_URL}/admin/report`, {
+        method: 'POST',
+        headers: authHeaders
+      });
+      const data = await res.json();
+      if (res.ok) {
+        addToast('Weekly financial report sent to your email!', 'success');
+        if (data.previewUrl) {
+          window.open(data.previewUrl, '_blank');
+        }
+      } else {
+        addToast(data.error || 'Failed to email report', 'danger');
+      }
+    } catch(e) {
+      addToast('Network error triggering report', 'danger');
+    }
   };
 
   const handleRestartWhatsApp = async () => {
@@ -151,17 +211,63 @@ const Settings = () => {
             <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <User size={18} /> Profile Information
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Full Name</label>
-                <input type="text" className="prof-input" disabled value={loggedInUser?.name || loggedInUser?.username || 'Admin User'} />
+            <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Full Name</label>
+                  <input 
+                    type="text" 
+                    className="prof-input" 
+                    value={profileName} 
+                    onChange={e => setProfileName(e.target.value)} 
+                    required 
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email Address (Admin notifications/backups)</label>
+                  <input 
+                    type="email" 
+                    className="prof-input" 
+                    value={profileEmail} 
+                    onChange={e => setProfileEmail(e.target.value)} 
+                    placeholder="Enter email address" 
+                  />
+                </div>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Account Role</label>
                 <input type="text" className="prof-input" disabled value={(loggedInUser?.role || 'Admin').toUpperCase()} />
               </div>
-            </div>
+              <button type="submit" className="prof-btn" style={{ alignSelf: 'flex-start' }}>Save Profile</button>
+            </form>
           </div>
+
+          {loggedInUser?.role === 'admin' && (
+            <div className="prof-card" style={{ marginBottom: '2rem' }}>
+              <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Cloud size={18} /> Database Backups & Reports
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.2rem' }}>
+                Quickly mail system updates and database backups directly to your configured email address.
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <button 
+                  onClick={handleEmailBackup}
+                  className="prof-btn"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  Email Database Backup
+                </button>
+                <button 
+                  onClick={handleSendWeeklyReport}
+                  className="prof-btn prof-btn-outline"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  Send Weekly Report Now
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="prof-card" style={{ marginBottom: '2rem' }}>
             <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
