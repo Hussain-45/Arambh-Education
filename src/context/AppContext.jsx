@@ -258,6 +258,9 @@ export const AppProvider = ({ children }) => {
         const student = students.find(s => s.id === studentId);
         if (student) sendMessage(student.parentPhone, 'SMS', `Payment of Rs.${amount} received. Thank you!`);
       }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const updateProfile = async (name, email) => {
