@@ -5,7 +5,7 @@ import Header from '../components/Header';
 import { Moon, Sun, Lock, User, Save, Bell, Globe, MonitorSmartphone, Cloud, Loader } from 'lucide-react';
 
 const Settings = () => {
-  const { theme, setTheme, loggedInUser, addToast } = useContext(AppContext);
+  const { theme, setTheme, loggedInUser, addToast, authHeaders, API_URL } = useContext(AppContext);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
@@ -23,13 +23,16 @@ const Settings = () => {
     // Poll WhatsApp status every 3 seconds if not connected
     const fetchWaStatus = async () => {
       try {
-        const token = localStorage.getItem('aarambh_token');
-        const res = await fetch('http://localhost:5000/api/whatsapp/status', {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const res = await fetch(`${API_URL}/whatsapp/status`, {
+          headers: authHeaders
         });
-        const data = await res.json();
-        setWaStatus(data.status);
-        setWaQr(data.qr);
+        if (res.ok) {
+          const data = await res.json();
+          setWaStatus(data.status);
+          setWaQr(data.qr);
+        } else {
+          setWaStatus('ERROR');
+        }
       } catch(e) {
         setWaStatus('ERROR');
       }
@@ -43,7 +46,7 @@ const Settings = () => {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [waStatus]);
+  }, [waStatus, authHeaders, API_URL]);
 
   const handleSavePreferences = () => {
     addToast('Preferences saved successfully!', 'success');
@@ -62,10 +65,9 @@ const Settings = () => {
 
   const handleRestartWhatsApp = async () => {
     try {
-      const token = localStorage.getItem('aarambh_token');
-      const res = await fetch('http://localhost:5000/api/whatsapp/restart', {
+      const res = await fetch(`${API_URL}/whatsapp/restart`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: authHeaders
       });
       if (res.ok) {
         addToast('WhatsApp Robot restarting...', 'info');
