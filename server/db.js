@@ -127,6 +127,15 @@ const db = new sqlite3.Database(dbPath, (err) => {
         date TEXT NOT NULL
       )`);
 
+      // Announcements Table
+      db.run(`CREATE TABLE IF NOT EXISTS announcements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        target_class TEXT DEFAULT 'All',
+        date TEXT NOT NULL
+      )`);
+
       console.log('Database schema ensured.');
     });
   }

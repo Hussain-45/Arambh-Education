@@ -832,18 +832,38 @@ app.get('/api/analytics', authenticateToken, (req, res) => {
 
 // AI Chatbot Endpoint (Google Gemini)
 app.post('/api/chat', async (req, res) => {
-  const { messages } = req.body;
+  const { messages, userContext } = req.body;
   const apiKey = process.env.GEMINI_API_KEY;
 
+  // 1. Offline Mode with student-specific context intelligence
   if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
-    // Graceful fallback to offline FAQ mode if no key is provided
+    const lastUserMessage = messages[messages.length - 1]?.text?.toLowerCase() || '';
+    let responseText = "I am currently running in Offline FAQ Mode. To unlock my full Artificial Intelligence, please add your Google Gemini API Key in the server settings!";
+    
+    if (userContext) {
+      if (lastUserMessage.includes('fee') || lastUserMessage.includes('pending') || lastUserMessage.includes('due') || lastUserMessage.includes('pay') || lastUserMessage.includes('rupee') || lastUserMessage.includes('money')) {
+        const pendingMonths = userContext.fees ? userContext.fees.filter(f => f.status !== 'Paid').map(f => f.month) : [];
+        if (pendingMonths.length > 0) {
+          responseText = `Hello ${userContext.name}! Your tuition fees are **Pending** for the following month(s): **${pendingMonths.join(', ')}**.\n\nYou can pay these month-by-month through the 'My Receipts' page or directly from your Student Dashboard.`;
+        } else {
+          responseText = `Great news ${userContext.name}! Your tuition fees for all 12 months (January to December) are fully **Paid**. Thank you so much!`;
+        }
+      } else if (lastUserMessage.includes('batch') || lastUserMessage.includes('class') || lastUserMessage.includes('schedule') || lastUserMessage.includes('subject')) {
+        responseText = `Hi ${userContext.name}, you are currently registered in the batch: **${userContext.class}**.\n\nYour class lectures, schedule, and study materials are mapped directly to this batch.`;
+      } else if (lastUserMessage.includes('father') || lastUserMessage.includes('parent') || lastUserMessage.includes('dad') || lastUserMessage.includes('family')) {
+        responseText = `According to your registration records, your father's name is registered as: **${userContext.fatherName || 'Not Set'}**. If this needs correction, please contact the administrator.`;
+      } else if (lastUserMessage.includes('hello') || lastUserMessage.includes('hi') || lastUserMessage.includes('hey')) {
+        responseText = `Hello ${userContext.name}! I am your Aarambh Assistant. I know you are in batch **${userContext.class}**. How can I help you today?`;
+      }
+    }
+    
     return res.json({ 
-      success: false, 
-      fallback: true,
-      text: "I am currently running in Offline FAQ Mode. To unlock my full Artificial Intelligence, please add your Google Gemini API Key in the server settings!"
+      success: true, 
+      text: responseText 
     });
   }
 
+  // 2. Online Mode using Google Gemini API
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
@@ -853,14 +873,24 @@ app.post('/api/chat', async (req, res) => {
       parts: [{ text: msg.text }]
     }));
 
-    // Inject a system prompt secretly at the beginning
+    // Inject system instructions + active user details
+    let systemPromptText = "You are Aarambh AI, a highly intelligent and friendly assistant for a tuition management system. You help students, parents, teachers, and admins with queries. Be concise, polite, and use formatting like bolding or bullet points where appropriate.";
+    if (userContext) {
+      systemPromptText += `\n\nActive Logged-in User Information:
+- Student Name: ${userContext.name}
+- Role: ${userContext.role}
+- Batch/Class Enrolled: ${userContext.class}
+- Father's Name: ${userContext.fatherName || 'N/A'}
+- 12-Month Tuition Fees Data: ${JSON.stringify(userContext.fees)}`;
+    }
+
     contents.unshift({
       role: 'user',
-      parts: [{ text: "System Prompt: You are Aarambh AI, a highly intelligent and friendly assistant for a tuition management system. You help students and admins with questions about fees, schedules, and general knowledge. Be concise, polite, and use formatting like bolding or bullet points where appropriate." }]
+      parts: [{ text: `System Prompt: ${systemPromptText}` }]
     });
     contents.unshift({
       role: 'model',
-      parts: [{ text: "Understood. I am Aarambh AI." }]
+      parts: [{ text: "Understood. I am Aarambh AI, and I am loaded with the current student's personal batch, fees, and father's name context. I will personalize my responses accordingly." }]
     });
 
     const response = await fetch(url, {
@@ -881,6 +911,50 @@ app.post('/api/chat', async (req, res) => {
     console.error('[GEMINI API ERROR]', error);
     res.status(500).json({ success: false, error: 'Failed to contact AI provider' });
   }
+});
+
+// Announcements Endpoints
+app.get('/api/announcements', authenticateToken, (req, res) => {
+  if (req.user.role === 'student') {
+    db.get(`SELECT className FROM users WHERE id = ?`, [req.user.id], (err, user) => {
+      if (err) return res.status(500).json({ error: err.message });
+      const studentClass = user ? user.className : 'N/A';
+      db.all(
+        `SELECT * FROM announcements WHERE target_class = 'All' OR target_class = ? ORDER BY id DESC`,
+        [studentClass],
+        (err, rows) => {
+          if (err) return res.status(500).json({ error: err.message });
+          res.json(rows);
+        }
+      );
+    });
+  } else {
+    db.all(`SELECT * FROM announcements ORDER BY id DESC`, [], (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    });
+  }
+});
+
+app.post('/api/announcements', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+  const { title, content, target_class } = req.body;
+  const date = new Date().toLocaleDateString();
+  db.run(`INSERT INTO announcements (title, content, target_class, date) VALUES (?, ?, ?, ?)`,
+    [title, content, target_class || 'All', date],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id: this.lastID, title, content, target_class, date });
+    }
+  );
+});
+
+app.delete('/api/announcements/:id', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+  db.run(`DELETE FROM announcements WHERE id = ?`, [req.params.id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
 });
 
 // Update Profile Details (Admin and others)

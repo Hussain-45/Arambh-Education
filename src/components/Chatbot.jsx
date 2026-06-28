@@ -1,7 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import { MessageCircle, X, Send } from 'lucide-react';
+import { AppContext } from '../context/AppContext';
 
 const Chatbot = () => {
+  const { loggedInUser, fees } = useContext(AppContext);
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { id: 1, sender: 'bot', text: 'Hi! I am your Aarambh Assistant. How can I help you today?' }
@@ -30,11 +32,30 @@ const Chatbot = () => {
     const loadingId = Date.now() + 1;
     setMessages(prev => [...prev, { id: loadingId, sender: 'bot', text: '...' }]);
 
+    // Build current user context for personalized answers
+    let userContext = null;
+    if (loggedInUser) {
+      const myFeesList = fees
+        .filter(f => f.studentId === loggedInUser.id)
+        .map(f => ({ month: f.month, status: f.status, total: f.total, paid: f.paid }));
+        
+      userContext = {
+        name: loggedInUser.name,
+        role: loggedInUser.role,
+        class: loggedInUser.class,
+        fatherName: loggedInUser.fatherName,
+        fees: myFeesList
+      };
+    }
+
     try {
       const response = await fetch('http://localhost:5000/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: updatedMessages.slice(1) }) // Skip the initial "Hi" greeting to save tokens
+        body: JSON.stringify({ 
+          messages: updatedMessages.slice(1), // Skip the initial greeting to save tokens
+          userContext
+        })
       });
       const data = await response.json();
 

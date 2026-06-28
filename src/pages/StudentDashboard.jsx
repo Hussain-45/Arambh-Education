@@ -1,11 +1,11 @@
 import React, { useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
-import { Sun, Moon, IndianRupee, FileText, Download, Calendar, Award } from 'lucide-react';
+import { Sun, Moon, IndianRupee, FileText, Download, Calendar, Award, Bell } from 'lucide-react';
 import { exportToPDF } from '../utils/exportUtils';
 
 const StudentDashboard = () => {
-  const { loggedInUser, theme, setTheme, fees, assignments, submissions, library, recordFeePayment } = useContext(AppContext);
+  const { loggedInUser, theme, setTheme, fees, assignments, submissions, library, recordFeePayment, announcements } = useContext(AppContext);
   
   if (!loggedInUser) return null;
 
@@ -133,6 +133,30 @@ const StudentDashboard = () => {
             </div>
           </div>
 
+        </div>
+
+        {/* Class Bulletin & Announcements */}
+        <div className="prof-card" style={{ marginBottom: '2rem', borderLeft: '4px solid var(--warning)' }}>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 600, margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Bell size={20} style={{ color: 'var(--warning)' }} /> Class Bulletin & Announcements
+          </h2>
+          {announcements.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>
+              No active announcements. Check back later for tuition updates!
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {announcements.map((ann) => (
+                <div key={ann.id} style={{ padding: '1rem', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+                  <div className="flex-between" style={{ marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>{ann.title}</h4>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{ann.date}</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-main)', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{ann.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 2-Column Dashboard Grid Layout */}

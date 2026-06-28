@@ -26,6 +26,7 @@ export const AppProvider = ({ children }) => {
   const [library, setLibrary] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [history, setHistory] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
 
   useEffect(() => { document.body.className = `theme-${theme}`; localStorage.setItem('theme', theme); }, [theme]);
   
@@ -64,13 +65,14 @@ export const AppProvider = ({ children }) => {
   const fetchAllData = async () => {
     if (!authToken) return;
     try {
-      const [clsRes, stuRes, tRes, feeRes, assnRes, libRes] = await Promise.all([
+      const [clsRes, stuRes, tRes, feeRes, assnRes, libRes, annRes] = await Promise.all([
         fetch(`${API_URL}/classes`, { headers: authHeaders }),
         fetch(`${API_URL}/students`, { headers: authHeaders }),
         fetch(`${API_URL}/teachers`, { headers: authHeaders }),
         fetch(`${API_URL}/fees`, { headers: authHeaders }),
         fetch(`${API_URL}/assignments`, { headers: authHeaders }),
-        fetch(`${API_URL}/library`, { headers: authHeaders })
+        fetch(`${API_URL}/library`, { headers: authHeaders }),
+        fetch(`${API_URL}/announcements`, { headers: authHeaders })
       ]);
 
       if (clsRes.ok) setClasses(await clsRes.json());
@@ -79,6 +81,7 @@ export const AppProvider = ({ children }) => {
       if (feeRes.ok) setFees(await feeRes.json());
       if (assnRes.ok) setAssignments(await assnRes.json());
       if (libRes.ok) setLibrary(await libRes.json());
+      if (annRes.ok) setAnnouncements(await annRes.json());
       if (userRole === 'admin') {
         const histRes = await fetch(`${API_URL}/admin/history`, { headers: authHeaders });
         if (histRes.ok) setHistory(await histRes.json());
@@ -394,15 +397,53 @@ export const AppProvider = ({ children }) => {
     return false;
   };
 
+  const addAnnouncement = async (title, content, targetClass) => {
+    try {
+      const res = await fetch(`${API_URL}/announcements`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ title, content, target_class: targetClass })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAnnouncements([data, ...announcements]);
+        addToast('Announcement posted successfully!', 'success');
+        return true;
+      }
+    } catch (e) {
+      console.error(e);
+      addToast('Failed to post announcement', 'danger');
+    }
+    return false;
+  };
+
+  const deleteAnnouncement = async (id) => {
+    try {
+      const res = await fetch(`${API_URL}/announcements/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders
+      });
+      if (res.ok) {
+        setAnnouncements(announcements.filter(a => a.id !== id));
+        addToast('Announcement deleted', 'success');
+        return true;
+      }
+    } catch (e) {
+      console.error(e);
+      addToast('Failed to delete announcement', 'danger');
+    }
+    return false;
+  };
+
   return (
     <AppContext.Provider value={{ 
       isAuthenticated, userRole, loggedInUser,
       loginAdmin, registerAdmin, loginStudent, loginTeacher, logout, requestRegistration, approveRequest, rejectRequest,
       theme, setTheme, 
       students, teachers, fees, messages, toasts, classes,
-      assignments, submissions, calendarEvents, library, history,
+      assignments, submissions, calendarEvents, library, history, announcements,
       sendMessage, recordFeePayment, addToast, addStudent, removeStudent, removeBatch, authHeaders, API_URL,
-      addAssignment, addLibraryMaterial, fetchHistory, updateProfile
+      addAssignment, addLibraryMaterial, fetchHistory, updateProfile, addAnnouncement, deleteAnnouncement
     }}>
       {children}
     </AppContext.Provider>
