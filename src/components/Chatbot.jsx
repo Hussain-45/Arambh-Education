@@ -43,6 +43,17 @@ const Chatbot = () => {
       };
     }
 
+    const lastUserMessage = input.toLowerCase();
+
+    // Prevent financial / fee queries client-side
+    const financialKeywords = ['fee', 'pending', 'due', 'pay', 'rupee', 'money', 'profit', 'loss', 'expense', 'cost', 'price', 'salary', 'financial', 'revenue', 'budget'];
+    if (financialKeywords.some(keyword => lastUserMessage.includes(keyword))) {
+      setMessages(prev => prev.map(m => 
+        m.id === loadingId ? { ...m, text: "Sorry, I cannot answer questions about financial details, fees, or profit & loss metrics." } : m
+      ));
+      return;
+    }
+
     try {
       const response = await fetch('http://localhost:5000/api/chat', {
         method: 'POST',
@@ -55,11 +66,27 @@ const Chatbot = () => {
       const data = await response.json();
 
       setMessages(prev => prev.map(m => 
-        m.id === loadingId ? { ...m, text: data.fallback ? data.text : data.text } : m
+        m.id === loadingId ? { ...m, text: data.text } : m
       ));
     } catch (error) {
+      // Offline fallback matching engine if local backend is stopped
+      let reply = "I am Aarambh Assistant. How can I help you today?";
+      const name = userContext?.name || "Student";
+      const userClass = userContext?.class || "10th Math";
+      const fatherName = userContext?.fatherName || "Not Set";
+
+      if (lastUserMessage.includes('batch') || lastUserMessage.includes('class') || lastUserMessage.includes('schedule') || lastUserMessage.includes('timing')) {
+        reply = `Hi ${name}, you are currently registered in the batch: **${userClass}**. Lectures and study materials are mapped directly to this class.`;
+      } else if (lastUserMessage.includes('father') || lastUserMessage.includes('parent') || lastUserMessage.includes('dad') || lastUserMessage.includes('family')) {
+        reply = `According to our student registration records, your father's name is: **${fatherName}**.`;
+      } else if (lastUserMessage.includes('hello') || lastUserMessage.includes('hi') || lastUserMessage.includes('hey')) {
+        reply = `Hello ${name}! I am your Aarambh Assistant. I know you are in batch **${userClass}**. How can I help you today?`;
+      } else {
+        reply = `I am Aarambh Assistant. I can answer questions about your batch schedule (**${userClass}**) or father's name (**${fatherName}**). Let me know what you need!`;
+      }
+
       setMessages(prev => prev.map(m => 
-        m.id === loadingId ? { ...m, text: "Connection error. Please ensure the server is running." } : m
+        m.id === loadingId ? { ...m, text: reply } : m
       ));
     }
   };

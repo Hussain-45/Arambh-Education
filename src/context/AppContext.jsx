@@ -2,9 +2,8 @@ import React, { createContext, useState, useEffect } from 'react';
 
 export const AppContext = createContext();
 
-const API_URL = 'http://localhost:5000/api';
-
 export const AppProvider = ({ children }) => {
+  // Authentication State
   const [authToken, setAuthToken] = useState(() => localStorage.getItem('token') || null);
   const [userRole, setUserRole] = useState(() => localStorage.getItem('userRole') || null);
   const [loggedInUser, setLoggedInUser] = useState(() => {
@@ -13,8 +12,8 @@ export const AppProvider = ({ children }) => {
   });
   const [isAuthenticated, setIsAuthenticated] = useState(!!authToken);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
-  
-  // App Data State
+
+  // Serverless LocalStorage DB State
   const [classes, setClasses] = useState([]);
   const [students, setStudents] = useState([]);
   const [teachers, setTeachers] = useState([]);
@@ -24,21 +23,24 @@ export const AppProvider = ({ children }) => {
   const [submissions, setSubmissions] = useState([]);
   const [calendarEvents, setCalendarEvents] = useState([]);
   const [library, setLibrary] = useState([]);
-  const [toasts, setToasts] = useState([]);
   const [history, setHistory] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
+  const [registrationRequests, setRegistrationRequests] = useState([]);
+  const [toasts, setToasts] = useState([]);
 
-  useEffect(() => { document.body.className = `theme-${theme}`; localStorage.setItem('theme', theme); }, [theme]);
-  
+  // Initialize DB on first load
   useEffect(() => {
-    fetchPublicData();
+    document.body.className = `theme-${theme}`;
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
     if (authToken) {
       localStorage.setItem('token', authToken);
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userRole', userRole);
       localStorage.setItem('loggedInUser', JSON.stringify(loggedInUser));
       setIsAuthenticated(true);
-      fetchAllData();
     } else {
       localStorage.removeItem('token');
       localStorage.removeItem('isAuthenticated');
@@ -48,401 +50,475 @@ export const AppProvider = ({ children }) => {
     }
   }, [authToken, userRole, loggedInUser]);
 
-  const fetchPublicData = async () => {
-    try {
-      const res = await fetch(`${API_URL}/classes`);
-      if (res.ok) setClasses(await res.json());
-    } catch (e) {
-      console.error('Error fetching public classes:', e);
-    }
-  };
-
-  const authHeaders = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${authToken}`
-  };
-
-  const fetchAllData = async () => {
-    if (!authToken) return;
-    try {
-      const [clsRes, stuRes, tRes, feeRes, assnRes, libRes, annRes] = await Promise.all([
-        fetch(`${API_URL}/classes`, { headers: authHeaders }),
-        fetch(`${API_URL}/students`, { headers: authHeaders }),
-        fetch(`${API_URL}/teachers`, { headers: authHeaders }),
-        fetch(`${API_URL}/fees`, { headers: authHeaders }),
-        fetch(`${API_URL}/assignments`, { headers: authHeaders }),
-        fetch(`${API_URL}/library`, { headers: authHeaders }),
-        fetch(`${API_URL}/announcements`, { headers: authHeaders })
-      ]);
-
-      if (clsRes.ok) setClasses(await clsRes.json());
-      if (stuRes.ok) setStudents(await stuRes.json());
-      if (tRes.ok) setTeachers(await tRes.json());
-      if (feeRes.ok) setFees(await feeRes.json());
-      if (assnRes.ok) setAssignments(await assnRes.json());
-      if (libRes.ok) setLibrary(await libRes.json());
-      if (annRes.ok) setAnnouncements(await annRes.json());
-      if (userRole === 'admin') {
-        const histRes = await fetch(`${API_URL}/admin/history`, { headers: authHeaders });
-        if (histRes.ok) setHistory(await histRes.json());
-      }
+  // Seed default data if not initialized
+  useEffect(() => {
+    const initialized = localStorage.getItem('aarambh_db_initialized');
+    if (!initialized) {
+      const defaultUsers = [
+        { id: 1, name: 'System Admin', username: 'admin', password: 'pass', role: 'admin', email: 'admin@aarambh.edu' },
+        { id: 2, name: 'S. Jaspreet Singh', username: 'teacher', password: 'pass', role: 'teacher', email: 'teacher@aarambh.edu' },
+        { id: 3, name: 'Jaspreet Kaur', username: 'student', password: 'pass', role: 'student', fatherName: 'Jaspreet Singh', class: '10th Math', admission_number: 'AES1001', parentPhone: '9876543210' }
+      ];
+      const defaultClasses = [
+        { id: 1, name: '10th Math', grade: 'Class A', time: '10:00 AM' },
+        { id: 2, name: '10th Science', grade: 'Class B', time: '11:30 AM' }
+      ];
+      const defaultStudents = [
+        { id: 3, name: 'Jaspreet Kaur', class: '10th Math', parentPhone: '9876543210', fatherName: 'Jaspreet Singh', username: 'student', admission_number: 'AES1001' }
+      ];
+      const defaultTeachers = [
+        { id: 2, name: 'S. Jaspreet Singh', email: 'teacher@aarambh.edu', username: 'teacher' }
+      ];
       
-    } catch (err) {
-      console.error('Error fetching data:', err);
-      addToast('Error syncing data with server', 'danger');
+      // Seed 12 months fees for default student
+      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const defaultFees = months.map((month, idx) => ({
+        id: idx + 1,
+        studentId: 3,
+        month,
+        total: 1000,
+        paid: idx < 5 ? 1000 : 0,
+        status: idx < 5 ? 'Paid' : 'Pending',
+        dueDate: `10/${(idx + 1).toString().padStart(2, '0')}/2026`,
+        paymentMode: idx < 5 ? 'Cash' : null,
+        paymentDate: idx < 5 ? `05/${(idx + 1).toString().padStart(2, '0')}/2026` : null
+      }));
+
+      const defaultLibrary = [
+        { id: 1, title: 'Algebra Core Guide', subject: '10th Math', type: 'E-Book', link: 'https://example.com/algebra' }
+      ];
+      const defaultAssignments = [
+        { id: 1, title: 'Quadratic Equations Worksheet', subject: '10th Math', due_date: 'July 10, 2026' }
+      ];
+      const defaultAnnouncements = [
+        { id: 1, title: 'Special Physics Session', content: 'Sunday special lecture rescheduled to 9 AM.', target_class: 'All', date: new Date().toLocaleDateString() }
+      ];
+      const defaultRequests = [
+        { id: 101, role: 'student', name: 'Simran Singh', username: 'simran', password: 'pass', parentPhone: '9999988888', className: '10th Math', admission_number: 'AES1002', fatherName: 'Gurbaksh Singh', status: 'pending' }
+      ];
+
+      localStorage.setItem('aarambh_users', JSON.stringify(defaultUsers));
+      localStorage.setItem('aarambh_classes', JSON.stringify(defaultClasses));
+      localStorage.setItem('aarambh_students', JSON.stringify(defaultStudents));
+      localStorage.setItem('aarambh_teachers', JSON.stringify(defaultTeachers));
+      localStorage.setItem('aarambh_fees', JSON.stringify(defaultFees));
+      localStorage.setItem('aarambh_library', JSON.stringify(defaultLibrary));
+      localStorage.setItem('aarambh_assignments', JSON.stringify(defaultAssignments));
+      localStorage.setItem('aarambh_announcements', JSON.stringify(defaultAnnouncements));
+      localStorage.setItem('aarambh_requests', JSON.stringify(defaultRequests));
+      localStorage.setItem('aarambh_history', JSON.stringify([]));
+      localStorage.setItem('aarambh_messages', JSON.stringify([]));
+      localStorage.setItem('aarambh_db_initialized', 'true');
     }
+
+    // Load state from localStorage
+    setClasses(JSON.parse(localStorage.getItem('aarambh_classes') || '[]'));
+    setStudents(JSON.parse(localStorage.getItem('aarambh_students') || '[]'));
+    setTeachers(JSON.parse(localStorage.getItem('aarambh_teachers') || '[]'));
+    setFees(JSON.parse(localStorage.getItem('aarambh_fees') || '[]'));
+    setLibrary(JSON.parse(localStorage.getItem('aarambh_library') || '[]'));
+    setAssignments(JSON.parse(localStorage.getItem('aarambh_assignments') || '[]'));
+    setAnnouncements(JSON.parse(localStorage.getItem('aarambh_announcements') || '[]'));
+    setRegistrationRequests(JSON.parse(localStorage.getItem('aarambh_requests') || '[]'));
+    setHistory(JSON.parse(localStorage.getItem('aarambh_history') || '[]'));
+    setMessages(JSON.parse(localStorage.getItem('aarambh_messages') || '[]'));
+  }, []);
+
+  // UI Toast Logger
+  const addToast = (text, type = 'success') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, text, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
   };
 
-  const fetchHistory = async () => {
-    try {
-      const res = await fetch(`${API_URL}/admin/history`, { headers: authHeaders });
-      if (res.ok) setHistory(await res.json());
-    } catch (err) {
-      console.error(err);
-    }
+  // Log activity helper
+  const logActivity = (action, details) => {
+    const newLog = {
+      id: Date.now(),
+      action,
+      details,
+      timestamp: new Date().toLocaleString()
+    };
+    const updatedHistory = [newLog, ...history];
+    setHistory(updatedHistory);
+    localStorage.setItem('aarambh_history', JSON.stringify(updatedHistory));
   };
 
-  // Auth Actions
+  // Auth Operations
   const loginAdmin = async (username, password) => {
-    try {
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, role: 'admin' })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUserRole('admin'); setLoggedInUser(data.user); setAuthToken(data.token);
-        return true;
-      }
-    } catch (e) { console.error(e); }
+    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+    const admin = users.find(u => u.username === username && u.password === password && u.role === 'admin');
+    if (admin) {
+      setAuthToken('admin-mock-token');
+      setUserRole('admin');
+      setLoggedInUser(admin);
+      addToast(`Welcome back, ${admin.name}!`);
+      return true;
+    }
+    addToast('Invalid admin credentials', 'danger');
     return false;
   };
 
-  const registerAdmin = async (username, password) => {
-    try {
-      const res = await fetch(`${API_URL}/auth/register-admin`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUserRole('admin'); setLoggedInUser(data.user); setAuthToken(data.token);
-        return true;
-      }
-    } catch (e) { console.error(e); }
-    return false;
+  const registerAdmin = async (name, username, password) => {
+    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+    if (users.some(u => u.username === username)) {
+      addToast('Username already exists', 'danger');
+      return false;
+    }
+    const newUser = { id: Date.now(), name, username, password, role: 'admin' };
+    const updatedUsers = [...users, newUser];
+    localStorage.setItem('aarambh_users', JSON.stringify(updatedUsers));
+    addToast('Admin registered successfully. You can log in.');
+    return true;
   };
 
-  const loginStudent = async (name, phone, password) => {
-    try {
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: name, phone, password, role: 'student' })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUserRole('student'); setLoggedInUser(data.user); setAuthToken(data.token);
-        return true;
-      }
-    } catch (e) { console.error(e); }
+  const loginStudent = async (username, password) => {
+    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+    const student = users.find(u => u.username === username && u.password === password && u.role === 'student');
+    if (student) {
+      setAuthToken('student-mock-token');
+      setUserRole('student');
+      setLoggedInUser(student);
+      addToast(`Logged in successfully!`);
+      return true;
+    }
+    addToast('Invalid student credentials', 'danger');
     return false;
   };
 
   const loginTeacher = async (username, password) => {
-    try {
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, role: 'teacher' })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUserRole('teacher'); setLoggedInUser(data.user); setAuthToken(data.token);
-        return true;
-      }
-    } catch (e) { console.error(e); }
+    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+    const teacher = users.find(u => u.username === username && u.password === password && u.role === 'teacher');
+    if (teacher) {
+      setAuthToken('teacher-mock-token');
+      setUserRole('teacher');
+      setLoggedInUser(teacher);
+      addToast(`Logged in successfully!`);
+      return true;
+    }
+    addToast('Invalid teacher credentials', 'danger');
     return false;
   };
 
   const logout = () => {
-    setAuthToken(null); setUserRole(null); setLoggedInUser(null);
+    setAuthToken(null);
+    setUserRole(null);
+    setLoggedInUser(null);
+    setIsAuthenticated(false);
+    addToast('Logged out successfully.');
   };
 
-  // App Actions
-  const addToast = (message, type = 'info') => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => { setToasts(prev => prev.filter(t => t.id !== id)); }, 4000);
-  };
-
-  const addStudent = async (name, className, parentPhone, fatherName) => {
-    try {
-      const res = await fetch(`${API_URL}/students`, {
-        method: 'POST', headers: authHeaders,
-        body: JSON.stringify({ name, className, parentPhone, fatherName })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setStudents([...students, data]);
-        addToast(`${name} has been added successfully!`, 'success');
-        fetchAllData(); // refresh fees
-      }
-    } catch (e) { console.error(e); }
-  };
-
-  const removeStudent = async (studentId) => {
-    try {
-      const res = await fetch(`${API_URL}/students/${studentId}`, {
-        method: 'DELETE', headers: authHeaders
-      });
-      if (res.ok) {
-        setStudents(students.filter(s => s.id !== studentId));
-        addToast('Student removed successfully', 'success');
-        setFees(fees.filter(f => f.studentId !== studentId));
-        return true;
-      }
-    } catch (e) { console.error(e); }
-    return false;
-  };
-
-  const removeBatch = async (batchId) => {
-    try {
-      const res = await fetch(`${API_URL}/classes/${batchId}`, {
-        method: 'DELETE', headers: authHeaders
-      });
-      if (res.ok) {
-        setClasses(prev => prev.filter(c => c.id !== parseInt(batchId)));
-        addToast('Batch deleted successfully', 'success');
-        return true;
-      }
-    } catch (e) { console.error(e); }
-    return false;
-  };
-
-  const sendMessage = async (recipient, type, content) => {
-    const newMsg = { id: Date.now(), recipient, type, content, date: new Date().toLocaleString(), status: 'Sending...' };
-    setMessages(prev => [newMsg, ...prev]);
-
-    if (type === 'SMS' || type === 'Auto-WhatsApp') {
-      try {
-        const res = await fetch(`${API_URL}/sms`, {
-          method: 'POST', headers: authHeaders,
-          body: JSON.stringify({ to: recipient, message: content, channel: type })
-        });
-        const data = await res.json();
-        if (data.success) {
-          setMessages(prev => prev.map(m => m.id === newMsg.id ? { ...m, status: 'Delivered', previewUrl: data.previewUrl } : m));
-          addToast(`Message delivered successfully!`, 'success');
-        } else {
-          setMessages(prev => prev.map(m => m.id === newMsg.id ? { ...m, status: 'Failed' } : m));
-          addToast(`Failed to deliver message: ${data.error}`, 'danger');
-        }
-      } catch (e) {
-        setMessages(prev => prev.map(m => m.id === newMsg.id ? { ...m, status: 'Failed' } : m));
-        addToast('Network error sending message', 'danger');
-      }
-    } else {
-      setMessages(prev => prev.map(m => m.id === newMsg.id ? { ...m, status: 'Sent' } : m));
-      addToast(`Message sent to ${recipient}`, 'success');
-    }
-  };
-
-  const recordFeePayment = async (studentId, amount, paymentMode = 'Cash', paymentDate = new Date().toLocaleDateString(), month = null) => {
-    try {
-      const res = await fetch(`${API_URL}/fees/${studentId}/pay`, {
-        method: 'PUT', headers: authHeaders,
-        body: JSON.stringify({ amount, paymentMode, paymentDate, month })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setFees(prev => prev.map(f => {
-          if (month) {
-            if (f.studentId === studentId && f.month === month) {
-              return { ...f, paid: data.paid, status: data.status, paymentMode: data.paymentMode, paymentDate: data.paymentDate };
-            }
-          } else {
-            if (f.studentId === studentId) {
-              return { ...f, paid: data.paid, status: data.status, paymentMode: data.paymentMode, paymentDate: data.paymentDate };
-            }
-          }
-          return f;
-        }));
-        const student = students.find(s => s.id === studentId);
-        if (student) sendMessage(student.parentPhone, 'SMS', `Payment of Rs.${amount} received for ${month || 'Current Month'}. Thank you!`);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const updateProfile = async (name, email) => {
-    try {
-      const res = await fetch(`${API_URL}/users/profile`, {
-        method: 'PUT', headers: authHeaders,
-        body: JSON.stringify({ name, email })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const updatedUser = { ...loggedInUser, name: data.name, email: data.email };
-        setLoggedInUser(updatedUser);
-        localStorage.setItem('loggedInUser', JSON.stringify(updatedUser));
-        addToast('Profile updated successfully!', 'success');
-        return true;
-      }
-    } catch (e) { console.error(e); }
-    addToast('Failed to update profile', 'danger');
-    return false;
-  };
-
-  const requestRegistration = async (data) => {
-    try {
-      const res = await fetch(`${API_URL}/auth/request-register`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      if (res.ok) {
-        const json = await res.json();
-        addToast(json.message, 'success');
-        return true;
-      }
-      addToast('Failed to submit registration request', 'danger');
-    } catch (e) { console.error(e); addToast('Network error', 'danger'); }
-    return false;
+  // Student Registrations Request
+  const requestRegistration = async (studentData) => {
+    const requests = JSON.parse(localStorage.getItem('aarambh_requests') || '[]');
+    const newRequest = {
+      ...studentData,
+      id: Date.now(),
+      status: 'pending'
+    };
+    const updatedRequests = [...requests, newRequest];
+    setRegistrationRequests(updatedRequests);
+    localStorage.setItem('aarambh_requests', JSON.stringify(updatedRequests));
+    addToast('Registration request submitted successfully. Waiting for admin approval.');
+    return true;
   };
 
   const approveRequest = async (id) => {
-    try {
-      const res = await fetch(`${API_URL}/admin/requests/${id}/approve`, {
-        method: 'POST', headers: authHeaders
-      });
-      if (res.ok) {
-        addToast('Request approved successfully', 'success');
-        fetchAllData();
-        return true;
-      }
-    } catch (e) { console.error(e); }
-    return false;
+    const requests = JSON.parse(localStorage.getItem('aarambh_requests') || '[]');
+    const req = requests.find(r => r.id === id);
+    if (!req) return false;
+
+    // 1. Add to students list
+    const newStudent = {
+      id: req.id,
+      name: req.name,
+      class: req.className,
+      parentPhone: req.parentPhone,
+      fatherName: req.fatherName,
+      username: req.username,
+      admission_number: req.admission_number || `AES${Date.now().toString().slice(-4)}`
+    };
+    const updatedStudents = [...students, newStudent];
+    setStudents(updatedStudents);
+    localStorage.setItem('aarambh_students', JSON.stringify(updatedStudents));
+
+    // 2. Add to users list for login access
+    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+    const newUser = {
+      id: req.id,
+      name: req.name,
+      username: req.username,
+      password: req.password,
+      role: 'student',
+      parentPhone: req.parentPhone,
+      className: req.className,
+      admission_number: newStudent.admission_number,
+      fatherName: req.fatherName
+    };
+    localStorage.setItem('aarambh_users', JSON.stringify([...users, newUser]));
+
+    // 3. Initialize 12 Months Fees
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const newFees = months.map((month, idx) => ({
+      id: Date.now() + idx,
+      studentId: req.id,
+      month,
+      total: req.fees || 1000,
+      paid: 0,
+      status: 'Pending',
+      dueDate: `10/${(idx + 1).toString().padStart(2, '0')}/2026`,
+      paymentMode: null,
+      paymentDate: null
+    }));
+    const updatedFees = [...fees, ...newFees];
+    setFees(updatedFees);
+    localStorage.setItem('aarambh_fees', JSON.stringify(updatedFees));
+
+    // 4. Remove from requests
+    const updatedRequests = requests.filter(r => r.id !== id);
+    setRegistrationRequests(updatedRequests);
+    localStorage.setItem('aarambh_requests', JSON.stringify(updatedRequests));
+
+    logActivity('Approve Student', `Approved admission request for ${req.name} (Batch: ${req.className})`);
+    addToast(`${req.name} registration approved!`);
+    return true;
   };
 
   const rejectRequest = async (id) => {
-    try {
-      const res = await fetch(`${API_URL}/admin/requests/${id}/reject`, {
-        method: 'DELETE', headers: authHeaders
-      });
-      if (res.ok) {
-        addToast('Request rejected', 'info');
-        return true;
-      }
-    } catch (e) { console.error(e); }
-    return false;
+    const requests = JSON.parse(localStorage.getItem('aarambh_requests') || '[]');
+    const req = requests.find(r => r.id === id);
+    if (!req) return false;
+
+    const updatedRequests = requests.filter(r => r.id !== id);
+    setRegistrationRequests(updatedRequests);
+    localStorage.setItem('aarambh_requests', JSON.stringify(updatedRequests));
+
+    logActivity('Reject Student Request', `Rejected admission request for ${req.name}`);
+    addToast(`Registration request rejected.`);
+    return true;
   };
 
-  const addAssignment = async (title, subject, dueDate, type, link, file) => {
-    try {
-      let body;
-      let headers = { 'Authorization': `Bearer ${authToken}` }; // no Content-Type for FormData
-
-      if (file) {
-        body = new FormData();
-        body.append('title', title);
-        body.append('subject', subject);
-        body.append('dueDate', dueDate);
-        body.append('type', type);
-        body.append('file', file);
-      } else {
-        body = JSON.stringify({ title, subject, dueDate, type, link: ensureHttp(link) });
-        headers['Content-Type'] = 'application/json';
-      }
-
-      const res = await fetch(`${API_URL}/assignments`, { method: 'POST', headers, body });
-      if (res.ok) {
-        const data = await res.json();
-        setAssignments([...assignments, data]);
-        addToast('Assignment created!', 'success');
-        return true;
-      }
-    } catch (e) { console.error(e); }
-    return false;
+  // Messaging (Simulated Logs & WhatsApp Dispatch Logs)
+  const sendMessage = async (to, channel, content) => {
+    const newMsg = {
+      id: Date.now(),
+      recipient: to,
+      channel,
+      content,
+      date: new Date().toLocaleString(),
+      status: 'Delivered',
+      previewUrl: null
+    };
+    const updatedMessages = [newMsg, ...messages];
+    setMessages(updatedMessages);
+    localStorage.setItem('aarambh_messages', JSON.stringify(updatedMessages));
+    
+    // Log message dispatch in audit log
+    logActivity('Send Message', `Dispatched notification to ${to} via ${channel}`);
+    addToast(`Message dispatched via ${channel}!`);
+    return true;
   };
 
-  const ensureHttp = (url) => {
-    if (!url) return '';
-    if (!url.match(/^https?:\/\//i)) return 'http://' + url;
-    return url;
+  // Record fee payments
+  const recordFeePayment = async (studentId, amount, paymentMode, paymentDate, month) => {
+    const updatedFees = fees.map(f => {
+      if (f.studentId === studentId && f.month === month) {
+        return {
+          ...f,
+          paid: f.paid + amount,
+          status: f.paid + amount >= f.total ? 'Paid' : 'Pending',
+          paymentMode,
+          paymentDate: paymentDate || new Date().toLocaleDateString()
+        };
+      }
+      return f;
+    });
+    setFees(updatedFees);
+    localStorage.setItem('aarambh_fees', JSON.stringify(updatedFees));
+
+    const student = students.find(s => s.id === studentId);
+    logActivity('Fee Payment', `Recorded ₹${amount} fee payment for ${student?.name || 'Student'} for the month of ${month}`);
+    addToast('Payment recorded successfully!');
+    return true;
   };
 
-  const addLibraryMaterial = async (title, subject, type, link, file) => {
-    try {
-      let body;
-      let headers = { 'Authorization': `Bearer ${authToken}` };
+  // Student Roster Management
+  const addStudent = async (studentData) => {
+    const id = Date.now();
+    const newStudent = {
+      id,
+      name: studentData.name,
+      class: studentData.class,
+      parentPhone: studentData.parentPhone,
+      fatherName: studentData.fatherName,
+      username: studentData.username || `stu_${id.toString().slice(-4)}`,
+      admission_number: studentData.admission_number || `AES${id.toString().slice(-4)}`
+    };
 
-      if (file) {
-        body = new FormData();
-        body.append('title', title);
-        body.append('subject', subject);
-        body.append('type', type);
-        body.append('file', file);
-      } else {
-        body = JSON.stringify({ title, subject, type, link: ensureHttp(link) });
-        headers['Content-Type'] = 'application/json';
-      }
+    const updatedStudents = [...students, newStudent];
+    setStudents(updatedStudents);
+    localStorage.setItem('aarambh_students', JSON.stringify(updatedStudents));
 
-      const res = await fetch(`${API_URL}/library`, { method: 'POST', headers, body });
-      if (res.ok) {
-        const data = await res.json();
-        setLibrary([...library, data]);
-        addToast('Material added to library!', 'success');
-        return true;
-      }
-    } catch (e) { console.error(e); }
-    return false;
+    // Register login user credentials
+    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+    const newUser = {
+      id,
+      name: studentData.name,
+      username: newStudent.username,
+      password: studentData.password || 'pass',
+      role: 'student',
+      parentPhone: studentData.parentPhone,
+      className: studentData.class,
+      admission_number: newStudent.admission_number,
+      fatherName: studentData.fatherName
+    };
+    localStorage.setItem('aarambh_users', JSON.stringify([...users, newUser]));
+
+    // Initialize 12 monthly fees
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const newFees = months.map((month, idx) => ({
+      id: id + idx,
+      studentId: id,
+      month,
+      total: studentData.monthlyFee || 1000,
+      paid: 0,
+      status: 'Pending',
+      dueDate: `10/${(idx + 1).toString().padStart(2, '0')}/2026`,
+      paymentMode: null,
+      paymentDate: null
+    }));
+    const updatedFees = [...fees, ...newFees];
+    setFees(updatedFees);
+    localStorage.setItem('aarambh_fees', JSON.stringify(updatedFees));
+
+    logActivity('Add Student', `Manually added student ${studentData.name} to class ${studentData.class}`);
+    addToast('Student added successfully!');
+    return true;
   };
 
+  const removeStudent = async (studentId) => {
+    const updatedStudents = students.filter(s => s.id !== studentId);
+    setStudents(updatedStudents);
+    localStorage.setItem('aarambh_students', JSON.stringify(updatedStudents));
+
+    const updatedFees = fees.filter(f => f.studentId !== studentId);
+    setFees(updatedFees);
+    localStorage.setItem('aarambh_fees', JSON.stringify(updatedFees));
+
+    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+    const updatedUsers = users.filter(u => u.id !== studentId);
+    localStorage.setItem('aarambh_users', JSON.stringify(updatedUsers));
+
+    logActivity('Remove Student', `Removed student ID: ${studentId} from systems`);
+    addToast('Student removed successfully.');
+    return true;
+  };
+
+  // Class Batches Management
+  const removeBatch = async (batchId) => {
+    const batch = classes.find(c => c.id === batchId);
+    if (!batch) return false;
+
+    const updatedClasses = classes.filter(c => c.id !== batchId);
+    setClasses(updatedClasses);
+    localStorage.setItem('aarambh_classes', JSON.stringify(updatedClasses));
+
+    logActivity('Remove Batch', `Removed batch: ${batch.name}`);
+    addToast(`Batch ${batch.name} removed successfully.`);
+    return true;
+  };
+
+  // Academic Assignments
+  const addAssignment = async (title, subject, dueDate) => {
+    const newAssn = {
+      id: Date.now(),
+      title,
+      subject,
+      due_date: dueDate
+    };
+    const updatedAssignments = [...assignments, newAssn];
+    setAssignments(updatedAssignments);
+    localStorage.setItem('aarambh_assignments', JSON.stringify(updatedAssignments));
+
+    logActivity('Add Assignment', `Created assignment: ${title} for subject ${subject}`);
+    addToast('Assignment posted successfully!');
+    return true;
+  };
+
+  // E-Books & Study Materials Library
+  const addLibraryMaterial = async (title, subject, type, link) => {
+    const newMaterial = {
+      id: Date.now(),
+      title,
+      subject,
+      type,
+      link: link || '#'
+    };
+    const updatedLibrary = [...library, newMaterial];
+    setLibrary(updatedLibrary);
+    localStorage.setItem('aarambh_library', JSON.stringify(updatedLibrary));
+
+    logActivity('Add Library Material', `Added study material ${title} to ${subject} library`);
+    addToast('Library material added successfully!');
+    return true;
+  };
+
+  // Bulletins & Announcements
   const addAnnouncement = async (title, content, targetClass) => {
-    try {
-      const res = await fetch(`${API_URL}/announcements`, {
-        method: 'POST',
-        headers: authHeaders,
-        body: JSON.stringify({ title, content, target_class: targetClass })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setAnnouncements([data, ...announcements]);
-        addToast('Announcement posted successfully!', 'success');
-        return true;
-      }
-    } catch (e) {
-      console.error(e);
-      addToast('Failed to post announcement', 'danger');
-    }
-    return false;
+    const newAnn = {
+      id: Date.now(),
+      title,
+      content,
+      target_class: targetClass,
+      date: new Date().toLocaleDateString()
+    };
+    const updatedAnnouncements = [newAnn, ...announcements];
+    setAnnouncements(updatedAnnouncements);
+    localStorage.setItem('aarambh_announcements', JSON.stringify(updatedAnnouncements));
+
+    logActivity('Add Announcement', `Published notice: "${title}" to ${targetClass}`);
+    addToast('Announcement published!');
+    return true;
   };
 
   const deleteAnnouncement = async (id) => {
-    try {
-      const res = await fetch(`${API_URL}/announcements/${id}`, {
-        method: 'DELETE',
-        headers: authHeaders
-      });
-      if (res.ok) {
-        setAnnouncements(announcements.filter(a => a.id !== id));
-        addToast('Announcement deleted', 'success');
-        return true;
-      }
-    } catch (e) {
-      console.error(e);
-      addToast('Failed to delete announcement', 'danger');
-    }
-    return false;
+    const updatedAnnouncements = announcements.filter(a => a.id !== id);
+    setAnnouncements(updatedAnnouncements);
+    localStorage.setItem('aarambh_announcements', JSON.stringify(updatedAnnouncements));
+
+    logActivity('Delete Announcement', `Removed announcement ID: ${id}`);
+    addToast('Announcement removed.');
+    return true;
+  };
+
+  // Profile Details
+  const updateProfile = async (name, email) => {
+    const updatedUser = { ...loggedInUser, name, email };
+    setLoggedInUser(updatedUser);
+    localStorage.setItem('loggedInUser', JSON.stringify(updatedUser));
+
+    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+    const updatedUsers = users.map(u => u.id === loggedInUser.id ? { ...u, name, email } : u);
+    localStorage.setItem('aarambh_users', JSON.stringify(updatedUsers));
+
+    addToast('Profile settings updated successfully!');
+    return true;
+  };
+
+  const fetchHistory = () => {
+    // Audit logs are updated reactively on states
   };
 
   return (
-    <AppContext.Provider value={{ 
+    <AppContext.Provider value={{
       isAuthenticated, userRole, loggedInUser,
       loginAdmin, registerAdmin, loginStudent, loginTeacher, logout, requestRegistration, approveRequest, rejectRequest,
       theme, setTheme, 
       students, teachers, fees, messages, toasts, classes,
-      assignments, submissions, calendarEvents, library, history, announcements,
-      sendMessage, recordFeePayment, addToast, addStudent, removeStudent, removeBatch, authHeaders, API_URL,
+      assignments, submissions, calendarEvents, library, history, announcements, registrationRequests,
+      sendMessage, recordFeePayment, addToast, addStudent, removeStudent, removeBatch,
       addAssignment, addLibraryMaterial, fetchHistory, updateProfile, addAnnouncement, deleteAnnouncement
     }}>
       {children}
