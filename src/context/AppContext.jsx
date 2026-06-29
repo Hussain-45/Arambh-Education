@@ -494,7 +494,19 @@ export const AppProvider = ({ children }) => {
   };
 
   // Student Roster Management
-  const addStudent = async (studentData) => {
+  const addStudent = async (param1, param2, param3, param4) => {
+    let studentData = {};
+    if (typeof param1 === 'object' && param1 !== null) {
+      studentData = param1;
+    } else {
+      studentData = {
+        name: param1,
+        class: param2,
+        parentPhone: param3,
+        fatherName: param4
+      };
+    }
+
     const id = Date.now();
     const newStudent = {
       id,
