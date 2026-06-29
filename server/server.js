@@ -48,13 +48,23 @@ let waStatus = 'INITIALIZING';
 
 try {
   console.log('Initializing WhatsApp Robot...');
+  const defaultChromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+  const hasLocalChrome = fs.existsSync(defaultChromePath);
+
+  const puppeteerOpts = {
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  };
+  if (hasLocalChrome) {
+    puppeteerOpts.executablePath = defaultChromePath;
+    console.log('[WhatsApp] Using Google Chrome installation:', defaultChromePath);
+  } else {
+    console.log('[WhatsApp] Google Chrome not found at default path, falling back to default browser engine');
+  }
+
   waClient = new Client({
     authStrategy: new LocalAuth(),
-    puppeteer: {
-      headless: true,
-      executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    }
+    puppeteer: puppeteerOpts
   });
 
   waClient.on('qr', async (qr) => {
