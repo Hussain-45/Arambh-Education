@@ -34,6 +34,15 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  // Enforce jaspreet admin user presence in localStorage users list
+  useEffect(() => {
+    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+    if (!users.some(u => (u.username || '').trim().toLowerCase() === 'jaspreet')) {
+      const jaspreetAdmin = { id: 4, name: 'Jaspreet Singh', username: 'jaspreet', password: 'pass', role: 'admin', email: 'jaspreet@aarambh.edu' };
+      localStorage.setItem('aarambh_users', JSON.stringify([...users, jaspreetAdmin]));
+    }
+  }, []);
+
   useEffect(() => {
     if (authToken) {
       localStorage.setItem('token', authToken);
@@ -56,6 +65,7 @@ export const AppProvider = ({ children }) => {
     if (!initialized) {
       const defaultUsers = [
         { id: 1, name: 'System Admin', username: 'admin', password: 'pass', role: 'admin', email: 'admin@aarambh.edu' },
+        { id: 4, name: 'Jaspreet Singh', username: 'jaspreet', password: 'pass', role: 'admin', email: 'jaspreet@aarambh.edu' },
         { id: 2, name: 'S. Jaspreet Singh', username: 'teacher', password: 'pass', role: 'teacher', email: 'teacher@aarambh.edu' },
         { id: 3, name: 'Jaspreet Kaur', username: 'student', password: 'pass', role: 'student', fatherName: 'Jaspreet Singh', class: '10th Math', admission_number: 'AES1001', parentPhone: '9876543210' }
       ];
@@ -148,9 +158,12 @@ export const AppProvider = ({ children }) => {
 
   // Auth Operations
   const loginAdmin = async (username, password) => {
+    const cleanUsername = (username || '').trim().toLowerCase();
+    const cleanPassword = (password || '').trim();
+
     // Fail-safe credential bypass
-    if (username === 'admin' && password === 'pass') {
-      const defaultAdmin = { id: 1, name: 'System Admin', username: 'admin', role: 'admin', email: 'admin@aarambh.edu' };
+    if ((cleanUsername === 'admin' || cleanUsername === 'jaspreet') && cleanPassword === 'pass') {
+      const defaultAdmin = { id: 1, name: 'System Admin', username: cleanUsername, role: 'admin', email: 'admin@aarambh.edu' };
       setAuthToken('admin-mock-token');
       setUserRole('admin');
       setLoggedInUser(defaultAdmin);
@@ -159,7 +172,7 @@ export const AppProvider = ({ children }) => {
     }
 
     const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    const admin = users.find(u => u.username === username && u.password === password && u.role === 'admin');
+    const admin = users.find(u => (u.username || '').trim().toLowerCase() === cleanUsername && (u.password || '').trim() === cleanPassword && u.role === 'admin');
     if (admin) {
       setAuthToken('admin-mock-token');
       setUserRole('admin');
@@ -172,21 +185,29 @@ export const AppProvider = ({ children }) => {
   };
 
   const registerAdmin = async (name, username, password) => {
+    const cleanUsername = (username || '').trim().toLowerCase();
+    const cleanPassword = (password || '').trim();
     const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    if (users.some(u => u.username === username)) {
+    
+    if (users.some(u => (u.username || '').trim().toLowerCase() === cleanUsername)) {
       addToast('Username already exists', 'danger');
       return false;
     }
-    const newUser = { id: Date.now(), name, username, password, role: 'admin' };
+    const newUser = { id: Date.now(), name, username: cleanUsername, password: cleanPassword, role: 'admin' };
     const updatedUsers = [...users, newUser];
     localStorage.setItem('aarambh_users', JSON.stringify(updatedUsers));
     addToast('Admin registered successfully. You can log in.');
     return true;
   };
 
-  const loginStudent = async (username, password) => {
+  const loginStudent = async (username, param2, param3) => {
+    // Resolve loginStudent(username, password) OR loginStudent(username, phone, password)
+    const actualPassword = param3 !== undefined ? param3 : param2;
+    const cleanUsername = (username || '').trim().toLowerCase();
+    const cleanPassword = (actualPassword || '').trim();
+
     // Fail-safe credential bypass
-    if (username === 'student' && password === 'pass') {
+    if (cleanUsername === 'student' && cleanPassword === 'pass') {
       const defaultStudent = { id: 3, name: 'Jaspreet Kaur', username: 'student', role: 'student', fatherName: 'Jaspreet Singh', class: '10th Math', admission_number: 'AES1001', parentPhone: '9876543210' };
       setAuthToken('student-mock-token');
       setUserRole('student');
@@ -196,7 +217,7 @@ export const AppProvider = ({ children }) => {
     }
 
     const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    const student = users.find(u => u.username === username && u.password === password && u.role === 'student');
+    const student = users.find(u => (u.username || '').trim().toLowerCase() === cleanUsername && (u.password || '').trim() === cleanPassword && u.role === 'student');
     if (student) {
       setAuthToken('student-mock-token');
       setUserRole('student');
@@ -209,8 +230,11 @@ export const AppProvider = ({ children }) => {
   };
 
   const loginTeacher = async (username, password) => {
+    const cleanUsername = (username || '').trim().toLowerCase();
+    const cleanPassword = (password || '').trim();
+
     // Fail-safe credential bypass
-    if (username === 'teacher' && password === 'pass') {
+    if (cleanUsername === 'teacher' && cleanPassword === 'pass') {
       const defaultTeacher = { id: 2, name: 'S. Jaspreet Singh', username: 'teacher', role: 'teacher', email: 'teacher@aarambh.edu' };
       setAuthToken('teacher-mock-token');
       setUserRole('teacher');
@@ -220,7 +244,7 @@ export const AppProvider = ({ children }) => {
     }
 
     const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    const teacher = users.find(u => u.username === username && u.password === password && u.role === 'teacher');
+    const teacher = users.find(u => (u.username || '').trim().toLowerCase() === cleanUsername && (u.password || '').trim() === cleanPassword && u.role === 'teacher');
     if (teacher) {
       setAuthToken('teacher-mock-token');
       setUserRole('teacher');
