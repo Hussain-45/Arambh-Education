@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login';
 import Attendance from './pages/Attendance';
@@ -107,7 +107,7 @@ const AppLayout = () => {
 function App() {
   return (
     <AppProvider>
-      <Router basename={import.meta.env.BASE_URL}>
+      <Router>
         <AppLayout />
       </Router>
     </AppProvider>
