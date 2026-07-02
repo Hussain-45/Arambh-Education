@@ -92,24 +92,18 @@ try {
 }
 // -----------------------------
 
-// Ethereal Email Setup (Zero-config free testing)
-let transporter;
-nodemailer.createTestAccount((err, account) => {
-  if (err) {
-    console.error('Failed to create a testing account. ' + err.message);
-    return;
+// Gmail SMTP configuration
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  auth: {
+    user: 'aarambhinstitute46@gmail.com',
+    pass: 'Neerajsir'
   }
-  transporter = nodemailer.createTransport({
-    host: account.smtp.host,
-    port: account.smtp.port,
-    secure: account.smtp.secure,
-    auth: {
-      user: account.user,
-      pass: account.pass
-    }
-  });
-  console.log('Ethereal Email system initialized. Ready to send free test messages!');
 });
+console.log('Gmail SMTP transport system initialized for aarambhinstitute46@gmail.com.');
 
 // Ensure uploads dir exists
 const uploadsDir = path.join(__dirname, 'uploads');
