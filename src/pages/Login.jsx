@@ -21,6 +21,7 @@ const Login = () => {
   const [admissionNumber, setAdmissionNumber] = useState(''); // Optional, auto-generated if blank
   const [fees, setFees] = useState(''); // Initial fee amount
   const [fatherName, setFatherName] = useState(''); // Student's Father Name
+  const [email, setEmail] = useState(''); // Student/User Email Address
 
   const { loginAdmin, registerAdmin, loginTeacher, loginStudent, requestRegistration, classes, addToast } = useContext(AppContext);
   const navigate = useNavigate();
@@ -45,6 +46,7 @@ const Login = () => {
     setAdmissionNumber('');
     setFees('');
     setFatherName('');
+    setEmail('');
 
     const isRemember = localStorage.getItem('aarambh_remember_me') !== 'false';
     setRememberMe(isRemember);
@@ -149,7 +151,8 @@ const Login = () => {
             className: targetTab === 'student' ? className : null,
             admissionNumber: admissionNumber || null,
             fees: targetTab === 'student' && fees ? parseInt(fees) : 0,
-            fatherName: targetTab === 'student' ? fatherName : null
+            fatherName: targetTab === 'student' ? fatherName : null,
+            email: email || null
           };
           
           const success = await requestRegistration(data);
@@ -292,6 +295,20 @@ const Login = () => {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required
+                className="prof-input"
+                style={{ paddingLeft: '2.5rem' }}
+              />
+            </div>
+          )}
+
+          {isRegisterMode && (
+            <div style={{ position: 'relative' }}>
+              <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input 
+                type="email" 
+                placeholder={activeTab === 'student' ? "Parent Email Address" : "Your Email Address"}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="prof-input"
                 style={{ paddingLeft: '2.5rem' }}
               />

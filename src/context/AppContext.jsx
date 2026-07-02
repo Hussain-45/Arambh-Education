@@ -398,7 +398,7 @@ export const AppProvider = ({ children }) => {
       username: reqData.username || cleanUsername,
       password: reqData.password,
       role: reqData.role,
-      email: reqData.role === 'teacher' ? `${cleanUsername}@aarambh.edu` : null,
+      email: reqData.email || (reqData.role === 'teacher' ? `${cleanUsername}@aarambh.edu` : null),
       className: reqData.className,
       fatherName: reqData.fatherName,
       admission_number: reqData.admissionNumber || sequentialAdmissionNumber,
@@ -478,7 +478,8 @@ export const AppProvider = ({ children }) => {
       parentPhone: req.parentPhone,
       fatherName: req.fatherName,
       username: req.username || req.name.toLowerCase().replace(/\s+/g, ''),
-      admission_number: req.admission_number || sequentialAdmissionNumber
+      admission_number: req.admission_number || sequentialAdmissionNumber,
+      email: req.email
     };
     const updatedStudents = [...students, newStudent];
     setStudents(updatedStudents);
@@ -495,7 +496,8 @@ export const AppProvider = ({ children }) => {
       parentPhone: req.parentPhone,
       className: req.className,
       admission_number: newStudent.admission_number,
-      fatherName: req.fatherName
+      fatherName: req.fatherName,
+      email: req.email
     };
     localStorage.setItem('aarambh_users', JSON.stringify([...users, newUser]));
 
@@ -697,7 +699,7 @@ export const AppProvider = ({ children }) => {
   };
 
   // Student Roster Management
-  const addStudent = async (param1, param2, param3, param4) => {
+  const addStudent = async (param1, param2, param3, param4, param5) => {
     let studentData = {};
     if (typeof param1 === 'object' && param1 !== null) {
       studentData = param1;
@@ -706,24 +708,34 @@ export const AppProvider = ({ children }) => {
         name: param1,
         class: param2,
         parentPhone: param3,
-        fatherName: param4
+        fatherName: param4,
+        email: param5
       };
     }
 
-    const id = Date.now();
-    
-    // Generate sequential admission number
-    const currentStudentsList = JSON.parse(localStorage.getItem('aarambh_students') || '[]');
-    let maxNum = 0;
-    currentStudentsList.forEach(s => {
-      const match = (s.admission_number || '').match(/AES(\d+)/i);
-      if (match) {
-        const num = parseInt(match[1]);
-        if (num > maxNum) maxNum = num;
+    let id = Date.now();
+    let sequentialAdmissionNumber = `AES${id.toString().slice(-4)}`;
+
+    try {
+      const response = await fetch(`${API_URL}/students`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          name: studentData.name,
+          className: studentData.class,
+          parentPhone: studentData.parentPhone,
+          fatherName: studentData.fatherName,
+          email: studentData.email
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        id = data.id;
+        sequentialAdmissionNumber = data.admission_number;
       }
-    });
-    const nextNum = maxNum + 1;
-    const sequentialAdmissionNumber = `AES${nextNum}`;
+    } catch (e) {
+      // fallback
+    }
 
     const newStudent = {
       id,
@@ -731,8 +743,9 @@ export const AppProvider = ({ children }) => {
       class: studentData.class,
       parentPhone: studentData.parentPhone,
       fatherName: studentData.fatherName,
+      email: studentData.email,
       username: studentData.username || `stu_${id.toString().slice(-4)}`,
-      admission_number: studentData.admission_number || sequentialAdmissionNumber
+      admission_number: sequentialAdmissionNumber
     };
 
     const updatedStudents = [...students, newStudent];
@@ -750,7 +763,8 @@ export const AppProvider = ({ children }) => {
       parentPhone: studentData.parentPhone,
       className: studentData.class,
       admission_number: newStudent.admission_number,
-      fatherName: studentData.fatherName
+      fatherName: studentData.fatherName,
+      email: studentData.email
     };
     localStorage.setItem('aarambh_users', JSON.stringify([...users, newUser]));
 

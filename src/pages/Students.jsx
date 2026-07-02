@@ -20,10 +20,11 @@ const Students = () => {
   const [newClass, setNewClass] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [newFatherName, setNewFatherName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
 
   const handleExportCSV = () => {
-    const headers = ['ID', 'Name', 'Class', 'Parent Phone', 'Father Name'];
-    const rows = students.map(s => [s.id, s.name, s.class, s.parentPhone, s.fatherName]);
+    const headers = ['ID', 'Name', 'Class', 'Parent Phone', 'Father Name', 'Email'];
+    const rows = students.map(s => [s.id, s.name, s.class, s.parentPhone, s.fatherName, s.email]);
     exportToCSV('students_list', rows, headers);
   };
 
@@ -33,7 +34,7 @@ const Students = () => {
       return;
     }
     
-    addStudent(newName, newClass, newPhone, newFatherName);
+    addStudent(newName, newClass, newPhone, newFatherName, newEmail);
     setShowModal(false);
     
     // Reset form
@@ -41,6 +42,7 @@ const Students = () => {
     setNewClass('');
     setNewPhone('');
     setNewFatherName('');
+    setNewEmail('');
   };
 
   return (
@@ -124,6 +126,14 @@ const Students = () => {
                 style={{ marginTop: '1rem' }} 
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
+              />
+              <input 
+                type="email" 
+                placeholder="Parent Email Address" 
+                className="prof-input" 
+                style={{ marginTop: '1rem' }} 
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
               />
               <div className="flex-between" style={{ marginTop: '1.5rem' }}>
                 <button onClick={() => setShowModal(false)} className="prof-btn prof-btn-secondary">Cancel</button>

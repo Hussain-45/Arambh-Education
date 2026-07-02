@@ -103,11 +103,15 @@ const db = new sqlite3.Database(dbPath, (err) => {
         admission_number TEXT,
         fees INTEGER,
         status TEXT DEFAULT 'pending',
-        fatherName TEXT
+        fatherName TEXT,
+        email TEXT
       )`);
 
       // Migration: Add fatherName to registration_requests if not exists
       db.run(`ALTER TABLE registration_requests ADD COLUMN fatherName TEXT`, (err) => {
+        // Ignore error if column already exists
+      });
+      db.run(`ALTER TABLE registration_requests ADD COLUMN email TEXT`, (err) => {
         // Ignore error if column already exists
       });
 

@@ -252,14 +252,14 @@ app.post('/api/auth/register-admin', async (req, res) => {
 
 // Request Registration (Teacher & Student)
 app.post('/api/auth/request-register', async (req, res) => {
-  const { role, name, username, password, phone, className, admissionNumber, fees, fatherName } = req.body;
+  const { role, name, username, password, phone, className, admissionNumber, fees, fatherName, email } = req.body;
   
   const hashedPassword = await bcrypt.hash(password, 10);
   const formattedName = name ? name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : name;
   const formattedFatherName = fatherName ? fatherName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : null;
 
-  db.run(`INSERT INTO registration_requests (role, name, username, password, parentPhone, className, admission_number, fees, status, fatherName) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`, 
-    [role, formattedName, username, hashedPassword, phone, className, admissionNumber || null, fees || 0, formattedFatherName], 
+  db.run(`INSERT INTO registration_requests (role, name, username, password, parentPhone, className, admission_number, fees, status, fatherName, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`, 
+    [role, formattedName, username, hashedPassword, phone, className, admissionNumber || null, fees || 0, formattedFatherName, email || null], 
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
       
@@ -309,8 +309,8 @@ app.post('/api/admin/requests/:id/approve', authenticateToken, (req, res) => {
     }
 
     function insertUser(admNum) {
-      db.run(`INSERT INTO users (name, username, password, role, parentPhone, className, admission_number, fatherName) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
-        [request.name || request.username, request.username, request.password, request.role, request.parentPhone, request.className, admNum, request.fatherName], 
+      db.run(`INSERT INTO users (name, username, password, role, parentPhone, className, admission_number, fatherName, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+        [request.name || request.username, request.username, request.password, request.role, request.parentPhone, request.className, admNum, request.fatherName, request.email], 
         function(err) {
           if (err) return res.status(500).json({ error: err.message });
           const newUserId = this.lastID;
@@ -404,7 +404,7 @@ app.get('/api/students', authenticateToken, (req, res) => {
 // Add a student (Admin only)
 app.post('/api/students', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const { name, className, parentPhone, fatherName } = req.body;
+  const { name, className, parentPhone, fatherName, email } = req.body;
   const hashedPassword = await bcrypt.hash('pass', 10); // default password
   const formattedName = name ? name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : name;
   const formattedFatherName = fatherName ? fatherName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : null;
@@ -414,8 +414,8 @@ app.post('/api/students', authenticateToken, async (req, res) => {
     const nextNum = (row && row.max_num ? row.max_num : 0) + 1;
     const admissionNumber = `AES${nextNum}`;
     
-    db.run(`INSERT INTO users (name, role, className, parentPhone, password, admission_number, fatherName) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
-      [formattedName, 'student', className, parentPhone, hashedPassword, admissionNumber, formattedFatherName], 
+    db.run(`INSERT INTO users (name, role, className, parentPhone, password, admission_number, fatherName, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
+      [formattedName, 'student', className, parentPhone, hashedPassword, admissionNumber, formattedFatherName, email || null], 
       function(err) {
         if (err) return res.status(500).json({ error: err.message });
         const newUserId = this.lastID;
@@ -434,7 +434,7 @@ app.post('/api/students', authenticateToken, async (req, res) => {
         
         logAction('STUDENT_ADDED', `Admin added new student: ${formattedName} to class ${className}`);
         
-        res.json({ id: newUserId, name: formattedName, class: className, parentPhone, admission_number: admissionNumber, fatherName: formattedFatherName });
+        res.json({ id: newUserId, name: formattedName, class: className, parentPhone, admission_number: admissionNumber, fatherName: formattedFatherName, email });
     });
   });
 });
@@ -907,15 +907,35 @@ app.post('/api/admin/smtp-settings', authenticateToken, async (req, res) => {
       });
     }
 
-    // Verification succeeded! Now save to DB
-    db.serialize(() => {
-      db.run(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('email_user', ?)`, [email]);
-      if (password) {
-        db.run(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('email_pass', ?)`, [password]);
-      }
-      initializeTransporter(email, targetPassword);
-      logAction('SMTP_SETTINGS_UPDATED', `Admin updated SMTP email config to ${email} (Verified successfully)`);
-      res.json({ success: true, verified: true, email });
+    // Verification succeeded! Send a test verification email first
+    testTransporter.sendMail({
+      from: `"Aarambh Notification Service" <${email}>`,
+      to: email,
+      subject: '🧪 SMTP Connection Verified - Aarambh System',
+      text: `Hello,\n\nThis is a test notification confirming that your Gmail SMTP connection has been successfully established and verified inside the Aarambh Management System.\n\nAll automated emails will now be sent from this account.\n\nBest regards,\nAarambh Team`,
+      html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px; max-width: 600px; margin: 0 auto;">
+               <h2 style="color: #4A90E2; margin-top: 0;">🧪 Connection Verified!</h2>
+               <p>Hello,</p>
+               <p style="font-size: 15px; color: #333; line-height: 1.6;">
+                 This email confirms that your Gmail SMTP credentials are correct and the connection to the Aarambh Notification System has been successfully linked.
+               </p>
+               <p>You will now receive administrative alerts, fee reminder summaries, and automated student progress cards from this account.</p>
+               <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+               <small style="color: #999;">This is an automated system check. Do not reply to this email.</small>
+             </div>`
+    }, (sendErr, info) => {
+      if (sendErr) console.error('[SMTP Settings Test Email Failed]', sendErr);
+      
+      // Save to DB
+      db.serialize(() => {
+        db.run(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('email_user', ?)`, [email]);
+        if (password) {
+          db.run(`INSERT OR REPLACE INTO system_settings (key, value) VALUES ('email_pass', ?)`, [password]);
+        }
+        initializeTransporter(email, targetPassword);
+        logAction('SMTP_SETTINGS_UPDATED', `Admin updated SMTP email config to ${email} (Verified successfully and sent test email)`);
+        res.json({ success: true, verified: true, email });
+      });
     });
   });
 });
