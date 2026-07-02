@@ -12,7 +12,7 @@ const StatCard = ({ title, value, icon: Icon, trend }) => {
           padding: '0.8rem', 
           background: 'var(--secondary)', 
           borderRadius: '12px',
-          color: 'var(--primary)'
+          color: 'var(--primary-text)'
         }}>
           <Icon size={24} />
         </div>

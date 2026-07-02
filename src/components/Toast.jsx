@@ -30,18 +30,23 @@ const ToastContainer = () => {
         }
 
         return (
-          <div key={toast.id} className="holo-card" style={{
-            padding: '1rem',
+          <div key={toast.id} className="prof-card" style={{
+            padding: '0.8rem 1.2rem',
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            minWidth: '250px',
-            animation: 'slideIn 0.3s ease forwards',
-            borderLeft: `3px solid ${color}`,
-            boxShadow: `0 5px 15px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.05)`
+            minWidth: '280px',
+            animation: 'slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+            borderLeft: `4px solid ${color}`,
+            background: 'var(--bg-card)',
+            color: 'var(--text-main)',
+            boxShadow: `0 10px 30px rgba(0,0,0,0.15), var(--shadow-glass)`,
+            borderRadius: '12px',
+            border: '1px solid var(--border-color)',
+            borderLeftWidth: '4px'
           }}>
             <Icon size={20} color={color} style={{ filter: `drop-shadow(0 0 5px ${color})` }} />
-            <span style={{ fontSize: '0.9rem', fontFamily: 'Inter' }}>{toast.message}</span>
+            <span style={{ fontSize: '0.9rem', fontFamily: 'Inter', color: 'var(--text-main)', fontWeight: 500 }}>{toast.text}</span>
           </div>
         );
       })}

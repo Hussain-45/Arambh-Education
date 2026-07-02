@@ -50,9 +50,9 @@ const StudentAttendance = () => {
           {/* Stat summary cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
             
-            <div className="prof-card" style={{ textAlign: 'center', borderTop: '4px solid var(--primary)' }}>
+            <div className="prof-card" style={{ textAlign: 'center', borderTop: '4px solid var(--primary-text)' }}>
               <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Attendance Rate</h4>
-              <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--primary)', marginTop: '0.5rem' }}>{attendancePercentage}%</div>
+              <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--primary-text)', marginTop: '0.5rem' }}>{attendancePercentage}%</div>
             </div>
 
             <div className="prof-card" style={{ textAlign: 'center', borderTop: '4px solid var(--success)' }}>
@@ -75,7 +75,7 @@ const StudentAttendance = () => {
           {/* Attendance Log Table */}
           <div className="prof-card">
             <h3 style={{ margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <CalendarIcon size={20} style={{ color: 'var(--primary)' }} /> Detailed Attendance Log
+              <CalendarIcon size={20} style={{ color: 'var(--primary-text)' }} /> Detailed Attendance Log
             </h3>
             
             <table className="prof-table">

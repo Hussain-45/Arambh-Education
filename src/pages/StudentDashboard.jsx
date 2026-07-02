@@ -78,7 +78,7 @@ const StudentDashboard = () => {
         {/* Modern Glassmorphic Header */}
         <header className="prof-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '2rem', background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--secondary) 100%)', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            <div style={{ width: '65px', height: '65px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 700, boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)' }}>
+            <div style={{ width: '65px', height: '65px', borderRadius: '50%', background: 'var(--primary-text)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 700, boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)' }}>
               {getInitials(loggedInUser.name)}
             </div>
             <div>
@@ -103,8 +103,8 @@ const StudentDashboard = () => {
         {/* Premium Stat Summary Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
           
-          <div className="prof-card" style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', padding: '1.5rem', borderLeft: '4px solid var(--primary)' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="prof-card" style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', padding: '1.5rem', borderLeft: '4px solid var(--primary-text)' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary-text)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Calendar size={24} />
             </div>
             <div>
@@ -167,7 +167,7 @@ const StudentDashboard = () => {
             <div className="prof-card">
               <div className="flex-between" style={{ marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: 600, margin: 0 }} className="flex-center gap-2">
-                  <IndianRupee size={20} style={{ color: 'var(--primary)' }} /> Monthly Fee Status & Receipts
+                  <IndianRupee size={20} style={{ color: 'var(--primary-text)' }} /> Monthly Fee Status & Receipts
                 </h2>
                 <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem' }}>
                   <span className="badge badge-secondary">Jan - Dec Cycle</span>
@@ -249,7 +249,7 @@ const StudentDashboard = () => {
             <div className="prof-card">
               <div className="flex-between" style={{ marginBottom: '1.2rem' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }} className="flex-center gap-1">
-                  <Award size={18} style={{ color: 'var(--primary)' }} /> Test Grades
+                  <Award size={18} style={{ color: 'var(--primary-text)' }} /> Test Grades
                 </h3>
                 <button onClick={handleDownloadReport} className="prof-btn prof-btn-secondary" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>
                   <Download size={12}/> Report PDF

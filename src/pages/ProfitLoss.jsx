@@ -69,11 +69,11 @@ const ProfitLoss = () => {
             <h3 style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Total Expenses</h3>
             <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--danger)' }}>Rs. {totalExpenses}</div>
           </div>
-          <div className="prof-card" style={{ borderLeft: `4px solid ${isProfitable ? 'var(--primary)' : 'var(--danger)'}` }}>
+          <div className="prof-card" style={{ borderLeft: `4px solid ${isProfitable ? 'var(--primary-text)' : 'var(--danger)'}` }}>
             <h3 style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Net Profit</h3>
             <div style={{ fontSize: '2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               Rs. {netProfit}
-              {isProfitable ? <TrendingUp color="var(--primary)" size={24}/> : <TrendingDown color="var(--danger)" size={24}/>}
+              {isProfitable ? <TrendingUp color="var(--primary-text)" size={24}/> : <TrendingDown color="var(--danger)" size={24}/>}
             </div>
           </div>
         </div>
@@ -132,7 +132,7 @@ const ProfitLoss = () => {
                           setAmount(exp.amount);
                           setShowAdd(true);
                         }} 
-                        style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
+                        style={{ background: 'none', border: 'none', color: 'var(--primary-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
                         title="Edit Expense"
                       >
                         <Edit size={16} />

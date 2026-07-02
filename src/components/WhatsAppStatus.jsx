@@ -74,7 +74,7 @@ const WhatsAppStatus = ({ dashboard = false }) => {
       <div className="prof-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div className="flex-between">
           <span style={{ fontWeight: 600, fontSize: '0.95rem' }} className="flex-center gap-1">
-            <QrCode size={16} color="var(--primary)" /> WhatsApp Robot Link
+            <QrCode size={16} color="var(--primary-text)" /> WhatsApp Robot Link
           </span>
           <span className={`badge badge-${status === 'CONNECTED' ? 'success' : 'warning'}`} style={{ fontSize: '0.75rem' }}>
             {status}
@@ -117,7 +117,7 @@ const WhatsAppStatus = ({ dashboard = false }) => {
     <div className="prof-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       <div className="flex-between">
         <span style={{ fontWeight: 600, fontSize: '0.95rem' }} className="flex-center gap-1">
-          <QrCode size={16} color="var(--primary)" /> WhatsApp Robot Link
+          <QrCode size={16} color="var(--primary-text)" /> WhatsApp Robot Link
         </span>
         <span className={`badge badge-${status === 'CONNECTED' ? 'success' : 'warning'}`} style={{ fontSize: '0.75rem' }}>
           {status}

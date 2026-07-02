@@ -20,7 +20,7 @@ const CalendarView = () => {
         {calendarEvents.map(ev => (
           <div key={ev.id} style={{ 
             padding: '1.5rem', border: '1px solid var(--border-color)', borderRadius: '12px',
-            borderLeft: `4px solid ${ev.type === 'Exam' ? 'var(--danger)' : ev.type === 'Class' ? 'var(--primary)' : 'var(--warning)'}`
+            borderLeft: `4px solid ${ev.type === 'Exam' ? 'var(--danger)' : ev.type === 'Class' ? 'var(--primary-text)' : 'var(--warning)'}`
           }}>
             <div className="flex-between" style={{ marginBottom: '1rem' }}>
               <span className={`badge badge-${ev.type === 'Exam' ? 'danger' : ev.type === 'Class' ? 'success' : 'warning'}`}>{ev.type}</span>

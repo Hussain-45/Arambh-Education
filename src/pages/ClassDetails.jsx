@@ -107,18 +107,18 @@ const ClassDetails = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)' }}>
-          <button onClick={() => setActiveTab('roster')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '1rem', borderBottom: activeTab === 'roster' ? '3px solid var(--primary)' : '3px solid transparent', color: activeTab === 'roster' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button onClick={() => setActiveTab('roster')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '1rem', borderBottom: activeTab === 'roster' ? '3px solid var(--primary-text)' : '3px solid transparent', color: activeTab === 'roster' ? 'var(--primary-text)' : 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Users size={16} /> Roster
           </button>
           {userRole !== 'teacher' && (
-            <button onClick={() => setActiveTab('fees')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '1rem', borderBottom: activeTab === 'fees' ? '3px solid var(--primary)' : '3px solid transparent', color: activeTab === 'fees' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button onClick={() => setActiveTab('fees')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '1rem', borderBottom: activeTab === 'fees' ? '3px solid var(--primary-text)' : '3px solid transparent', color: activeTab === 'fees' ? 'var(--primary-text)' : 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <IndianRupee size={16} /> Class Fees
             </button>
           )}
-          <button onClick={() => setActiveTab('attendance')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '1rem', borderBottom: activeTab === 'attendance' ? '3px solid var(--primary)' : '3px solid transparent', color: activeTab === 'attendance' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button onClick={() => setActiveTab('attendance')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '1rem', borderBottom: activeTab === 'attendance' ? '3px solid var(--primary-text)' : '3px solid transparent', color: activeTab === 'attendance' ? 'var(--primary-text)' : 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Users size={16} /> Attendance
           </button>
-          <button onClick={() => setActiveTab('academics')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '1rem', borderBottom: activeTab === 'academics' ? '3px solid var(--primary)' : '3px solid transparent', color: activeTab === 'academics' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button onClick={() => setActiveTab('academics')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '1rem', borderBottom: activeTab === 'academics' ? '3px solid var(--primary-text)' : '3px solid transparent', color: activeTab === 'academics' ? 'var(--primary-text)' : 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <BookOpen size={16} /> Academics
           </button>
         </div>

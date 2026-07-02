@@ -210,7 +210,7 @@ const Login = () => {
         <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ 
             width: '48px', height: '48px', borderRadius: '12px', 
-            background: 'var(--primary)', 
+            background: 'var(--primary-text)', 
             display: 'flex', justifyContent: 'center', alignItems: 'center',
             marginBottom: '1rem', color: 'white'
           }}>
@@ -220,39 +220,42 @@ const Login = () => {
         </div>
 
         {/* Role Toggle */}
-        <div style={{ display: 'flex', width: '100%', background: 'var(--secondary)', borderRadius: '8px', padding: '4px', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', width: '100%', background: 'var(--secondary)', borderRadius: '8px', padding: '4px', marginBottom: '1.5rem', border: '1px solid var(--border-color)' }}>
           <button 
             onClick={() => { setActiveTab('admin'); resetForm('admin'); }}
+            className={activeTab === 'admin' ? 'glass-active' : ''}
             style={{ 
-              flex: 1, padding: '0.6rem', border: 'none', borderRadius: '6px', cursor: 'pointer',
+              flex: 1, padding: '0.6rem', border: '1px solid transparent', borderRadius: '6px', cursor: 'pointer',
               background: activeTab === 'admin' ? 'var(--bg-card)' : 'transparent',
-              color: activeTab === 'admin' ? 'var(--text-main)' : 'var(--text-muted)',
-              boxShadow: activeTab === 'admin' ? 'var(--shadow-sm)' : 'none',
-              fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+              color: activeTab === 'admin' ? 'var(--primary-text)' : 'var(--text-muted)',
+              fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
           >
             <ShieldCheck size={16} /> Admin
           </button>
           <button 
             onClick={() => { setActiveTab('teacher'); resetForm('teacher'); }}
+            className={activeTab === 'teacher' ? 'glass-active' : ''}
             style={{ 
-              flex: 1, padding: '0.6rem', border: 'none', borderRadius: '6px', cursor: 'pointer',
+              flex: 1, padding: '0.6rem', border: '1px solid transparent', borderRadius: '6px', cursor: 'pointer',
               background: activeTab === 'teacher' ? 'var(--bg-card)' : 'transparent',
-              color: activeTab === 'teacher' ? 'var(--text-main)' : 'var(--text-muted)',
-              boxShadow: activeTab === 'teacher' ? 'var(--shadow-sm)' : 'none',
-              fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+              color: activeTab === 'teacher' ? 'var(--primary-text)' : 'var(--text-muted)',
+              fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
           >
             <Briefcase size={16} /> Teacher
           </button>
           <button 
             onClick={() => { setActiveTab('student'); resetForm('student'); }}
+            className={activeTab === 'student' ? 'glass-active' : ''}
             style={{ 
-              flex: 1, padding: '0.6rem', border: 'none', borderRadius: '6px', cursor: 'pointer',
+              flex: 1, padding: '0.6rem', border: '1px solid transparent', borderRadius: '6px', cursor: 'pointer',
               background: activeTab === 'student' ? 'var(--bg-card)' : 'transparent',
-              color: activeTab === 'student' ? 'var(--text-main)' : 'var(--text-muted)',
-              boxShadow: activeTab === 'student' ? 'var(--shadow-sm)' : 'none',
-              fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+              color: activeTab === 'student' ? 'var(--primary-text)' : 'var(--text-muted)',
+              fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
           >
             <GraduationCap size={16} /> Student

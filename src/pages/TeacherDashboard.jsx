@@ -44,7 +44,7 @@ const TeacherDashboard = () => {
           {/* Batches list */}
           <div className="prof-card">
             <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0, marginBottom: '1.5rem', color: 'var(--text-main)' }} className="flex-center gap-1">
-              <Clock size={18} style={{ color: 'var(--primary)' }} /> My Batches Today
+              <Clock size={18} style={{ color: 'var(--primary-text)' }} /> My Batches Today
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {myClasses.map(cls => {
@@ -59,7 +59,7 @@ const TeacherDashboard = () => {
                       <span className="flex-center gap-1"><Users size={14}/> {enrolled} Enrolled</span>
                       <button 
                         onClick={() => navigate(`/classes/${cls.id}`)} 
-                        style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '2px' }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--primary-text)', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '2px' }}
                       >
                         Details <ArrowRight size={14} />
                       </button>

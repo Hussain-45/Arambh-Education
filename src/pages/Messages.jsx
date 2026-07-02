@@ -222,7 +222,7 @@ const Messages = () => {
                     <div key={msg.id} style={{ 
                       padding: '1rem', background: 'var(--bg-main)', 
                       border: '1px solid var(--border-color)', borderRadius: '8px',
-                      borderLeft: '4px solid var(--primary)'
+                      borderLeft: '4px solid var(--primary-text)'
                     }}>
                       <div className="flex-between" style={{ marginBottom: '0.5rem' }}>
                         <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>To: {msg.recipient}</span>
@@ -234,7 +234,7 @@ const Messages = () => {
                         <div style={{ fontSize: '0.8rem', color: msg.status === 'Failed' ? 'var(--danger)' : 'var(--success)', fontWeight: 500 }}>
                           Status: {msg.status}
                           {msg.previewUrl && (
-                            <a href={msg.previewUrl} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '10px', color: 'var(--primary)', textDecoration: 'underline' }}>
+                            <a href={msg.previewUrl} target="_blank" rel="noopener noreferrer" style={{ marginLeft: '10px', color: 'var(--primary-text)', textDecoration: 'underline' }}>
                               View Delivered Message
                             </a>
                           )}

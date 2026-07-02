@@ -64,7 +64,7 @@ const StudentReceipts = () => {
 
           {/* Fee Metrics Summary */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-            <div className="prof-card" style={{ borderLeft: '4px solid var(--primary)', textAlign: 'center' }}>
+            <div className="prof-card" style={{ borderLeft: '4px solid var(--primary-text)', textAlign: 'center' }}>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Total Tuition Assigned</div>
               <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-main)', marginTop: '0.5rem' }}>₹{totalAssigned}</div>
             </div>
@@ -81,7 +81,7 @@ const StudentReceipts = () => {
           {/* Ledger Table */}
           <div className="prof-card">
             <h3 style={{ margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <IndianRupee size={20} style={{ color: 'var(--primary)' }} /> Monthly Fees Ledger
+              <IndianRupee size={20} style={{ color: 'var(--primary-text)' }} /> Monthly Fees Ledger
             </h3>
 
             <div style={{ overflowX: 'auto' }}>

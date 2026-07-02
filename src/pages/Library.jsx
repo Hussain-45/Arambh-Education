@@ -83,7 +83,7 @@ const Library = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
           {displayMaterials.map(item => (
             <div key={item.id} style={{ padding: '1.5rem', border: '1px solid var(--border-color)', borderRadius: '12px', background: 'var(--bg-main)' }}>
-              <div style={{ marginBottom: '1rem', color: 'var(--primary)' }}>
+              <div style={{ marginBottom: '1rem', color: 'var(--primary-text)' }}>
                 {item.type === 'PDF' ? <FileText size={32} /> : <Video size={32} />}
               </div>
               <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>{item.title}</h3>

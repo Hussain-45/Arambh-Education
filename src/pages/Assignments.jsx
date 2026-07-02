@@ -149,7 +149,7 @@ const Assignments = () => {
                 <h3 style={{ margin: 0, marginBottom: '0.5rem' }}>{a.title}</h3>
                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Due: {a.dueDate}</p>
                 {a.link && (
-                  <a href={a.link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '0.5rem', color: 'var(--primary)', textDecoration: 'none', fontSize: '0.85rem' }}>
+                  <a href={a.link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '0.5rem', color: 'var(--primary-text)', textDecoration: 'none', fontSize: '0.85rem' }}>
                     <FileText size={14} /> View {a.type}
                   </a>
                 )}

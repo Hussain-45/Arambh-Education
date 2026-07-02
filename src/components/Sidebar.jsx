@@ -9,26 +9,29 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
     alignItems: 'center',
     padding: '0.8rem 1.5rem',
     cursor: 'pointer',
-    color: active ? 'var(--primary)' : 'var(--text-muted)',
+    color: active ? 'var(--primary-text)' : 'var(--text-muted)',
     background: active ? 'var(--secondary)' : 'transparent',
-    borderRight: active ? '3px solid var(--primary)' : '3px solid transparent',
-    transition: 'all 0.2s ease',
+    borderLeft: active ? '4px solid var(--primary-text)' : '4px solid transparent',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     fontWeight: active ? 600 : 500,
-    fontSize: '0.9rem'
+    fontSize: '0.9rem',
+    gap: '0.5rem'
   }}
   onMouseEnter={(e) => {
+    e.currentTarget.style.transform = 'translateX(6px)';
     if (!active) {
       e.currentTarget.style.color = 'var(--text-main)';
-      e.currentTarget.style.background = 'var(--bg-main)';
+      e.currentTarget.style.background = 'var(--primary)';
     }
   }}
   onMouseLeave={(e) => {
+    e.currentTarget.style.transform = 'translateX(0)';
     if (!active) {
       e.currentTarget.style.color = 'var(--text-muted)';
       e.currentTarget.style.background = 'transparent';
     }
   }}>
-    <Icon size={18} style={{ marginRight: '1rem' }} />
+    <Icon size={18} style={{ marginRight: '0.5rem', transition: 'transform 0.3s ease' }} />
     <span>{label}</span>
   </div>
 );
@@ -43,7 +46,7 @@ const Sidebar = () => {
   return (
     <div className="sidebar">
       <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <div style={{ width: '32px', height: '32px', background: 'var(--primary)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: '32px', height: '32px', background: 'var(--primary-text)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.2rem' }}>A</span>
         </div>
         <div>

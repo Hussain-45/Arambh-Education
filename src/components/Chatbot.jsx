@@ -99,11 +99,23 @@ const Chatbot = () => {
         style={{
           position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999,
           width: '60px', height: '60px', borderRadius: '50%',
-          background: 'var(--primary)', color: 'white',
+          background: 'var(--primary-text)', color: 'white',
           display: 'flex', justifyContent: 'center', alignItems: 'center',
           cursor: 'pointer', boxShadow: 'var(--shadow-lg)',
-          transition: 'transform 0.2s ease',
+          transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
           transform: isOpen ? 'scale(0)' : 'scale(1)'
+        }}
+        onMouseEnter={(e) => {
+          if (!isOpen) {
+            e.currentTarget.style.transform = 'scale(1.1)';
+            e.currentTarget.style.boxShadow = '0 0 20px var(--glow-color), var(--shadow-lg)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isOpen) {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+          }
         }}
       >
         <MessageCircle size={28} />
@@ -125,7 +137,7 @@ const Chatbot = () => {
         
         {/* Header */}
         <div style={{
-          background: 'var(--primary)', color: 'white', padding: '1rem',
+          background: 'var(--primary-text)', color: 'white', padding: '1rem',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center'
         }}>
           <div>
@@ -140,7 +152,7 @@ const Chatbot = () => {
           {messages.map(msg => (
             <div key={msg.id} style={{
               alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-              background: msg.sender === 'user' ? 'var(--primary)' : 'var(--bg-card)',
+              background: msg.sender === 'user' ? 'var(--primary-text)' : 'var(--bg-card)',
               color: msg.sender === 'user' ? 'white' : 'var(--text-main)',
               border: `1px solid ${msg.sender === 'user' ? 'transparent' : 'var(--border-color)'}`,
               padding: '0.75rem 1rem', borderRadius: '12px',
