@@ -8,6 +8,7 @@ const Login = () => {
   const { loginAdmin, loginTeacher, loginStudent, addToast } = useContext(AppContext);
   const navigate = useNavigate();
 
+  const [selectedRole, setSelectedRole] = useState('student');
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -45,22 +46,21 @@ const Login = () => {
 
     setIsLoading(true);
 
-    // Mock Routing Matrix
-    const emailLower = formData.email.toLowerCase();
+    // Role-Based Redirection Matrix
     let redirectMsg = '';
     let targetRoute = '/student-dashboard';
     let loginAction = () => loginStudent('student', '9876543210', 'student');
 
-    if (emailLower.includes('admin')) {
-      redirectMsg = '[Frontend Route Triggered] Redirecting user to Admin Dashboard Panel...';
+    if (selectedRole === 'admin') {
+      redirectMsg = '[Frontend Route Triggered] Redirecting authenticated user to Admin Dashboard Panel...';
       targetRoute = '/dashboard';
       loginAction = () => loginAdmin('admin', 'admin');
-    } else if (emailLower.includes('teacher')) {
-      redirectMsg = '[Frontend Route Triggered] Redirecting user to Teacher Workspace Portal...';
+    } else if (selectedRole === 'teacher') {
+      redirectMsg = '[Frontend Route Triggered] Redirecting authenticated user to Teacher Workspace Portal...';
       targetRoute = '/teacher-dashboard';
       loginAction = () => loginTeacher('teacher', 'pass');
     } else {
-      redirectMsg = '[Frontend Route Triggered] Redirecting user to Student & Parent Portal...';
+      redirectMsg = '[Frontend Route Triggered] Redirecting authenticated user to Student & Parent Portal...';
       targetRoute = '/student-dashboard';
       loginAction = () => loginStudent('student', '9876543210', 'student');
     }
@@ -187,7 +187,7 @@ const Login = () => {
       }}>
         
         {/* TOP BLOCK - Branding */}
-        <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ marginBottom: '1.8rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ 
             width: '84px', height: '84px', borderRadius: '50%', 
             background: 'white', 
@@ -203,6 +203,64 @@ const Login = () => {
           </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'white', letterSpacing: '-0.02em' }}>Arambh Education</h1>
           <p style={{ color: '#d97706', fontSize: '0.75rem', fontWeight: 700, marginTop: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Learn • Grow • Succeed</p>
+        </div>
+
+        {/* Role Selection UI Element (The Sliding Segmented Bar) */}
+        <div style={{ 
+          display: 'flex', 
+          width: '100%', 
+          background: 'rgba(255, 255, 255, 0.05)', 
+          borderRadius: '30px', 
+          padding: '4px', 
+          marginBottom: '2rem', 
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          position: 'relative',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          userSelect: 'none'
+        }}>
+          {/* Active Slider background pill */}
+          <div style={{
+            position: 'absolute',
+            top: '4px',
+            bottom: '4px',
+            left: selectedRole === 'admin' ? '4px' : selectedRole === 'teacher' ? 'calc(33.33% + 2px)' : 'calc(66.66% + 0px)',
+            width: 'calc(33.33% - 6px)',
+            background: 'linear-gradient(to right, #06b6d4, #14b8a6)',
+            borderRadius: '25px',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: '0 4px 12px rgba(20, 184, 166, 0.25)',
+            zIndex: 1
+          }} />
+
+          {/* Tab Buttons */}
+          {['admin', 'teacher', 'student'].map(role => {
+            const isActive = selectedRole === role;
+            return (
+              <button 
+                key={role}
+                type="button"
+                onClick={() => { setSelectedRole(role); }}
+                style={{ 
+                  flex: 1, 
+                  padding: '0.65rem 0', 
+                  border: 'none', 
+                  background: 'transparent',
+                  color: isActive ? 'white' : '#94a3b8',
+                  fontWeight: isActive ? 700 : 500, 
+                  fontSize: '0.8rem', 
+                  textTransform: 'capitalize',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  zIndex: 2,
+                  transition: 'color 0.2s ease',
+                  textAlign: 'center'
+                }}
+              >
+                {role}
+              </button>
+            );
+          })}
         </div>
 
         {/* MIDDLE BLOCK - Authentication Forms */}
@@ -270,13 +328,19 @@ const Login = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', fontSize: '0.8rem', marginTop: '0.2rem' }}>
             <span 
               onClick={() => {
-                setFormData({ email: 'admin@aarambh.edu', password: 'password123' });
+                if (selectedRole === 'admin') {
+                  setFormData({ email: 'admin@aarambh.edu', password: 'password123' });
+                } else if (selectedRole === 'teacher') {
+                  setFormData({ email: 'teacher@aarambh.edu', password: 'password123' });
+                } else {
+                  setFormData({ email: 'student@aarambh.edu', password: 'password123' });
+                }
               }}
               style={{ color: '#0d9488', cursor: 'pointer', fontWeight: 600 }}
               onMouseEnter={(e) => e.currentTarget.style.color = '#0f766e'}
               onMouseLeave={(e) => e.currentTarget.style.color = '#0d9488'}
             >
-              ⚡ Autofill Credentials
+              ⚡ Autofill {selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)} Credentials
             </span>
             <span 
               onClick={() => {
