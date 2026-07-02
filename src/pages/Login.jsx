@@ -298,12 +298,12 @@ const Login = () => {
             </div>
           )}
 
-          {isRegisterMode && (activeTab === 'student' || activeTab === 'teacher') && (
+          {isRegisterMode && activeTab === 'student' && (
             <div style={{ position: 'relative' }}>
               <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input 
                 type="text" 
-                placeholder={`Admission No. (Leave blank to auto-generate)`}
+                placeholder="Admission No. (Leave blank to auto-generate)"
                 value={admissionNumber}
                 onChange={(e) => setAdmissionNumber(e.target.value)}
                 className="prof-input"

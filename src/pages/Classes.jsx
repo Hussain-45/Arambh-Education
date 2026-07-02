@@ -7,9 +7,26 @@ import { Users, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Classes = () => {
-  const { userRole, classes, students } = useContext(AppContext);
+  const { userRole, classes, students, addBatch, addToast } = useContext(AppContext);
   const [showModal, setShowModal] = useState(false);
+  const [newGrade, setNewGrade] = useState('');
+  const [newName, setNewName] = useState('');
+  const [newTime, setNewTime] = useState('');
   const navigate = useNavigate();
+
+  const handleCreateBatch = async () => {
+    if (!newName || !newGrade || !newTime) {
+      addToast('Please fill out all fields.', 'warning');
+      return;
+    }
+    const success = await addBatch(newName, newGrade, newTime);
+    if (success) {
+      setShowModal(false);
+      setNewName('');
+      setNewGrade('');
+      setNewTime('');
+    }
+  };
 
   return (
     <>
@@ -65,7 +82,12 @@ const Classes = () => {
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 999 }}>
             <div className="prof-card" style={{ width: '400px' }}>
               <h3>Add New Batch</h3>
-              <select className="prof-input" style={{ marginTop: '1rem', width: '100%' }}>
+              <select 
+                className="prof-input" 
+                style={{ marginTop: '1rem', width: '100%' }}
+                value={newGrade}
+                onChange={(e) => setNewGrade(e.target.value)}
+              >
                 <option value="">Select Grade Level</option>
                 <option value="5th Grade">5th Grade</option>
                 <option value="6th Grade">6th Grade</option>
@@ -76,11 +98,25 @@ const Classes = () => {
                 <option value="11th Grade">11th Grade</option>
                 <option value="12th Grade">12th Grade</option>
               </select>
-              <input type="text" placeholder="Batch Name (e.g. 10th - Science Morning)" className="prof-input" style={{ marginTop: '1rem' }} />
-              <input type="text" placeholder="Timing (e.g. 08:00 AM - 10:00 AM)" className="prof-input" style={{ marginTop: '1rem' }} />
+              <input 
+                type="text" 
+                placeholder="Batch Name (e.g. 10th - Science Morning)" 
+                className="prof-input" 
+                style={{ marginTop: '1rem' }} 
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+              />
+              <input 
+                type="text" 
+                placeholder="Timing (e.g. 08:00 AM - 10:00 AM)" 
+                className="prof-input" 
+                style={{ marginTop: '1rem' }} 
+                value={newTime}
+                onChange={(e) => setNewTime(e.target.value)}
+              />
               <div className="flex-between" style={{ marginTop: '1.5rem' }}>
                 <button onClick={() => setShowModal(false)} className="prof-btn prof-btn-secondary">Cancel</button>
-                <button onClick={() => setShowModal(false)} className="prof-btn">Create Batch</button>
+                <button onClick={handleCreateBatch} className="prof-btn">Create Batch</button>
               </div>
             </div>
           </div>

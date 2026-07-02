@@ -13,9 +13,7 @@ const TeacherDashboard = () => {
   if (!loggedInUser) return null;
 
   const myClasses = classes.filter(c => 
-    loggedInUser.assignedClasses 
-      ? loggedInUser.assignedClasses.includes(c.name) 
-      : true
+    (loggedInUser.assignedClasses || []).includes(c.name)
   );
 
   const myClassNames = myClasses.map(c => c.name);

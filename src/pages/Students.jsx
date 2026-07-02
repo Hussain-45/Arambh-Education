@@ -12,7 +12,7 @@ const Students = () => {
   const navigate = useNavigate();
 
   const displayClasses = userRole === 'teacher' 
-    ? classes.filter(c => loggedInUser.assignedClasses?.includes(c.name))
+    ? classes.filter(c => (loggedInUser?.assignedClasses || []).includes(c.name))
     : classes;
   
   // Form State

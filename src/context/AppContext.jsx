@@ -446,7 +446,41 @@ export const AppProvider = ({ children }) => {
     const req = requests.find(r => r.id === id);
     if (!req) return false;
 
-    // 1. Add to students list
+    if (req.role === 'teacher') {
+      // 1. Add to teachers list
+      const currentTeachersList = JSON.parse(localStorage.getItem('aarambh_teachers') || '[]');
+      const newTeacher = {
+        id: req.id,
+        name: req.name,
+        email: req.email || `${req.username || req.name.toLowerCase().replace(/\s+/g, '')}@aarambh.edu`,
+        username: req.username || req.name.toLowerCase().replace(/\s+/g, '')
+      };
+      const updatedTeachers = [...teachers, newTeacher];
+      setTeachers(updatedTeachers);
+      localStorage.setItem('aarambh_teachers', JSON.stringify(updatedTeachers));
+
+      // 2. Add to users list for login access
+      const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+      const newUser = {
+        id: req.id,
+        name: req.name,
+        username: newTeacher.username,
+        password: req.password,
+        role: 'teacher',
+        email: newTeacher.email
+      };
+      localStorage.setItem('aarambh_users', JSON.stringify([...users, newUser]));
+
+      // 3. Remove from requests
+      const updatedRequests = requests.filter(r => r.id !== id);
+      setRegistrationRequests(updatedRequests);
+      localStorage.setItem('aarambh_requests', JSON.stringify(updatedRequests));
+
+      logActivity('Approve Teacher', `Approved staff request for ${req.name}`);
+      addToast(`${req.name} registration approved!`);
+      return true;
+    }
+
     // Generate sequential admission number for approved student
     const currentStudentsList = JSON.parse(localStorage.getItem('aarambh_students') || '[]');
     let maxNum = 0;
@@ -466,7 +500,7 @@ export const AppProvider = ({ children }) => {
       class: req.className,
       parentPhone: req.parentPhone,
       fatherName: req.fatherName,
-      username: req.username,
+      username: req.username || req.name.toLowerCase().replace(/\s+/g, ''),
       admission_number: req.admission_number || sequentialAdmissionNumber
     };
     const updatedStudents = [...students, newStudent];
@@ -478,7 +512,7 @@ export const AppProvider = ({ children }) => {
     const newUser = {
       id: req.id,
       name: req.name,
-      username: req.username,
+      username: newStudent.username,
       password: req.password,
       role: 'student',
       parentPhone: req.parentPhone,
@@ -682,6 +716,22 @@ export const AppProvider = ({ children }) => {
 
     logActivity('Remove Batch', `Removed batch: ${batch.name}`);
     addToast(`Batch ${batch.name} removed successfully.`);
+    return true;
+  };
+
+  const addBatch = async (name, grade, time) => {
+    const newBatch = {
+      id: Date.now(),
+      name,
+      grade,
+      time
+    };
+    const updatedClasses = [...classes, newBatch];
+    setClasses(updatedClasses);
+    localStorage.setItem('aarambh_classes', JSON.stringify(updatedClasses));
+
+    logActivity('Add Batch', `Created new batch: ${name} (${grade})`);
+    addToast(`Batch ${name} created successfully!`, 'success');
     return true;
   };
 

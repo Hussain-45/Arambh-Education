@@ -75,12 +75,12 @@ const AppLayout = () => {
         {/* Admin Routes */}
         <Route path="/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         <Route path="/profit-loss" element={<AdminRoute><ProfitLoss /></AdminRoute>} />
-        <Route path="/attendance" element={<AdminRoute><Attendance /></AdminRoute>} />
+        <Route path="/attendance" element={<AuthRoute allowedRoles={['admin', 'teacher']}><Attendance /></AuthRoute>} />
         <Route path="/fees" element={<AdminRoute><Fees /></AdminRoute>} />
-        <Route path="/messages" element={<AdminRoute><Messages /></AdminRoute>} />
+        <Route path="/messages" element={<AuthRoute allowedRoles={['admin', 'teacher']}><Messages /></AuthRoute>} />
         <Route path="/students" element={<AdminRoute><Students /></AdminRoute>} />
-        <Route path="/classes" element={<AdminRoute><Classes /></AdminRoute>} />
-        <Route path="/classes/:id" element={<AdminRoute><ClassDetails /></AdminRoute>} />
+        <Route path="/classes" element={<AuthRoute allowedRoles={['admin', 'teacher']}><Classes /></AuthRoute>} />
+        <Route path="/classes/:id" element={<AuthRoute allowedRoles={['admin', 'teacher']}><ClassDetails /></AuthRoute>} />
         <Route path="/history" element={<AdminRoute><History /></AdminRoute>} />
         
         {/* Student Routes */}
