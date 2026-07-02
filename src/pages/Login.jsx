@@ -201,8 +201,8 @@ const Login = () => {
               style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
             />
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: 'white', letterSpacing: '-0.02em' }}>Arambh Education</h1>
-          <p style={{ color: '#d97706', fontSize: '0.75rem', fontWeight: 700, marginTop: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Learn • Grow • Succeed</p>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 900, margin: 0, color: 'white', letterSpacing: '-0.02em' }}>Arambh Education</h1>
+          <p style={{ color: '#d97706', fontSize: '0.75rem', fontWeight: 900, marginTop: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Learn • Grow • Succeed</p>
         </div>
 
         {/* Role Selection UI Element (The Sliding Segmented Bar) */}
@@ -246,8 +246,8 @@ const Login = () => {
                   padding: '0.65rem 0', 
                   border: 'none', 
                   background: 'transparent',
-                  color: isActive ? 'white' : '#94a3b8',
-                  fontWeight: isActive ? 700 : 500, 
+                  color: isActive ? 'white' : '#cbd5e1',
+                  fontWeight: isActive ? 900 : 700, 
                   fontSize: '0.8rem', 
                   textTransform: 'capitalize',
                   cursor: 'pointer',
@@ -268,7 +268,7 @@ const Login = () => {
           
           {/* Email Input Field Group */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
-            <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Email Address
             </label>
             <div style={{ position: 'relative' }}>
@@ -284,12 +284,13 @@ const Login = () => {
                   borderRadius: '12px', 
                   background: 'rgba(15, 23, 42, 0.35)', 
                   border: '1px solid rgba(255, 255, 255, 0.08)',
-                  color: 'white'
+                  color: 'white',
+                  fontWeight: 700
                 }}
               />
             </div>
             {errors.email && (
-              <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 500, marginTop: '0.1rem' }}>
+              <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 700, marginTop: '0.1rem' }}>
                 {errors.email}
               </span>
             )}
@@ -297,7 +298,7 @@ const Login = () => {
 
           {/* Password Input Field Group */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
-            <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Password
             </label>
             <div style={{ position: 'relative' }}>
@@ -313,12 +314,13 @@ const Login = () => {
                   borderRadius: '12px', 
                   background: 'rgba(15, 23, 42, 0.35)', 
                   border: '1px solid rgba(255, 255, 255, 0.08)',
-                  color: 'white'
+                  color: 'white',
+                  fontWeight: 700
                 }}
               />
             </div>
             {errors.password && (
-              <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 500, marginTop: '0.1rem' }}>
+              <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 700, marginTop: '0.1rem' }}>
                 {errors.password}
               </span>
             )}
@@ -336,7 +338,7 @@ const Login = () => {
                   setFormData({ email: 'student@aarambh.edu', password: 'password123' });
                 }
               }}
-              style={{ color: '#0d9488', cursor: 'pointer', fontWeight: 600 }}
+              style={{ color: '#0d9488', cursor: 'pointer', fontWeight: 800 }}
               onMouseEnter={(e) => e.currentTarget.style.color = '#0f766e'}
               onMouseLeave={(e) => e.currentTarget.style.color = '#0d9488'}
             >
@@ -346,7 +348,7 @@ const Login = () => {
               onClick={() => {
                 alert('Mock: Please contact administration to reset your password.');
               }}
-              style={{ color: '#0d9488', cursor: 'pointer', fontWeight: 600 }}
+              style={{ color: '#0d9488', cursor: 'pointer', fontWeight: 800 }}
               onMouseEnter={(e) => e.currentTarget.style.color = '#0f766e'}
               onMouseLeave={(e) => e.currentTarget.style.color = '#0d9488'}
             >
@@ -355,7 +357,7 @@ const Login = () => {
           </div>
 
           {errors.submit && (
-            <div style={{ color: '#ef4444', fontSize: '0.85rem', textAlign: 'center', fontWeight: 500 }}>
+            <div style={{ color: '#ef4444', fontSize: '0.85rem', textAlign: 'center', fontWeight: 750 }}>
               {errors.submit}
             </div>
           )}
@@ -372,7 +374,7 @@ const Login = () => {
               color: 'white', 
               border: 'none', 
               borderRadius: '12px',
-              fontWeight: 700, 
+              fontWeight: 800, 
               fontSize: '0.95rem', 
               cursor: isLoading ? 'not-allowed' : 'pointer',
               opacity: isLoading ? 0.75 : 1,
@@ -422,7 +424,7 @@ const Login = () => {
           animation: 'fadeIn 0.3s ease'
         }}>
           <Loader2 size={48} style={{ animation: 'spin 1.2s linear infinite', color: '#0d9488' }} />
-          <div style={{ fontSize: '1.15rem', fontWeight: 600, color: '#cbd5e1', textAlign: 'center', padding: '0 2rem', maxWidth: '500px', lineHeight: '1.6' }}>
+          <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#cbd5e1', textAlign: 'center', padding: '0 2rem', maxWidth: '500px', lineHeight: '1.6' }}>
             {routeOverlayMsg}
           </div>
         </div>
