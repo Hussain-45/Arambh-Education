@@ -107,17 +107,17 @@ const Login = () => {
         zIndex: 0,
         overflow: 'hidden'
       }}>
-        {/* Teal Blob */}
+        {/* Blue Blob */}
         <div style={{
           position: 'absolute',
           width: '550px',
           height: '550px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(13, 148, 136, 0.4) 0%, rgba(13, 148, 136, 0) 70%)',
+          background: 'radial-gradient(circle, rgba(37, 99, 235, 0.35) 0%, rgba(37, 99, 235, 0) 70%)',
           filter: 'blur(100px)',
           top: '-15%',
           left: '10%',
-          animation: 'floatTeal 22s infinite alternate ease-in-out'
+          animation: 'floatBlue 22s infinite alternate ease-in-out'
         }} />
 
         {/* Cyan Blob */}
@@ -147,7 +147,7 @@ const Login = () => {
         }} />
 
         <style>{`
-          @keyframes floatTeal {
+          @keyframes floatBlue {
             0% { transform: translate(0, 0) scale(1); }
             100% { transform: translate(100px, 60px) scale(1.1); }
           }
@@ -226,10 +226,10 @@ const Login = () => {
             bottom: '4px',
             left: selectedRole === 'admin' ? '4px' : selectedRole === 'teacher' ? 'calc(33.33% + 2px)' : 'calc(66.66% + 0px)',
             width: 'calc(33.33% - 6px)',
-            background: 'linear-gradient(to right, #06b6d4, #14b8a6)',
+            background: 'linear-gradient(to right, #2563eb, #3b82f6)',
             borderRadius: '25px',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: '0 4px 12px rgba(20, 184, 166, 0.25)',
+            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
             zIndex: 1
           }} />
 
@@ -338,9 +338,9 @@ const Login = () => {
                   setFormData({ email: 'student@aarambh.edu', password: 'password123' });
                 }
               }}
-              style={{ color: '#0d9488', cursor: 'pointer', fontWeight: 800 }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#0f766e'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#0d9488'}
+              style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 800 }}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#1d4ed8'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#3b82f6'}
             >
               ⚡ Autofill {selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)} Credentials
             </span>
@@ -348,9 +348,9 @@ const Login = () => {
               onClick={() => {
                 alert('Mock: Please contact administration to reset your password.');
               }}
-              style={{ color: '#0d9488', cursor: 'pointer', fontWeight: 800 }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#0f766e'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#0d9488'}
+              style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 800 }}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#1d4ed8'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#3b82f6'}
             >
               Forgot Password?
             </span>
@@ -370,7 +370,7 @@ const Login = () => {
               width: '100%', 
               marginTop: '0.8rem', 
               padding: '0.85rem',
-              background: 'linear-gradient(to right, #2563eb, #0d9488)',
+              background: 'linear-gradient(to right, #1d4ed8, #3b82f6)',
               color: 'white', 
               border: 'none', 
               borderRadius: '12px',
@@ -379,17 +379,17 @@ const Login = () => {
               cursor: isLoading ? 'not-allowed' : 'pointer',
               opacity: isLoading ? 0.75 : 1,
               transition: 'all 0.2s',
-              boxShadow: '0 4px 15px rgba(13, 148, 136, 0.25)',
+              boxShadow: '0 4px 15px rgba(37, 99, 235, 0.25)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.5rem'
             }}
             onMouseEnter={(e) => {
-              if (!isLoading) e.currentTarget.style.boxShadow = '0 6px 20px rgba(13, 148, 136, 0.4)';
+              if (!isLoading) e.currentTarget.style.boxShadow = '0 6px 20px rgba(37, 99, 235, 0.4)';
             }}
             onMouseLeave={(e) => {
-              if (!isLoading) e.currentTarget.style.boxShadow = '0 4px 15px rgba(13, 148, 136, 0.25)';
+              if (!isLoading) e.currentTarget.style.boxShadow = '0 4px 15px rgba(37, 99, 235, 0.25)';
             }}
           >
             {isLoading ? (
@@ -423,7 +423,7 @@ const Login = () => {
           gap: '1.5rem',
           animation: 'fadeIn 0.3s ease'
         }}>
-          <Loader2 size={48} style={{ animation: 'spin 1.2s linear infinite', color: '#0d9488' }} />
+          <Loader2 size={48} style={{ animation: 'spin 1.2s linear infinite', color: '#3b82f6' }} />
           <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#cbd5e1', textAlign: 'center', padding: '0 2rem', maxWidth: '500px', lineHeight: '1.6' }}>
             {routeOverlayMsg}
           </div>
