@@ -5,12 +5,18 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
 const Requests = () => {
-  const { registrationRequests, approveRequest, rejectRequest, addToast } = useContext(AppContext);
+  const { registrationRequests, approveRequest, rejectRequest, classes, addToast } = useContext(AppContext);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
+  const [teacherClasses, setTeacherClasses] = useState({});
 
-  const handleApprove = async (id) => {
-    await approveRequest(id);
+  const handleApprove = async (id, role) => {
+    if (role === 'teacher') {
+      const assigned = teacherClasses[id] || [];
+      await approveRequest(id, assigned);
+    } else {
+      await approveRequest(id);
+    }
   };
 
   const handleReject = async (id) => {
@@ -82,7 +88,7 @@ const Requests = () => {
                   <tr>
                     <th>Role</th>
                     <th>Name/Username</th>
-                    <th>Contact/Class</th>
+                    <th>Contact/Class Batch Details</th>
                     <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
@@ -109,24 +115,49 @@ const Requests = () => {
                           <div style={{ fontSize: '0.85rem' }}>Phone: {req.parentPhone}</div>
                         </>
                       ) : (
-                        'N/A'
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <span style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-main)' }}>Assign Batches:</span>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                            {classes.map(cls => (
+                              <label key={cls.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', cursor: 'pointer', userSelect: 'none' }}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={teacherClasses[req.id]?.includes(cls.name) || false}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setTeacherClasses(prev => {
+                                      const current = prev[req.id] || [];
+                                      const updated = checked 
+                                        ? [...current, cls.name]
+                                        : current.filter(name => name !== cls.name);
+                                      return { ...prev, [req.id]: updated };
+                                    });
+                                  }}
+                                  style={{ transform: 'scale(1.1)' }}
+                                />
+                                {cls.name}
+                              </label>
+                            ))}
+                          </div>
+                          <div style={{ fontSize: '0.85rem', marginTop: '4px' }}>Phone: {req.parentPhone || 'N/A'}</div>
+                        </div>
                       )}
                     </td>
                     <td style={{ padding: '1rem 0.5rem', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                         <button 
-                          onClick={() => handleApprove(req.id)}
+                          onClick={() => handleApprove(req.id, req.role)}
                           style={{ 
-                            background: 'var(--success)', color: 'white', border: 'none', padding: '0.5rem', 
-                            borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' 
+                            background: 'var(--success)', color: 'white', border: 'none', padding: '0.5rem 1rem', 
+                            borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 
                           }}>
                           <CheckCircle size={16} /> Approve
                         </button>
                         <button 
                           onClick={() => handleReject(req.id)}
                           style={{ 
-                            background: 'var(--danger)', color: 'white', border: 'none', padding: '0.5rem', 
-                            borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' 
+                            background: 'var(--danger)', color: 'white', border: 'none', padding: '0.5rem 1rem', 
+                            borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 
                           }}>
                           <XCircle size={16} /> Reject
                         </button>

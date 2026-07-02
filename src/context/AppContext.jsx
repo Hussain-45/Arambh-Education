@@ -441,12 +441,13 @@ export const AppProvider = ({ children }) => {
     return true;
   };
 
-  const approveRequest = async (id) => {
+  const approveRequest = async (id, assignedClasses = []) => {
     const requests = JSON.parse(localStorage.getItem('aarambh_requests') || '[]');
     const req = requests.find(r => r.id === id);
     if (!req) return false;
 
     if (req.role === 'teacher') {
+      const defaultAssigned = assignedClasses.length > 0 ? assignedClasses : ['10th Math', '10th Science'];
       // 1. Add to teachers list
       const currentTeachersList = JSON.parse(localStorage.getItem('aarambh_teachers') || '[]');
       const newTeacher = {
@@ -455,6 +456,7 @@ export const AppProvider = ({ children }) => {
         email: req.email || `${req.username || req.name.toLowerCase().replace(/\s+/g, '')}@aarambh.edu`,
         username: req.username || req.name.toLowerCase().replace(/\s+/g, '')
       };
+      newTeacher.assignedClasses = defaultAssigned;
       const updatedTeachers = [...teachers, newTeacher];
       setTeachers(updatedTeachers);
       localStorage.setItem('aarambh_teachers', JSON.stringify(updatedTeachers));
@@ -467,7 +469,8 @@ export const AppProvider = ({ children }) => {
         username: newTeacher.username,
         password: req.password,
         role: 'teacher',
-        email: newTeacher.email
+        email: newTeacher.email,
+        assignedClasses: defaultAssigned
       };
       localStorage.setItem('aarambh_users', JSON.stringify([...users, newUser]));
 
@@ -476,7 +479,7 @@ export const AppProvider = ({ children }) => {
       setRegistrationRequests(updatedRequests);
       localStorage.setItem('aarambh_requests', JSON.stringify(updatedRequests));
 
-      logActivity('Approve Teacher', `Approved staff request for ${req.name}`);
+      logActivity('Approve Teacher', `Approved staff request for ${req.name} with batches: ${defaultAssigned.join(', ')}`);
       addToast(`${req.name} registration approved!`);
       return true;
     }
