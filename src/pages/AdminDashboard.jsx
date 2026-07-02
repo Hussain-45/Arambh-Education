@@ -3,7 +3,7 @@ import { Users, BookOpen, CheckSquare, ArrowRight, Plus, Calendar as CalendarIco
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import StatCard from '../components/StatCard';
-import WhatsAppStatus from '../components/WhatsAppStatus';
+
 import RecentAttendance from '../components/RecentAttendance';
 import { AppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -131,9 +131,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div style={{ flex: '1 1 320px' }}>
-            <WhatsAppStatus />
-          </div>
+
         </div>
 
         {/* Bottom Section: Analytics Charts */}
