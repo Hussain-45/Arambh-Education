@@ -457,6 +457,160 @@ app.delete('/api/students/:id', authenticateToken, (req, res) => {
   });
 });
 
+// Mark or update daily attendance
+app.post('/api/attendance', authenticateToken, (req, res) => {
+  const { studentId, date, status } = req.body;
+  if (!studentId || !date || !status) {
+    return res.status(400).json({ error: 'studentId, date, and status are required' });
+  }
+
+  // Check if attendance already exists for this date
+  db.get(`SELECT id FROM attendance WHERE student_id = ? AND date = ?`, [studentId, date], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (row) {
+      db.run(`UPDATE attendance SET status = ? WHERE id = ?`, [status, row.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, updated: true });
+      });
+    } else {
+      db.run(`INSERT INTO attendance (student_id, date, status) VALUES (?, ?, ?)`, [studentId, date, status], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, inserted: true });
+      });
+    }
+  });
+});
+
+// Get attendance logs for a student
+app.get('/api/attendance/:studentId', authenticateToken, (req, res) => {
+  const studentId = req.params.studentId;
+  db.all(`SELECT * FROM attendance WHERE student_id = ? ORDER BY date DESC`, [studentId], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// Send monthly attendance progress card email
+app.post('/api/admin/attendance-report', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  if (!transporter) return res.status(500).json({ error: 'Email service not ready' });
+
+  // Get previous month string in YYYY-MM format
+  const now = new Date();
+  let prevMonth = now.getMonth(); // 0-indexed, so current month index is actually previous month number!
+  let year = now.getFullYear();
+  if (prevMonth === 0) {
+    prevMonth = 12;
+    year -= 1;
+  }
+  const monthString = `${year}-${prevMonth.toString().padStart(2, '0')}`;
+  const monthName = new Date(year, prevMonth - 1).toLocaleString('default', { month: 'long' });
+
+  // Query all active students
+  db.all(`SELECT id, name, email, className FROM users WHERE role = 'student'`, [], async (err, studentsList) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    let sentCount = 0;
+    let failedCount = 0;
+
+    for (const student of studentsList) {
+      if (!student.email) continue;
+
+      try {
+        // Calculate attendance stats for the student in previous month
+        const stats = await new Promise((resolve, reject) => {
+          db.all(
+            `SELECT status, COUNT(*) as count FROM attendance WHERE student_id = ? AND date LIKE ? GROUP BY status`,
+            [student.id, `${monthString}%`],
+            (err, rows) => {
+              if (err) reject(err);
+              else resolve(rows);
+            }
+          );
+        });
+
+        let present = 0;
+        let absent = 0;
+        let late = 0;
+
+        stats.forEach(s => {
+          if (s.status === 'Present') present = s.count;
+          else if (s.status === 'Absent') absent = s.count;
+          else if (s.status === 'Late') late = s.count;
+        });
+
+        const total = present + absent + late;
+        if (total === 0) continue; // skip if no classes attended
+
+        const rate = (((present + late * 0.5) / total) * 100).toFixed(1);
+
+        const emailInfo = await transporter.sendMail({
+          from: '"Aarambh System" <admin@aarambh.edu>',
+          to: student.email,
+          subject: `📊 MONTHLY ATTENDANCE REPORT: ${student.name} - ${monthName} ${year}`,
+          html: `<div style="font-family: sans-serif; padding: 25px; border: 1px solid #eaeaea; border-radius: 12px; max-width: 600px; margin: 0 auto; background: #ffffff;">
+                   <div style="text-align: center; border-bottom: 2px solid var(--primary, #4A90E2); padding-bottom: 15px; margin-bottom: 20px;">
+                     <h2 style="color: #4A90E2; margin: 0; font-size: 22px;">Aarambh Tuition Center</h2>
+                     <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">Official Attendance Progress Card</p>
+                   </div>
+                   
+                   <p style="font-size: 15px; color: #333;">Dear Parent,</p>
+                   <p style="font-size: 15px; color: #333; line-height: 1.6;">
+                     Please review the monthly attendance performance report for <strong>${student.name}</strong> (Class: ${student.className || 'General'}) for the period of <strong>${monthName} ${year}</strong>:
+                   </p>
+                   
+                   <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4A90E2;">
+                     <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                       <tr>
+                         <td style="padding: 6px 0; color: #555;">Total Class Sessions:</td>
+                         <td style="padding: 6px 0; font-weight: 600; text-align: right; color: #333;">${total}</td>
+                       </tr>
+                       <tr>
+                         <td style="padding: 6px 0; color: #2e7d32;">Present Days:</td>
+                         <td style="padding: 6px 0; font-weight: 600; text-align: right; color: #2e7d32;">${present}</td>
+                       </tr>
+                       <tr>
+                         <td style="padding: 6px 0; color: #f57c00;">Late Days:</td>
+                         <td style="padding: 6px 0; font-weight: 600; text-align: right; color: #f57c00;">${late}</td>
+                       </tr>
+                       <tr>
+                         <td style="padding: 6px 0; color: #c62828;">Absent Days:</td>
+                         <td style="padding: 6px 0; font-weight: 600; text-align: right; color: #c62828;">${absent}</td>
+                       </tr>
+                       <tr style="border-top: 1px solid #ddd;">
+                         <td style="padding: 10px 0 0 0; font-weight: bold; color: #333;">Monthly Attendance Rate:</td>
+                         <td style="padding: 10px 0 0 0; font-weight: bold; text-align: right; color: ${rate >= 85 ? '#2e7d32' : '#c62828'}; font-size: 16px;">${rate}%</td>
+                       </tr>
+                     </table>
+                   </div>
+                   
+                   <p style="font-size: 14px; color: #333; line-height: 1.5;">
+                     ${rate >= 85 
+                       ? "🎉 Excellent consistency! Regular attendance is crucial for academic success. Keep up the great effort!"
+                       : "⚠️ Attendance is below our recommended 85% threshold. Please ensure regular attendance to avoid falling behind in batches."}
+                   </p>
+                   
+                   <p style="margin-top: 25px;">Thank you,<br/>Aarambh Management</p>
+                   <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                   <small style="color: #999; font-size: 11px; display: block; text-align: center;">This is an automated administrative notification. Please do not reply directly to this email.</small>
+                 </div>`
+        });
+        
+        const testUrl = nodemailer.getTestMessageUrl(emailInfo);
+        console.log(`[MONTHLY ATTENDANCE EMAIL SENT] to ${student.email}.${testUrl ? ` Preview: ${testUrl}` : ''}`);
+        sentCount++;
+      } catch (e) {
+        console.error(`[Monthly Attendance Email Error] for ${student.name}:`, e);
+        failedCount++;
+      }
+    }
+
+    logAction('ATTENDANCE_REPORTS_SENT', `Triggered monthly attendance progress cards. Sent: ${sentCount}, Failed: ${failedCount}`);
+    res.json({ success: true, sentCount, failedCount });
+  });
+});
+
 // Get all teachers
 app.get('/api/teachers', authenticateToken, (req, res) => {
   db.all(`SELECT id, name, username, password FROM users WHERE role = 'teacher'`, [], (err, rows) => {

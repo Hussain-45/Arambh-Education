@@ -3,19 +3,23 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import { ArrowLeft, Users, IndianRupee, BookOpen, Download } from 'lucide-react';
+import FeeReceiptModal from '../components/FeeReceiptModal';
+import { ArrowLeft, Users, IndianRupee, BookOpen, Download, FileText } from 'lucide-react';
 import { exportToPDF } from '../utils/exportUtils';
 
 const ClassDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { userRole, classes, students, fees, assignments, library, addStudent, removeStudent, removeBatch, sendMessage, addToast, recordFeePayment } = useContext(AppContext);
+  const { userRole, classes, students, fees, assignments, library, addStudent, removeStudent, removeBatch, sendMessage, addToast, recordFeePayment, markAttendance } = useContext(AppContext);
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'roster');
   
   const [showAddStudent, setShowAddStudent] = useState(false);
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentPhone, setNewStudentPhone] = useState('');
+  
+  const [selectedReceiptFee, setSelectedReceiptFee] = useState(null);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   
   const currentMonthName = new Date().toLocaleString('default', { month: 'long' });
   const [selectedMonth, setSelectedMonth] = useState(currentMonthName);
@@ -46,11 +50,11 @@ const ClassDetails = () => {
     setNewStudentPhone('');
   };
 
-  const handleMarkAttendance = (student, status) => {
+  const handleMarkAttendance = async (student, status) => {
+    const today = new Date().toISOString().split('T')[0];
+    await markAttendance(student.id, today, status);
     if (status === 'Absent') {
       sendMessage(student.parentPhone, 'Auto-WhatsApp', `${student.name} is marked Absent today.`);
-    } else {
-      addToast(`Marked ${student.name} as ${status}`);
     }
   };
 
@@ -190,7 +194,9 @@ const ClassDetails = () => {
                           </>
                         )}
                         {fee.status === 'Paid' && (
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic' }}>No actions needed</span>
+                          <button onClick={() => { setSelectedReceiptFee(fee); setIsReceiptModalOpen(true); }} className="prof-btn prof-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+                            <FileText size={12} /> Receipt
+                          </button>
                         )}
                       </td>
                     </tr>
@@ -274,6 +280,14 @@ const ClassDetails = () => {
             </div>
           </div>
         )}
+
+        <FeeReceiptModal
+          isOpen={isReceiptModalOpen}
+          onClose={() => { setIsReceiptModalOpen(false); setSelectedReceiptFee(null); }}
+          fee={selectedReceiptFee}
+          student={classStudents.find(s => s.id === selectedReceiptFee?.studentId)}
+          className={classData.name}
+        />
       </main>
     </>
   );

@@ -6,13 +6,18 @@ import WhatsAppStatus from '../components/WhatsAppStatus';
 import { Moon, Sun, Lock, User, Save, Bell, Globe, MonitorSmartphone, Cloud, Loader, Clock } from 'lucide-react';
 
 const Settings = () => {
-  const { theme, setTheme, loggedInUser, addToast, authHeaders, API_URL, history, messages, fetchHistory, updateProfile } = useContext(AppContext);
+  const { theme, setTheme, loggedInUser, addToast, authHeaders, API_URL, history, messages, fetchHistory, updateProfile, sendMonthlyAttendanceReport } = useContext(AppContext);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
   // SMTP Settings States
   const [smtpEmail, setSmtpEmail] = useState('');
   const [smtpPassword, setSmtpPassword] = useState('');
+
+  const handleSendMonthlyAttendanceReport = async () => {
+    addToast('Compiling and sending monthly attendance reports...', 'info');
+    await sendMonthlyAttendanceReport();
+  };
 
   // Mock states for new features
   const [emailAlerts, setEmailAlerts] = useState(true);
@@ -309,6 +314,13 @@ const Settings = () => {
                   style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
                   Send Weekly Report Now
+                </button>
+                <button 
+                  onClick={handleSendMonthlyAttendanceReport}
+                  className="prof-btn prof-btn-outline"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  📊 Email Monthly Attendance Reports
                 </button>
               </div>
             </div>
