@@ -201,7 +201,7 @@ const Login = () => {
           }}>
             <Fingerprint size={28} />
           </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>Aarambh Setup</h1>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>Aarambh Institution</h1>
         </div>
 
         {/* Role Toggle */}

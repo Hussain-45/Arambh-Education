@@ -229,8 +229,10 @@ export const AppProvider = ({ children }) => {
     const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
     const admin = users.find(u => {
       if (u.role !== 'admin') return false;
-      const cleanU = (u.username || '').trim().toLowerCase();
-      const matchUser = cleanU === cleanUsername;
+      const cleanU = (u.username || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      const cleanN = (u.name || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      const cleanE = (u.email || '').trim().toLowerCase();
+      const matchUser = cleanU === cleanUsername || cleanN === cleanUsername || cleanE === cleanUsername;
       const matchPass = (u.password || '').startsWith('$2b$') || (u.password || '').trim() === cleanPassword;
       return matchUser && matchPass;
     });
@@ -322,8 +324,10 @@ export const AppProvider = ({ children }) => {
     const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
     const teacher = users.find(u => {
       if (u.role !== 'teacher') return false;
-      const cleanU = (u.username || '').trim().toLowerCase();
-      const matchUser = cleanU === cleanUsername;
+      const cleanU = (u.username || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      const cleanN = (u.name || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      const cleanE = (u.email || '').trim().toLowerCase();
+      const matchUser = cleanU === cleanUsername || cleanN === cleanUsername || cleanE === cleanUsername;
       const matchPass = (u.password || '').startsWith('$2b$') || (u.password || '').trim() === cleanPassword;
       return matchUser && matchPass;
     });

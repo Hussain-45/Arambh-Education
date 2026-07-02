@@ -48,7 +48,7 @@ const Sidebar = () => {
         </div>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)' }}>AARAMBH</h2>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase' }}>Tuition System</div>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase' }}>Institution</div>
         </div>
       </div>
       
