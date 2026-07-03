@@ -30,6 +30,7 @@ export const AppProvider = ({ children }) => {
   const [expenses, setExpenses] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [attendance, setAttendance] = useState([]);
+  const [doubtTickets, setDoubtTickets] = useState([]);
 
   // Initialize DB on first load
   useEffect(() => {
@@ -228,6 +229,7 @@ export const AppProvider = ({ children }) => {
     setHistory(JSON.parse(localStorage.getItem('aarambh_history') || '[]'));
     setMessages(JSON.parse(localStorage.getItem('aarambh_messages') || '[]'));
     setExpenses(JSON.parse(localStorage.getItem('aarambh_expenses') || '[]'));
+    setDoubtTickets(JSON.parse(localStorage.getItem('aarambh_doubt_tickets') || '[]'));
   }, []);
 
   // UI Toast Logger
@@ -1153,6 +1155,24 @@ export const AppProvider = ({ children }) => {
     // Audit logs are updated reactively on states
   };
 
+  const addDoubtTicket = (subject, description) => {
+    const newTicket = {
+      id: Date.now(),
+      studentId: loggedInUser?.id,
+      studentName: loggedInUser?.name,
+      subject,
+      description,
+      timestamp: new Date().toLocaleString(),
+      status: 'Pending Faculty Review',
+      reply: null
+    };
+    const updated = [newTicket, ...doubtTickets];
+    setDoubtTickets(updated);
+    localStorage.setItem('aarambh_doubt_tickets', JSON.stringify(updated));
+    logActivity('Doubt Clearance', `Submitted ticket for subject ${subject}: ${description.slice(0, 30)}...`);
+    addToast('Doubt ticket submitted successfully.', 'success');
+  };
+
   const API_URL = 'http://localhost:5000/api';
   const authHeaders = {
     'Content-Type': 'application/json',
@@ -1165,11 +1185,11 @@ export const AppProvider = ({ children }) => {
       loginAdmin, registerAdmin, loginStudent, loginTeacher, logout, requestRegistration, approveRequest, rejectRequest,
       theme, setTheme, sidebarCollapsed, setSidebarCollapsed,
       students, teachers, fees, messages, toasts, classes, expenses, attendance,
-      assignments, submissions, calendarEvents, library, history, announcements, registrationRequests,
+      assignments, submissions, calendarEvents, library, history, announcements, registrationRequests, doubtTickets,
       sendMessage, recordFeePayment, sendFeeReminders, addToast, addStudent, removeStudent, removeBatch,
       addTeacher, removeTeacher, editStudent, editTeacher,
       addAssignment, addLibraryMaterial, fetchHistory, updateProfile, addAnnouncement, deleteAnnouncement,
-      addExpense, editExpense, removeExpense, markAttendance, sendMonthlyAttendanceReport, API_URL, authHeaders
+      addExpense, editExpense, removeExpense, markAttendance, sendMonthlyAttendanceReport, addDoubtTicket, API_URL, authHeaders
     }}>
       {children}
     </AppContext.Provider>

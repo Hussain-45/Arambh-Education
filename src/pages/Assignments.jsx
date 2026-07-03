@@ -134,38 +134,82 @@ const Assignments = () => {
 
   // If Student
   const myAssignments = assignments.filter(a => a.subject === loggedInUser.class);
+
+  const getUrgencyData = (dueDateStr) => {
+    try {
+      const now = new Date();
+      const due = new Date(dueDateStr);
+      if (isNaN(due.getTime())) return { percent: 100, color: 'var(--primary-text)', bg: 'rgba(99,102,241,0.1)', text: 'No due date limit' };
+      const diffMs = due.getTime() - now.getTime();
+      const diffHours = diffMs / (1000 * 60 * 60);
+      
+      if (diffMs < 0) {
+        return { percent: 100, color: '#ef4444', bg: 'rgba(239,68,68,0.1)', text: 'Overdue / Submission Closed' };
+      }
+      
+      if (diffHours < 24) {
+        // Critical: Crimson
+        const percent = Math.max(10, Math.min(100, (diffHours / 24) * 100));
+        return { percent, color: '#f43f5e', bg: 'rgba(244,63,94,0.15)', text: `Urgent: ${Math.floor(diffHours)} hours left!` };
+      } else if (diffHours < 72) {
+        // Moderate: Amber
+        const percent = Math.max(10, Math.min(100, (diffHours / 72) * 100));
+        return { percent, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', text: `${Math.floor(diffHours / 24)} days remaining` };
+      } else {
+        // Stable: Indigo
+        return { percent: 100, color: 'var(--primary-text)', bg: 'rgba(99,102,241,0.1)', text: 'On track / Normal schedule' };
+      }
+    } catch (e) {
+      return { percent: 100, color: 'var(--primary-text)', bg: 'rgba(99,102,241,0.1)', text: 'Stable' };
+    }
+  };
+
   return (
     <>
       <Sidebar />
       <main className="main-content">
         <Header />
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '2rem' }}>My Assignments</h1>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
-        {myAssignments.map(a => {
-          const sub = submissions.find(s => s.assignmentId === a.id && s.studentId === loggedInUser.id);
-          return (
-            <div key={a.id} className="prof-card flex-between">
-              <div>
-                <h3 style={{ margin: 0, marginBottom: '0.5rem' }}>{a.title}</h3>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Due: {a.dueDate}</p>
-                {a.link && (
-                  <a href={a.link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '0.5rem', color: 'var(--primary-text)', textDecoration: 'none', fontSize: '0.85rem' }}>
-                    <FileText size={14} /> View {a.type}
-                  </a>
-                )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {myAssignments.map(a => {
+            const sub = submissions.find(s => s.assignmentId === a.id && s.studentId === loggedInUser.id);
+            const urgency = getUrgencyData(a.due_date || a.dueDate);
+            return (
+              <div key={a.id} className="prof-card flex-between" style={{ gap: '1.5rem', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: '250px' }}>
+                  <h3 style={{ margin: 0, marginBottom: '0.5rem' }}>{a.title}</h3>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Due: {a.due_date || a.dueDate}</p>
+                  
+                  {/* Urgency Progress Bar */}
+                  {!sub && (
+                    <div style={{ marginTop: '0.8rem', width: '100%', maxWidth: '280px' }}>
+                      <div className="flex-between" style={{ fontSize: '0.75rem', color: urgency.color, fontWeight: 700, marginBottom: '0.25rem' }}>
+                        <span>{urgency.text}</span>
+                      </div>
+                      <div style={{ width: '100%', height: '6px', background: 'var(--secondary)', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ width: `${urgency.percent}%`, height: '100%', background: urgency.color, transition: 'width 0.5s ease-in-out' }}></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {a.link && (
+                    <a href={a.link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '0.5rem', color: 'var(--primary-text)', textDecoration: 'none', fontSize: '0.85rem' }}>
+                      <FileText size={14} /> View {a.type}
+                    </a>
+                  )}
+                </div>
+                <div>
+                  {sub ? (
+                    <span className={`badge badge-${sub.grade ? 'success' : 'warning'}`}>
+                      {sub.grade ? `Graded: ${sub.grade}` : 'Submitted'}
+                    </span>
+                  ) : (
+                    <button className="prof-btn prof-btn-outline"><Check size={14}/> Submit Work</button>
+                  )}
+                </div>
               </div>
-              <div>
-                {sub ? (
-                  <span className={`badge badge-${sub.grade ? 'success' : 'warning'}`}>
-                    {sub.grade ? `Graded: ${sub.grade}` : 'Submitted'}
-                  </span>
-                ) : (
-                  <button className="prof-btn prof-btn-outline"><Check size={14}/> Submit Work</button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
         </div>
       </main>
     </>
