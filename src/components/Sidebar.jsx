@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { LayoutDashboard, Users, BookOpen, CheckSquare, Settings, LogOut, IndianRupee, MessageSquare, Calendar, ClipboardList, Clock } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, CheckSquare, Settings, LogOut, IndianRupee, MessageSquare, Calendar, ClipboardList, Clock, Sun, Moon } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logoImg from '../assets/image_7cc2c3.jpg';
@@ -38,7 +38,7 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
 );
 
 const Sidebar = () => {
-  const { logout, userRole, sidebarCollapsed } = useContext(AppContext);
+  const { logout, userRole, sidebarCollapsed, theme, setTheme } = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -107,7 +107,48 @@ const Sidebar = () => {
         )}
       </div>
 
-      <div style={{ marginBottom: '1.5rem' }}>
+      <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        {!sidebarCollapsed && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.8rem 1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.2rem', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Theme</span>
+            <button 
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              style={{
+                background: 'var(--secondary)',
+                border: '1px solid var(--border-color)',
+                cursor: 'pointer',
+                padding: '0.3rem 0.6rem',
+                borderRadius: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                color: 'var(--text-main)'
+              }}
+            >
+              {theme === 'light' ? (
+                <>
+                  <Moon size={12} color="var(--primary-text)" />
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700 }}>Dark</span>
+                </>
+              ) : (
+                <>
+                  <Sun size={12} color="var(--primary-text)" />
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700 }}>Light</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+        {sidebarCollapsed && (
+          <div 
+            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            style={{ display: 'flex', justifyContent: 'center', padding: '0.8rem 0', cursor: 'pointer', color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)' }}
+            title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+          >
+            {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+          </div>
+        )}
         <SidebarItem icon={Settings} label="Settings" active={path === '/settings'} onClick={() => navigate('/settings')} />
         <SidebarItem icon={LogOut} label="Logout" onClick={logout} />
       </div>

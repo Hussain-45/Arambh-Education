@@ -3,23 +3,23 @@
 /* Professional Theme CSS */
 
 :root, body.theme-light {
-  --bg-main: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  --bg-card: rgba(255, 255, 255, 0.45);
-  --bg-sidebar: rgba(255, 255, 255, 0.65);
-  --text-main: #1f2937;
-  --text-muted: #4b5563;
+  --bg-main: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 100%);
+  --bg-card: rgba(241, 245, 249, 0.55);
+  --bg-sidebar: rgba(241, 245, 249, 0.75);
+  --text-main: #0f172a;
+  --text-muted: #475569;
   
   --primary: rgba(37, 99, 235, 0.08);
   --primary-text: #2563eb;
   --primary-hover: rgba(37, 99, 235, 0.15);
-  --secondary: rgba(255, 255, 255, 0.3);
-  --secondary-hover: rgba(255, 255, 255, 0.5);
+  --secondary: rgba(15, 23, 42, 0.04);
+  --secondary-hover: rgba(15, 23, 42, 0.08);
   
-  --border-color: rgba(255, 255, 255, 0.6);
+  --border-color: rgba(15, 23, 42, 0.06);
   
-  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-  --shadow-glass-hover: 0 12px 40px 0 rgba(31, 38, 135, 0.12);
-  --glow-color: rgba(37, 99, 235, 0.2);
+  --shadow-glass: 0 8px 32px 0 rgba(148, 163, 184, 0.08);
+  --shadow-glass-hover: 0 12px 40px 0 rgba(148, 163, 184, 0.15);
+  --glow-color: rgba(37, 99, 235, 0.1);
   
   --success: #059669;
   --warning: #d97706;
@@ -27,19 +27,19 @@
 
   /* Receipt Modal / Popups (Light Theme) */
   --modal-bg: #ffffff;
-  --modal-border: rgba(0, 0, 0, 0.08);
-  --bg-muted: #f8f9fa;
+  --modal-border: rgba(15, 23, 42, 0.08);
+  --bg-muted: #f8fafc;
   --table-border: #e2e8f0;
   --text-success: #15803d;
   --text-danger: #b91c1c;
-  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
 }
 
 body.theme-dark {
   --bg-main: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
   --bg-card: rgba(15, 23, 42, 0.45);
   --bg-sidebar: rgba(15, 23, 42, 0.65);
-  --text-main: #f8fafc;
+  --text-main: #f1f5f9;
   --text-muted: #cbd5e1;
   
   --primary: rgba(96, 165, 250, 0.12);
@@ -48,10 +48,10 @@ body.theme-dark {
   --secondary: rgba(255, 255, 255, 0.05);
   --secondary-hover: rgba(255, 255, 255, 0.1);
   
-  --border-color: rgba(255, 255, 255, 0.12);
+  --border-color: rgba(255, 255, 255, 0.08);
   
-  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
-  --shadow-glass-hover: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  --shadow-glass-hover: 0 12px 40px 0 rgba(31, 38, 135, 0.12);
   --glow-color: rgba(96, 165, 250, 0.3);
   
   --success: #10b981;

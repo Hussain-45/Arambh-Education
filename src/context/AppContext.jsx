@@ -22,6 +22,8 @@ export const AppProvider = ({ children }) => {
   const [messages, setMessages] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [submissions, setSubmissions] = useState([]);
+  const [pendingUploads, setPendingUploads] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [calendarEvents, setCalendarEvents] = useState([]);
   const [library, setLibrary] = useState([]);
   const [history, setHistory] = useState([]);
@@ -230,6 +232,9 @@ export const AppProvider = ({ children }) => {
     setMessages(JSON.parse(localStorage.getItem('aarambh_messages') || '[]'));
     setExpenses(JSON.parse(localStorage.getItem('aarambh_expenses') || '[]'));
     setDoubtTickets(JSON.parse(localStorage.getItem('aarambh_doubt_tickets') || '[]'));
+    setSubmissions(JSON.parse(localStorage.getItem('aarambh_submissions') || '[]'));
+    setPendingUploads(JSON.parse(localStorage.getItem('aarambh_pending_uploads') || '[]'));
+    setNotifications(JSON.parse(localStorage.getItem('aarambh_notifications') || '[]'));
   }, []);
 
   // UI Toast Logger
@@ -1173,6 +1178,108 @@ export const AppProvider = ({ children }) => {
     addToast('Doubt ticket submitted successfully.', 'success');
   };
 
+  const addNotification = (title, text, type = 'announcement') => {
+    const notifId = Date.now();
+    const newNotif = {
+      id: notifId,
+      title,
+      text,
+      type,
+      read: false,
+      timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    };
+    setNotifications(prev => {
+      const updated = [newNotif, ...prev];
+      localStorage.setItem('aarambh_notifications', JSON.stringify(updated));
+      return updated;
+    });
+
+    // Toast alert matched to the type
+    setToasts(prev => [...prev, { id: notifId, title, text, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== notifId));
+    }, 4000);
+  };
+
+  const markAllNotificationsAsRead = () => {
+    setNotifications(prev => {
+      const updated = prev.map(n => ({ ...n, read: true }));
+      localStorage.setItem('aarambh_notifications', JSON.stringify(updated));
+      return updated;
+    });
+    addToast('All notifications marked as read.', 'success');
+  };
+
+  const addSubmission = (assignmentId, studentId, link, text, status = 'Submitted') => {
+    const newSubmission = {
+      id: Date.now(),
+      assignmentId,
+      studentId,
+      link,
+      text,
+      status,
+      timestamp: new Date().toLocaleString(),
+      grade: null
+    };
+    const updated = [...submissions, newSubmission];
+    setSubmissions(updated);
+    localStorage.setItem('aarambh_submissions', JSON.stringify(updated));
+    logActivity('Assignment Submit', `Submitted assignment ID ${assignmentId}`);
+    addNotification('Assignment Submitted', `You turned in your work for assignment ID ${assignmentId}`, 'assignment');
+    return newSubmission;
+  };
+
+  const addOfflineSubmission = (assignmentId, studentId, link, text) => {
+    const offlineId = Date.now();
+    const tempSubmission = {
+      id: offlineId,
+      assignmentId,
+      studentId,
+      link,
+      text,
+      status: 'Syncing Offline',
+      timestamp: new Date().toLocaleString(),
+      grade: null
+    };
+    
+    // Add to submissions state so UI displays it
+    const updatedSub = [...submissions, tempSubmission];
+    setSubmissions(updatedSub);
+    localStorage.setItem('aarambh_submissions', JSON.stringify(updatedSub));
+
+    // Save to pending uploads queue
+    const updatedPending = [...pendingUploads, tempSubmission];
+    setPendingUploads(updatedPending);
+    localStorage.setItem('aarambh_pending_uploads', JSON.stringify(updatedPending));
+    
+    logActivity('Offline Submit', `Queued offline submission for assignment ID ${assignmentId}`);
+    addNotification('Offline Queued', `Assignment saved offline (⏳ Syncing Offline). It will sync when online.`, 'assignment');
+  };
+
+  const syncOfflineSubmissions = () => {
+    const queued = JSON.parse(localStorage.getItem('aarambh_pending_uploads') || '[]');
+    if (queued.length === 0) return;
+
+    const currentSubs = JSON.parse(localStorage.getItem('aarambh_submissions') || '[]');
+    
+    const updatedSubs = currentSubs.map(sub => {
+      const match = queued.find(q => q.id === sub.id);
+      if (match) {
+        return { ...sub, status: 'Submitted' };
+      }
+      return sub;
+    });
+
+    setSubmissions(updatedSubs);
+    localStorage.setItem('aarambh_submissions', JSON.stringify(updatedSubs));
+
+    setPendingUploads([]);
+    localStorage.setItem('aarambh_pending_uploads', JSON.stringify([]));
+
+    logActivity('Queue Sync', `Synchronized ${queued.length} offline submissions.`);
+    addNotification('Sync Success', `[SYNC] Offline assignments synchronized successfully!`, 'success');
+  };
+
   const API_URL = 'http://localhost:5000/api';
   const authHeaders = {
     'Content-Type': 'application/json',
@@ -1186,10 +1293,12 @@ export const AppProvider = ({ children }) => {
       theme, setTheme, sidebarCollapsed, setSidebarCollapsed,
       students, teachers, fees, messages, toasts, classes, expenses, attendance,
       assignments, submissions, calendarEvents, library, history, announcements, registrationRequests, doubtTickets,
+      notifications, pendingUploads,
       sendMessage, recordFeePayment, sendFeeReminders, addToast, addStudent, removeStudent, removeBatch,
       addTeacher, removeTeacher, editStudent, editTeacher,
       addAssignment, addLibraryMaterial, fetchHistory, updateProfile, addAnnouncement, deleteAnnouncement,
-      addExpense, editExpense, removeExpense, markAttendance, sendMonthlyAttendanceReport, addDoubtTicket, API_URL, authHeaders
+      addExpense, editExpense, removeExpense, markAttendance, sendMonthlyAttendanceReport, addDoubtTicket,
+      addNotification, markAllNotificationsAsRead, addSubmission, addOfflineSubmission, syncOfflineSubmissions, API_URL, authHeaders
     }}>
       {children}
     </AppContext.Provider>

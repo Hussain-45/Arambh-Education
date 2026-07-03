@@ -1,16 +1,27 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import { Plus, Check, FileText, Users, ChevronRight } from 'lucide-react';
+import { Plus, Check, FileText, Users, ChevronRight, Wifi, WifiOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Assignments = () => {
-  const { userRole, assignments, submissions, students, loggedInUser, addAssignment, classes } = useContext(AppContext);
+  const { 
+    userRole, assignments, submissions, students, loggedInUser, addAssignment, classes,
+    addSubmission, addOfflineSubmission, syncOfflineSubmissions, pendingUploads 
+  } = useContext(AppContext);
+  
   const [showModal, setShowModal] = useState(false);
+  
+  // Offline Simulation and Submission States
+  const [isOfflineSimulated, setIsOfflineSimulated] = useState(false);
+  const [submittingAssignment, setSubmittingAssignment] = useState(null);
+  const [submitLink, setSubmitLink] = useState('');
+  const [submitText, setSubmitText] = useState('');
+
   const navigate = useNavigate();
   
-  // New Assignment State
+  // New Assignment Form State (Admin/Teacher)
   const [newTitle, setNewTitle] = useState('');
   const [newSubject, setNewSubject] = useState('');
   const [newDueDate, setNewDueDate] = useState('');
@@ -18,6 +29,24 @@ const Assignments = () => {
   const [newLink, setNewLink] = useState('');
   const [newFile, setNewFile] = useState(null);
   const [uploadMode, setUploadMode] = useState('file'); // 'file' or 'link'
+
+  // Effect: Self-Healing Offline Sync on Toggle off or reconnect
+  useEffect(() => {
+    if (!isOfflineSimulated && navigator.onLine) {
+      syncOfflineSubmissions();
+    }
+  }, [isOfflineSimulated, syncOfflineSubmissions]);
+
+  // Effect: Sync on browser online event
+  useEffect(() => {
+    const handleOnline = () => {
+      if (!isOfflineSimulated) {
+        syncOfflineSubmissions();
+      }
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [isOfflineSimulated, syncOfflineSubmissions]);
 
   // Filter logic
   const displayAssignments = userRole === 'student' 
@@ -41,6 +70,22 @@ const Assignments = () => {
       setNewLink('');
       setNewFile(null);
     }
+  };
+
+  const handleSubmitWork = () => {
+    if (!submittingAssignment) return;
+    
+    // Check simulated or real offline status
+    if (isOfflineSimulated || !navigator.onLine) {
+      addOfflineSubmission(submittingAssignment.id, loggedInUser.id, submitLink, submitText);
+    } else {
+      addSubmission(submittingAssignment.id, loggedInUser.id, submitLink, submitText);
+    }
+
+    // Reset and close
+    setSubmittingAssignment(null);
+    setSubmitLink('');
+    setSubmitText('');
   };
 
   // If Admin or Teacher
@@ -169,7 +214,31 @@ const Assignments = () => {
       <Sidebar />
       <main className="main-content">
         <Header />
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '2rem' }}>My Assignments</h1>
+        
+        {/* Page title + Offline simulator control toggle */}
+        <div className="flex-between" style={{ marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>My Assignments</h1>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>Manage and submit your class assignments</p>
+          </div>
+          
+          {/* Offline Simulator Switch */}
+          <div className="prof-card" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {isOfflineSimulated ? (
+              <WifiOff size={16} color="#ef4444" style={{ animation: 'pulse 1.5s infinite' }} />
+            ) : (
+              <Wifi size={16} color="#10b981" />
+            )}
+            <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Simulate Offline Mode</span>
+            <input 
+              type="checkbox" 
+              checked={isOfflineSimulated}
+              onChange={(e) => setIsOfflineSimulated(e.target.checked)}
+              style={{ cursor: 'pointer' }}
+            />
+          </div>
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {myAssignments.map(a => {
             const sub = submissions.find(s => s.assignmentId === a.id && s.studentId === loggedInUser.id);
@@ -200,18 +269,131 @@ const Assignments = () => {
                 </div>
                 <div>
                   {sub ? (
-                    <span className={`badge badge-${sub.grade ? 'success' : 'warning'}`}>
-                      {sub.grade ? `Graded: ${sub.grade}` : 'Submitted'}
+                    <span 
+                      className={`badge badge-${
+                        sub.status === 'Syncing Offline' 
+                          ? 'warning' 
+                          : sub.grade 
+                            ? 'success' 
+                            : 'warning'
+                      }`}
+                      style={sub.status === 'Syncing Offline' ? { animation: 'pulse 1.5s infinite', border: '1px solid var(--warning)' } : {}}
+                    >
+                      {sub.status === 'Syncing Offline' 
+                        ? '⏳ Syncing Offline' 
+                        : sub.grade 
+                          ? `Graded: ${sub.grade}` 
+                          : 'Submitted'
+                      }
                     </span>
                   ) : (
-                    <button className="prof-btn prof-btn-outline"><Check size={14}/> Submit Work</button>
+                    <button 
+                      onClick={() => setSubmittingAssignment(a)}
+                      className="prof-btn prof-btn-outline"
+                    >
+                      <Check size={14}/> Submit Work
+                    </button>
                   )}
                 </div>
               </div>
             );
           })}
+          {myAssignments.length === 0 && (
+            <div className="prof-card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              No assignments assigned for your batch yet.
+            </div>
+          )}
         </div>
+
+        {/* Submit Work Modal */}
+        {submittingAssignment && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 999 }}>
+            <div className="prof-card" style={{ width: '450px', padding: '2rem' }}>
+              <h3 style={{ margin: 0, marginBottom: '1rem' }}>Submit Assignment</h3>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                Assignment: <strong>{submittingAssignment.title}</strong>
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
+                    Submission Link / URL (Drive, Github, etc.)
+                  </label>
+                  <input 
+                    type="url" 
+                    placeholder="https://example.com/your-submission" 
+                    value={submitLink}
+                    onChange={(e) => setSubmitLink(e.target.value)}
+                    className="prof-input"
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
+                    Additional Comments / Notes (Optional)
+                  </label>
+                  <textarea 
+                    placeholder="Describe your submission details..." 
+                    value={submitText}
+                    onChange={(e) => setSubmitText(e.target.value)}
+                    className="prof-input"
+                    rows={4}
+                    style={{ resize: 'none', fontFamily: 'inherit' }}
+                  />
+                </div>
+              </div>
+
+              {/* Simulation Status Badge inside modal */}
+              {(isOfflineSimulated || !navigator.onLine) && (
+                <div style={{
+                  marginTop: '1rem',
+                  padding: '0.6rem 0.8rem',
+                  background: 'rgba(245,158,11,0.1)',
+                  borderRadius: '6px',
+                  border: '1px solid var(--warning)',
+                  fontSize: '0.75rem',
+                  color: 'var(--warning)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <WifiOff size={14} />
+                  <span>Offline simulation active. This submission will be queued in local storage.</span>
+                </div>
+              )}
+
+              <div className="flex-between" style={{ marginTop: '2rem' }}>
+                <button 
+                  onClick={() => {
+                    setSubmittingAssignment(null);
+                    setSubmitLink('');
+                    setSubmitText('');
+                  }} 
+                  className="prof-btn prof-btn-outline"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleSubmitWork}
+                  disabled={!submitLink.trim()}
+                  className="prof-btn"
+                  style={{ opacity: submitLink.trim() ? 1 : 0.6, cursor: submitLink.trim() ? 'pointer' : 'not-allowed' }}
+                >
+                  Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
+      
+      <style>{`
+        @keyframes pulse {
+          0% { opacity: 0.6; }
+          50% { opacity: 1; }
+          100% { opacity: 0.6; }
+        }
+      `}</style>
     </>
   );
 };

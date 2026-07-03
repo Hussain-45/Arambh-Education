@@ -1,16 +1,17 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
-import { Bell, Search, Sun, Moon, Menu } from 'lucide-react';
+import { Bell, Search, Sun, Moon, Menu, IndianRupee, Clipboard } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
-  const { theme, setTheme, students, classes, logout, userRole, sidebarCollapsed, setSidebarCollapsed } = useContext(AppContext);
+  const { theme, setTheme, students, classes, logout, userRole, sidebarCollapsed, setSidebarCollapsed, notifications, markAllNotificationsAsRead } = useContext(AppContext);
   const [searchVal, setSearchVal] = useState('');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [timeString, setTimeString] = useState('');
   
   const navigate = useNavigate();
+  const unreadCount = notifications ? notifications.filter(n => !n.read).length : 0;
   const searchRef = useRef(null);
   const notifRef = useRef(null);
   const profileRef = useRef(null);
@@ -238,41 +239,25 @@ const Header = () => {
           }}
         >
           <Bell size={18} color="var(--text-main)" />
-          <span style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            background: 'var(--danger)',
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            border: '2px solid var(--bg-main)'
-          }}></span>
-
-          {showNotifications && (
-            <div className="prof-card" style={{
+          {unreadCount > 0 && (
+            <span style={{
               position: 'absolute',
-              top: '120%',
-              right: 0,
-              width: '280px',
-              zIndex: 1000,
-              background: 'var(--bg-card)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid var(--border-color)',
-              boxShadow: 'var(--shadow-glass)',
-              borderRadius: '12px',
-              padding: '0.5rem'
+              top: '2px',
+              right: '2px',
+              background: 'var(--danger)',
+              color: 'white',
+              width: '18px',
+              height: '18px',
+              borderRadius: '50%',
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid var(--bg-main)'
             }}>
-              <div style={{ padding: '0.6rem 0.8rem', borderBottom: '1px solid var(--border-color)', fontWeight: 600, fontSize: '0.9rem' }}>Recent Notifications</div>
-              <div style={{ padding: '0.6rem 0.8rem', borderBottom: '1px solid var(--border-color)', fontSize: '0.8rem', cursor: 'default' }}>
-                <strong style={{ color: 'var(--primary-text)' }}>Attendance sheet alert</strong>
-                <div style={{ color: 'var(--text-muted)', marginTop: '0.1rem' }}>Today's attendance has been marked.</div>
-              </div>
-              <div style={{ padding: '0.6rem 0.8rem', fontSize: '0.8rem', cursor: 'default' }}>
-                <strong style={{ color: 'var(--primary-text)' }}>System alert</strong>
-                <div style={{ color: 'var(--text-muted)', marginTop: '0.1rem' }}>Local dev database version 1.0.7 verified.</div>
-              </div>
-            </div>
+              {unreadCount}
+            </span>
           )}
         </div>
 
@@ -332,6 +317,92 @@ const Header = () => {
                 Logout / Sign Out
               </div>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Notifications Drawer */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        right: showNotifications ? 0 : '-360px',
+        width: '360px',
+        height: '100vh',
+        background: 'var(--bg-card)',
+        backdropFilter: 'blur(20px)',
+        webkitBackdropFilter: 'blur(20px)',
+        borderLeft: '1px solid var(--border-color)',
+        boxShadow: '-8px 0 32px rgba(0,0,0,0.3)',
+        zIndex: 2000,
+        transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        padding: '2rem 1.5rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.5rem'
+      }}>
+        <div className="flex-between" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>Notification Center</h3>
+          <button 
+            onClick={() => setShowNotifications(false)}
+            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.5rem', lineHeight: 1 }}
+          >
+            &times;
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button onClick={markAllNotificationsAsRead} className="prof-btn prof-btn-secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}>
+            Mark All as Read
+          </button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+          {(!notifications || notifications.length === 0) ? (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', marginTop: '2rem' }}>No notifications yet.</p>
+          ) : (
+            notifications.map(n => {
+              let IconComp = Bell;
+              let iconColor = '#6366f1';
+              if (n.type === 'fee') {
+                IconComp = IndianRupee;
+                iconColor = '#10b981';
+              } else if (n.type === 'assignment') {
+                IconComp = Clipboard;
+                iconColor = '#a855f7';
+              } else if (n.type === 'success') {
+                IconComp = CheckCircle;
+                iconColor = '#10b981';
+              }
+              return (
+                <div key={n.id} style={{
+                  padding: '0.8rem',
+                  background: n.read ? 'rgba(255,255,255,0.02)' : 'rgba(99, 102, 241, 0.05)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  position: 'relative',
+                  transition: 'all 0.2s ease'
+                }}>
+                  <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
+                    <div style={{
+                      padding: '0.3rem',
+                      background: 'rgba(255,255,255,0.05)',
+                      borderRadius: '6px',
+                      color: iconColor,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <IconComp size={14} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <strong style={{ fontSize: '0.85rem', color: 'var(--text-main)', display: 'block' }}>{n.title}</strong>
+                      <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.2' }}>{n.text}</p>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.4rem' }}>{n.timestamp}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
       </div>
