@@ -82,12 +82,12 @@ const Library = () => {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
           {displayMaterials.map(item => (
-            <div key={item.id} style={{ padding: '1.5rem', border: '1px solid var(--border-color)', borderRadius: '12px', background: 'var(--bg-main)' }}>
-              <div style={{ marginBottom: '1rem', color: 'var(--primary-text)' }}>
+            <div key={item.id} className="prof-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              <div style={{ color: 'var(--primary-text)' }}>
                 {item.type === 'PDF' ? <FileText size={32} /> : <Video size={32} />}
               </div>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>{item.title}</h3>
-              <div className="flex-between">
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{item.title}</h3>
+              <div className="flex-between" style={{ marginTop: 'auto', paddingTop: '0.5rem' }}>
                 <span className="badge badge-warning">{item.subject}</span>
                 <a href={item.link} target="_blank" rel="noopener noreferrer" className="prof-btn prof-btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', textDecoration: 'none' }}>
                   <Download size={14}/> Open
