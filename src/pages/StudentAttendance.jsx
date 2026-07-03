@@ -37,7 +37,7 @@ const StudentAttendance = () => {
       <main className="main-content" style={{ padding: '2rem', background: 'var(--bg-main)', minHeight: '100vh' }}>
         <Header />
 
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <div style={{ width: '100%' }}>
           
           {/* Header Description */}
           <div className="prof-card" style={{ marginBottom: '2rem', background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--secondary) 100%)' }}>
@@ -47,61 +47,81 @@ const StudentAttendance = () => {
             </p>
           </div>
 
-          {/* Stat summary cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', alignItems: 'start' }}>
             
-            <div className="prof-card" style={{ textAlign: 'center', borderTop: '4px solid var(--primary-text)' }}>
-              <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Attendance Rate</h4>
-              <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--primary-text)', marginTop: '0.5rem' }}>{attendancePercentage}%</div>
+            {/* Left Column: Attendance Log Table */}
+            <div className="prof-card">
+              <h3 style={{ margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <CalendarIcon size={20} style={{ color: 'var(--primary-text)' }} /> Detailed Attendance Log
+              </h3>
+              
+              <div style={{ overflowX: 'auto' }}>
+                <table className="prof-table">
+                  <thead>
+                    <tr>
+                      <th>Session Date</th>
+                      <th>Day</th>
+                      <th>Remarks / Notes</th>
+                      <th style={{ textAlign: 'right' }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendanceLogs.map((log, index) => (
+                      <tr key={index}>
+                        <td style={{ fontWeight: 600 }}>{log.date}</td>
+                        <td style={{ color: 'var(--text-muted)' }}>{log.day}</td>
+                        <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{log.remark}</td>
+                        <td style={{ textAlign: 'right' }}>
+                          <span className={`badge badge-${log.status === 'Present' ? 'success' : log.status === 'Late' ? 'warning' : 'danger'}`}>
+                            {log.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <div className="prof-card" style={{ textAlign: 'center', borderTop: '4px solid var(--success)' }}>
-              <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Present Days</h4>
-              <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--success)', marginTop: '0.5rem' }}>{presentCount}</div>
+            {/* Right Column: Stats Cards and Policy */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="prof-card" style={{ textAlign: 'center', borderTop: '4px solid var(--primary-text)', padding: '1.2rem 0.5rem' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Attendance Rate</h4>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--primary-text)', marginTop: '0.5rem' }}>{attendancePercentage}%</div>
+                </div>
+
+                <div className="prof-card" style={{ textAlign: 'center', borderTop: '4px solid var(--success)', padding: '1.2rem 0.5rem' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Present Days</h4>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--success)', marginTop: '0.5rem' }}>{presentCount}</div>
+                </div>
+
+                <div className="prof-card" style={{ textAlign: 'center', borderTop: '4px solid var(--warning)', padding: '1.2rem 0.5rem' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Late Days</h4>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--warning)', marginTop: '0.5rem' }}>{lateCount}</div>
+                </div>
+
+                <div className="prof-card" style={{ textAlign: 'center', borderTop: '4px solid var(--danger)', padding: '1.2rem 0.5rem' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>Absent Days</h4>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--danger)', marginTop: '0.5rem' }}>{absentCount}</div>
+                </div>
+              </div>
+
+              {/* Attendance Guidelines Policy Card */}
+              <div className="prof-card" style={{ background: 'rgba(99, 102, 241, 0.05)', border: '1px solid rgba(99, 102, 241, 0.15)' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 0.8rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--primary-text)' }}>
+                  <CheckCircle2 size={16} /> Attendance Rules
+                </h3>
+                <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.6' }}>
+                  <li>Maintain at least <strong>75% attendance</strong> to remain exam-eligible.</li>
+                  <li>Late entry (more than 15 mins) marks status as <strong>Late</strong>.</li>
+                  <li>Submit parent-signed applications for medical leaves.</li>
+                </ul>
+              </div>
+
             </div>
 
-            <div className="prof-card" style={{ textAlign: 'center', borderTop: '4px solid var(--warning)' }}>
-              <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Late Days</h4>
-              <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--warning)', marginTop: '0.5rem' }}>{lateCount}</div>
-            </div>
-
-            <div className="prof-card" style={{ textAlign: 'center', borderTop: '4px solid var(--danger)' }}>
-              <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Absent Days</h4>
-              <div style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--danger)', marginTop: '0.5rem' }}>{absentCount}</div>
-            </div>
-
-          </div>
-
-          {/* Attendance Log Table */}
-          <div className="prof-card">
-            <h3 style={{ margin: '0 0 1.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <CalendarIcon size={20} style={{ color: 'var(--primary-text)' }} /> Detailed Attendance Log
-            </h3>
-            
-            <table className="prof-table">
-              <thead>
-                <tr>
-                  <th>Session Date</th>
-                  <th>Day</th>
-                  <th>Remarks / Notes</th>
-                  <th style={{ textAlign: 'right' }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {attendanceLogs.map((log, index) => (
-                  <tr key={index}>
-                    <td style={{ fontWeight: 600 }}>{log.date}</td>
-                    <td style={{ color: 'var(--text-muted)' }}>{log.day}</td>
-                    <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{log.remark}</td>
-                    <td style={{ textAlign: 'right' }}>
-                      <span className={`badge badge-${log.status === 'Present' ? 'success' : log.status === 'Late' ? 'warning' : 'danger'}`}>
-                        {log.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
 
         </div>
