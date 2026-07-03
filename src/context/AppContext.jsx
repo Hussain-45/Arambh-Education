@@ -816,6 +816,131 @@ export const AppProvider = ({ children }) => {
     return true;
   };
 
+  const editStudent = async (studentId, name, className, parentPhone, fatherName, email, birthdate) => {
+    const updatedStudents = students.map(s => {
+      if (s.id === studentId) {
+        return {
+          ...s,
+          name,
+          class: className,
+          parentPhone,
+          fatherName,
+          email,
+          birthdate
+        };
+      }
+      return s;
+    });
+    setStudents(updatedStudents);
+    localStorage.setItem('aarambh_students', JSON.stringify(updatedStudents));
+
+    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+    const updatedUsers = users.map(u => {
+      if (u.id === studentId) {
+        return {
+          ...u,
+          name,
+          email,
+          parentPhone,
+          className,
+          fatherName,
+          birthdate
+        };
+      }
+      return u;
+    });
+    localStorage.setItem('aarambh_users', JSON.stringify(updatedUsers));
+
+    logActivity('Edit Student', `Updated student details for ${name} (ID: ${studentId})`);
+    addToast('Student details updated successfully.', 'success');
+    return true;
+  };
+
+  const removeTeacher = async (teacherId) => {
+    const updatedTeachers = teachers.filter(t => t.id !== teacherId);
+    setTeachers(updatedTeachers);
+    localStorage.setItem('aarambh_teachers', JSON.stringify(updatedTeachers));
+
+    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+    const updatedUsers = users.filter(u => u.id !== teacherId);
+    localStorage.setItem('aarambh_users', JSON.stringify(updatedUsers));
+
+    logActivity('Remove Teacher', `Removed teacher ID: ${teacherId} from systems`);
+    addToast('Teacher removed successfully.');
+    return true;
+  };
+
+  const addTeacher = async (name, email, username, password, assignedClasses) => {
+    const id = Date.now();
+    const newTeacher = {
+      id,
+      name,
+      email: email || `${username}@aarambh.edu`,
+      username,
+      assignedClasses: assignedClasses || []
+    };
+    const updatedTeachers = [...teachers, newTeacher];
+    setTeachers(updatedTeachers);
+    localStorage.setItem('aarambh_teachers', JSON.stringify(updatedTeachers));
+
+    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+    const newUser = {
+      id,
+      name,
+      username,
+      password,
+      role: 'teacher',
+      email: email || `${username}@aarambh.edu`,
+      assignedClasses: assignedClasses || []
+    };
+    localStorage.setItem('aarambh_users', JSON.stringify([...users, newUser]));
+
+    logActivity('Add Teacher', `Added teacher: ${name} with classes: ${(assignedClasses || []).join(', ')}`);
+    addToast(`Teacher ${name} added successfully!`, 'success');
+    return true;
+  };
+
+  const editTeacher = async (teacherId, name, email, username, password, assignedClasses) => {
+    const updatedTeachers = teachers.map(t => {
+      if (t.id === teacherId) {
+        return {
+          ...t,
+          name,
+          email,
+          username,
+          assignedClasses: assignedClasses || []
+        };
+      }
+      return t;
+    });
+    setTeachers(updatedTeachers);
+    localStorage.setItem('aarambh_teachers', JSON.stringify(updatedTeachers));
+
+    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
+    const updatedUsers = users.map(u => {
+      if (u.id === teacherId) {
+        const updatedUser = {
+          ...u,
+          name,
+          username,
+          email,
+          assignedClasses: assignedClasses || []
+        };
+        if (password) {
+          updatedUser.password = password;
+        }
+        return updatedUser;
+      }
+      return u;
+    });
+    localStorage.setItem('aarambh_users', JSON.stringify(updatedUsers));
+
+    logActivity('Edit Teacher', `Updated teacher details for ${name} (ID: ${teacherId})`);
+    addToast('Teacher details updated successfully.', 'success');
+    return true;
+  };
+
+
   // Class Batches Management
   const removeBatch = async (batchId) => {
     const batch = classes.find(c => c.id === batchId);
@@ -1008,6 +1133,7 @@ export const AppProvider = ({ children }) => {
       students, teachers, fees, messages, toasts, classes, expenses, attendance,
       assignments, submissions, calendarEvents, library, history, announcements, registrationRequests,
       sendMessage, recordFeePayment, sendFeeReminders, addToast, addStudent, removeStudent, removeBatch,
+      addTeacher, removeTeacher, editStudent, editTeacher,
       addAssignment, addLibraryMaterial, fetchHistory, updateProfile, addAnnouncement, deleteAnnouncement,
       addExpense, editExpense, removeExpense, markAttendance, sendMonthlyAttendanceReport, API_URL, authHeaders
     }}>

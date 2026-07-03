@@ -67,16 +67,16 @@ const Sidebar = () => {
         {userRole === 'admin' && (
           <>
             <SidebarItem icon={LayoutDashboard} label="Dashboard" active={path === '/dashboard'} onClick={() => navigate('/dashboard')} />
-            <SidebarItem icon={IndianRupee} label="Profit & Loss" active={path === '/profit-loss'} onClick={() => navigate('/profit-loss')} />
+            <SidebarItem icon={Users} label="Teachers" active={path === '/teachers'} onClick={() => navigate('/teachers')} />
+            <SidebarItem icon={Users} label="Students" active={path === '/students'} onClick={() => navigate('/students')} />
+            <SidebarItem icon={BookOpen} label="Batches" active={path === '/classes'} onClick={() => navigate('/classes')} />
+            <SidebarItem icon={IndianRupee} label="Expenses" active={path === '/profit-loss'} onClick={() => navigate('/profit-loss')} />
             <SidebarItem icon={CheckSquare} label="Attendance" active={path === '/attendance'} onClick={() => navigate('/attendance')} />
             <SidebarItem icon={IndianRupee} label="Fees" active={path === '/fees'} onClick={() => navigate('/fees')} />
             <SidebarItem icon={BookOpen} label="Assignments" active={path === '/assignments'} onClick={() => navigate('/assignments')} />
-            <SidebarItem icon={MessageSquare} label="Messages" active={path === '/messages'} onClick={() => navigate('/messages')} />
+            <SidebarItem icon={BookOpen} label="Study Material" active={path === '/library'} onClick={() => navigate('/library')} />
+            <SidebarItem icon={MessageSquare} label="Announcements" active={path === '/messages'} onClick={() => navigate('/messages')} />
             <SidebarItem icon={ClipboardList} label="Requests" active={path === '/requests'} onClick={() => navigate('/requests')} />
-            <SidebarItem icon={Users} label="Students" active={path === '/students'} onClick={() => navigate('/students')} />
-            <SidebarItem icon={BookOpen} label="Classes" active={path === '/classes'} onClick={() => navigate('/classes')} />
-            <SidebarItem icon={Calendar} label="Calendar" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
-            <SidebarItem icon={BookOpen} label="Library" active={path === '/library'} onClick={() => navigate('/library')} />
             <SidebarItem icon={Clock} label="System History" active={path === '/history'} onClick={() => navigate('/history')} />
           </>
         )}
@@ -87,10 +87,10 @@ const Sidebar = () => {
             <SidebarItem icon={LayoutDashboard} label="Dashboard" active={path === '/teacher-dashboard'} onClick={() => navigate('/teacher-dashboard')} />
             <SidebarItem icon={CheckSquare} label="Attendance" active={path === '/attendance'} onClick={() => navigate('/attendance')} />
             <SidebarItem icon={BookOpen} label="Assignments" active={path === '/assignments'} onClick={() => navigate('/assignments')} />
-            <SidebarItem icon={MessageSquare} label="Messages" active={path === '/messages'} onClick={() => navigate('/messages')} />
-            <SidebarItem icon={BookOpen} label="My Classes" active={path === '/classes'} onClick={() => navigate('/classes')} />
-            <SidebarItem icon={Calendar} label="Calendar" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
-            <SidebarItem icon={BookOpen} label="Library" active={path === '/library'} onClick={() => navigate('/library')} />
+            <SidebarItem icon={MessageSquare} label="Announcements" active={path === '/messages'} onClick={() => navigate('/messages')} />
+            <SidebarItem icon={BookOpen} label="My Batches" active={path === '/classes'} onClick={() => navigate('/classes')} />
+            <SidebarItem icon={Calendar} label="Events" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
+            <SidebarItem icon={BookOpen} label="Study Material" active={path === '/library'} onClick={() => navigate('/library')} />
           </>
         )}
 
@@ -101,8 +101,8 @@ const Sidebar = () => {
             <SidebarItem icon={CheckSquare} label="My Attendance" active={path === '/student-attendance'} onClick={() => navigate('/student-attendance')} />
             <SidebarItem icon={IndianRupee} label="My Receipts" active={path === '/student-receipts'} onClick={() => navigate('/student-receipts')} />
             <SidebarItem icon={BookOpen} label="My Assignments" active={path === '/assignments'} onClick={() => navigate('/assignments')} />
-            <SidebarItem icon={Calendar} label="Class Schedule" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
-            <SidebarItem icon={BookOpen} label="Study Materials" active={path === '/library'} onClick={() => navigate('/library')} />
+            <SidebarItem icon={Calendar} label="Events" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
+            <SidebarItem icon={BookOpen} label="Study Material" active={path === '/library'} onClick={() => navigate('/library')} />
           </>
         )}
       </div>

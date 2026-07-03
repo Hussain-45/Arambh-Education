@@ -93,7 +93,7 @@ const ProfitLoss = () => {
         {/* Page Title & Add Button */}
         <div className="flex-between" style={{ marginBottom: '2rem' }}>
           <div>
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>Profit & Loss</h2>
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>Expenses</h2>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.25rem', letterSpacing: '0.05em' }}>
               Thursday, July 2, 2026
             </div>

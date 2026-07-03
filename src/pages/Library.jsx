@@ -104,7 +104,7 @@ const Library = () => {
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 999 }}>
           <div className="prof-card" style={{ width: '400px' }}>
-            <h3>Add Library Material</h3>
+            <h3>Add Study Material</h3>
             
             <input type="text" placeholder="Material Title" value={newTitle} onChange={e => setNewTitle(e.target.value)} className="prof-input" style={{ marginTop: '1rem' }}/>
             

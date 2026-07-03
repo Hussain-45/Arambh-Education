@@ -36,7 +36,7 @@ const Classes = () => {
         
         <div className="prof-card" style={{ flex: 1 }}>
           <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 600, margin: 0 }}>Classes & Batches</h2>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 600, margin: 0 }}>Batches</h2>
             {userRole === 'admin' && (
               <button onClick={() => setShowModal(true)} className="prof-btn">
                 <Plus size={16} /> Add Batch

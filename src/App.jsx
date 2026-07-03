@@ -6,6 +6,7 @@ import Attendance from './pages/Attendance';
 import Fees from './pages/Fees';
 import Messages from './pages/Messages';
 import Students from './pages/Students';
+import Teachers from './pages/Teachers';
 import Classes from './pages/Classes';
 import ClassDetails from './pages/ClassDetails';
 import StudentDashboard from './pages/StudentDashboard';
@@ -74,6 +75,7 @@ const AppLayout = () => {
         
         {/* Admin Routes */}
         <Route path="/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path="/teachers" element={<AdminRoute><Teachers /></AdminRoute>} />
         <Route path="/profit-loss" element={<AdminRoute><ProfitLoss /></AdminRoute>} />
         <Route path="/attendance" element={<AuthRoute allowedRoles={['admin', 'teacher']}><Attendance /></AuthRoute>} />
         <Route path="/fees" element={<AdminRoute><Fees /></AdminRoute>} />
