@@ -154,27 +154,7 @@ const Teachers = () => {
           {/* Card Grid Layout */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
             {filteredTeachers.map((teacher) => (
-              <div 
-                key={teacher.id} 
-                className="prof-card" 
-                style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  gap: '1rem', 
-                  position: 'relative',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-5px)';
-                  e.currentTarget.style.boxShadow = 'var(--shadow-glass-hover), 0 8px 24px rgba(0,0,0,0.12)';
-                  e.currentTarget.style.borderColor = 'var(--primary-text)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'var(--shadow-glass)';
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                }}
-              >
+              <div key={teacher.id} className="prof-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'relative' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ 
                     width: '48px', height: '48px', borderRadius: '50%', 

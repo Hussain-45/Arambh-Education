@@ -94,12 +94,23 @@ body {
   box-shadow: var(--shadow-glass);
   border-radius: 16px;
   padding: 1.5rem;
-  transition: box-shadow 0.3s ease, transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .prof-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-glass-hover);
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-glass-hover), 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: var(--primary-text);
+}
+
+/* Exclude modals, popups, and toast alerts from hover floating */
+div[style*="position: fixed"] .prof-card:hover,
+div[style*="position: absolute"] .prof-card:hover,
+.toast-container .prof-card:hover,
+.toast .prof-card:hover {
+  transform: none !important;
+  box-shadow: var(--shadow-glass) !important;
+  border-color: var(--border-color) !important;
 }
 
 .prof-btn {
