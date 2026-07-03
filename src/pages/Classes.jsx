@@ -51,15 +51,8 @@ const Classes = () => {
                 <div 
                   key={cls.id} 
                   onClick={() => navigate(`/classes/${cls.id}`)}
-                  style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.5rem', background: 'var(--bg-main)', cursor: 'pointer', transition: 'all 0.2s' }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
+                  className="prof-card"
+                  style={{ cursor: 'pointer' }}
                 >
                   <div className="flex-between" style={{ marginBottom: '1rem' }}>
                     <span className="badge badge-primary">{cls.grade}</span>

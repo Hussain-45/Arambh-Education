@@ -103,11 +103,14 @@ body {
   border-color: var(--primary-text);
 }
 
-/* Exclude modals, popups, and toast alerts from hover floating */
+/* Exclude modals, popups, layout wrappers, and toast alerts from hover floating */
 div[style*="position: fixed"] .prof-card:hover,
 div[style*="position: absolute"] .prof-card:hover,
 .toast-container .prof-card:hover,
-.toast .prof-card:hover {
+.toast .prof-card:hover,
+.main-content > .prof-card:hover,
+.main-content > div > .prof-card:hover,
+.prof-card-static:hover {
   transform: none !important;
   box-shadow: var(--shadow-glass) !important;
   border-color: var(--border-color) !important;
