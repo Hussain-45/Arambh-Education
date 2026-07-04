@@ -57,10 +57,10 @@ export const AppProvider = ({ children }) => {
     }
   }, [authToken, userRole, loggedInUser]);
 
-  // Enforce empty mock database on clean launch
+  // Enforce empty mock database on clean launch (forced wipe migration for existing browsers)
   useEffect(() => {
-    const initialized = localStorage.getItem('aarambh_db_initialized');
-    if (!initialized) {
+    const cleared = localStorage.getItem('aarambh_db_cleared_v2');
+    if (!cleared) {
       localStorage.setItem('aarambh_users', JSON.stringify([]));
       localStorage.setItem('aarambh_classes', JSON.stringify([]));
       localStorage.setItem('aarambh_students', JSON.stringify([]));
@@ -75,6 +75,10 @@ export const AppProvider = ({ children }) => {
       localStorage.setItem('aarambh_expenses', JSON.stringify([]));
       localStorage.setItem('aarambh_attendance', JSON.stringify([]));
       localStorage.setItem('aarambh_db_initialized', 'true');
+      localStorage.setItem('aarambh_db_cleared_v2', 'true');
+      
+      // Force reload to apply clean state
+      window.location.reload();
     }
   }, []);
 
