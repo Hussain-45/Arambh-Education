@@ -3,10 +3,15 @@ import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import { Sun, Moon, IndianRupee, FileText, Download, Calendar, Award, Bell, HelpCircle, Clock } from 'lucide-react';
 import { exportToPDF } from '../utils/exportUtils';
+import FeeReceiptModal from '../components/FeeReceiptModal';
 
 const StudentDashboard = () => {
   const { loggedInUser, theme, setTheme, fees, assignments, submissions, library, announcements, doubtTickets, addDoubtTicket } = useContext(AppContext);
   
+  // Receipt modal states
+  const [selectedReceiptFee, setSelectedReceiptFee] = useState(null);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+
   // Streak state
   const [streakCount, setStreakCount] = useState(1);
 
@@ -332,7 +337,7 @@ const StudentDashboard = () => {
                           {fee.status !== 'Paid' ? (
                             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Pending Payment</span>
                           ) : (
-                            <button onClick={() => handleDownloadReceipt(fee)} className="prof-btn prof-btn-secondary" style={{ padding: '0.35rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <button onClick={() => { setSelectedReceiptFee(fee); setIsReceiptModalOpen(true); }} className="prof-btn prof-btn-secondary" style={{ padding: '0.35rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                               <Download size={12} /> Receipt
                             </button>
                           )}
@@ -592,6 +597,13 @@ const StudentDashboard = () => {
 
         </div>
       </div>
+      <FeeReceiptModal 
+        isOpen={isReceiptModalOpen} 
+        onClose={() => { setIsReceiptModalOpen(false); setSelectedReceiptFee(null); }} 
+        fee={selectedReceiptFee} 
+        student={loggedInUser} 
+        className={loggedInUser.class} 
+      />
     </>
   );
 };

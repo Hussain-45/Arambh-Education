@@ -3,6 +3,7 @@ import { Users, BookOpen, CheckSquare, ArrowRight, Plus, Calendar as CalendarIco
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import StatCard from '../components/StatCard';
+import WhatsAppStatus from '../components/WhatsAppStatus';
 
 import RecentAttendance from '../components/RecentAttendance';
 import { AppContext } from '../context/AppContext';
@@ -87,48 +88,52 @@ const AdminDashboard = () => {
              </div>
           </div>
 
-          <div className="prof-card" style={{ flex: '1 1 350px', display: 'flex', flexDirection: 'column' }}>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem', marginTop: 0 }}>Quick Actions</h2>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
-              <button onClick={() => navigate('/attendance')} className="dashboard-action-btn">
-                <span>Mark Attendance</span>
-                <ArrowRight size={16} />
-              </button>
-              <button onClick={() => navigate('/students')} className="dashboard-action-btn">
-                <span>Add New Student</span>
-                <Plus size={16} />
-              </button>
-              <button onClick={() => navigate('/requests')} className="dashboard-action-btn">
-                <span>Registration Requests</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{ 
-                    background: pendingRequests.length > 0 ? 'var(--danger)' : 'var(--secondary)', 
-                    color: pendingRequests.length > 0 ? 'white' : 'var(--text-muted)', 
-                    borderRadius: '50%', width: '22px', height: '22px', 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                    fontSize: '0.75rem', fontWeight: 600,
-                    border: '1px solid var(--border-color)'
-                  }}>
-                    {pendingRequests.length}
-                  </span>
-                  <ArrowRight size={16} />
-                </div>
-              </button>
+          <div style={{ flex: '1 1 350px', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <div className="prof-card" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem', marginTop: 0 }}>Quick Actions</h2>
               
-              <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: `1px solid var(--border-color)` }}>
-                <div className="flex-between" style={{ marginBottom: '0.75rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
-                  <span>System Status</span>
-                  <span style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)', display: 'inline-block', filter: 'drop-shadow(0 0 3px var(--success))' }}></span>
-                    All Systems Operational
-                  </span>
-                </div>
-                <div style={{ width: '100%', height: '4px', background: 'var(--secondary)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: '100%', height: '100%', background: 'var(--success)' }}></div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
+                <button onClick={() => navigate('/attendance')} className="dashboard-action-btn">
+                  <span>Mark Attendance</span>
+                  <ArrowRight size={16} />
+                </button>
+                <button onClick={() => navigate('/students')} className="dashboard-action-btn">
+                  <span>Add New Student</span>
+                  <Plus size={16} />
+                </button>
+                <button onClick={() => navigate('/requests')} className="dashboard-action-btn">
+                  <span>Registration Requests</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <span style={{ 
+                      background: pendingRequests.length > 0 ? 'var(--danger)' : 'var(--secondary)', 
+                      color: pendingRequests.length > 0 ? 'white' : 'var(--text-muted)', 
+                      borderRadius: '50%', width: '22px', height: '22px', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                      fontSize: '0.75rem', fontWeight: 600,
+                      border: '1px solid var(--border-color)'
+                    }}>
+                      {pendingRequests.length}
+                    </span>
+                    <ArrowRight size={16} />
+                  </div>
+                </button>
+                
+                <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: `1px solid var(--border-color)` }}>
+                  <div className="flex-between" style={{ marginBottom: '0.75rem', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+                    <span>System Status</span>
+                    <span style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)', display: 'inline-block', filter: 'drop-shadow(0 0 3px var(--success))' }}></span>
+                      All Systems Operational
+                    </span>
+                  </div>
+                  <div style={{ width: '100%', height: '4px', background: 'var(--secondary)', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: '100%', background: 'var(--success)' }}></div>
+                  </div>
                 </div>
               </div>
             </div>
+
+            <WhatsAppStatus dashboard={true} />
           </div>
 
 

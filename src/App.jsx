@@ -23,6 +23,9 @@ import ProfitLoss from './pages/ProfitLoss';
 import { AppProvider, AppContext } from './context/AppContext';
 import ToastContainer from './components/Toast';
 import Chatbot from './components/Chatbot';
+import TeacherAttendance from './pages/TeacherAttendance';
+import TeacherAssignments from './pages/TeacherAssignments';
+import MyBatches from './pages/MyBatches';
 
 // Admin Protected Route
 const AdminRoute = ({ children }) => {
@@ -77,12 +80,12 @@ const AppLayout = () => {
         <Route path="/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         <Route path="/teachers" element={<AdminRoute><Teachers /></AdminRoute>} />
         <Route path="/profit-loss" element={<AdminRoute><ProfitLoss /></AdminRoute>} />
-        <Route path="/attendance" element={<AuthRoute allowedRoles={['admin', 'teacher']}><Attendance /></AuthRoute>} />
+        <Route path="/attendance" element={<AuthRoute allowedRoles={['admin', 'teacher']}>{userRole === 'teacher' ? <TeacherAttendance /> : <Attendance />}</AuthRoute>} />
         <Route path="/fees" element={<AdminRoute><Fees /></AdminRoute>} />
         <Route path="/messages" element={<AuthRoute allowedRoles={['admin', 'teacher']}><Messages /></AuthRoute>} />
         <Route path="/students" element={<AdminRoute><Students /></AdminRoute>} />
-        <Route path="/classes" element={<AuthRoute allowedRoles={['admin', 'teacher']}><Classes /></AuthRoute>} />
-        <Route path="/classes/:id" element={<AuthRoute allowedRoles={['admin', 'teacher']}><ClassDetails /></AuthRoute>} />
+        <Route path="/classes" element={<AuthRoute allowedRoles={['admin', 'teacher']}>{userRole === 'teacher' ? <MyBatches /> : <Classes />}</AuthRoute>} />
+        <Route path="/classes/:id" element={<AuthRoute allowedRoles={['admin', 'teacher']}>{userRole === 'teacher' ? <MyBatches /> : <ClassDetails />}</AuthRoute>} />
         <Route path="/history" element={<AdminRoute><History /></AdminRoute>} />
         
         {/* Student Routes */}
@@ -94,7 +97,7 @@ const AppLayout = () => {
         <Route path="/teacher-dashboard" element={<TeacherRoute><TeacherDashboard /></TeacherRoute>} />
         
         {/* Shared Routes (Internal component handles role UI differences) */}
-        <Route path="/assignments" element={<AuthRoute allowedRoles={['admin', 'teacher', 'student']}><Assignments /></AuthRoute>} />
+        <Route path="/assignments" element={<AuthRoute allowedRoles={['admin', 'teacher', 'student']}>{userRole === 'teacher' ? <TeacherAssignments /> : <Assignments />}</AuthRoute>} />
         <Route path="/calendar" element={<AuthRoute allowedRoles={['admin', 'teacher', 'student']}><CalendarView /></AuthRoute>} />
         <Route path="/library" element={<AuthRoute allowedRoles={['admin', 'teacher', 'student']}><Library /></AuthRoute>} />
         <Route path="/requests" element={<AuthRoute allowedRoles={['admin']}><Requests /></AuthRoute>} />

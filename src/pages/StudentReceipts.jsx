@@ -4,10 +4,15 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import { IndianRupee, Download, Info, CheckCircle2, CreditCard } from 'lucide-react';
 import { exportToPDF } from '../utils/exportUtils';
+import FeeReceiptModal from '../components/FeeReceiptModal';
 
 const StudentReceipts = () => {
   const { loggedInUser, fees, recordFeePayment } = useContext(AppContext);
   const [selectedPendingId, setSelectedPendingId] = useState('');
+  
+  // Receipt modal states
+  const [selectedReceiptFee, setSelectedReceiptFee] = useState(null);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
 
   const monthsOrder = [
     'January', 'February', 'March', 'April', 'May', 'June', 
@@ -119,7 +124,7 @@ const StudentReceipts = () => {
                           {fee.status !== 'Paid' ? (
                             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Pending Payment</span>
                           ) : (
-                            <button onClick={() => handleDownloadReceipt(fee)} className="prof-btn prof-btn-secondary" style={{ padding: '0.35rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <button onClick={() => { setSelectedReceiptFee(fee); setIsReceiptModalOpen(true); }} className="prof-btn prof-btn-secondary" style={{ padding: '0.35rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                               <Download size={12} /> Receipt PDF
                             </button>
                           )}
@@ -196,6 +201,13 @@ const StudentReceipts = () => {
 
         </div>
       </main>
+      <FeeReceiptModal 
+        isOpen={isReceiptModalOpen} 
+        onClose={() => { setIsReceiptModalOpen(false); setSelectedReceiptFee(null); }} 
+        fee={selectedReceiptFee} 
+        student={loggedInUser} 
+        className={loggedInUser.class} 
+      />
     </>
   );
 };

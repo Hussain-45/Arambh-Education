@@ -1,3 +1,10 @@
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception thrown:', error);
+});
+
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
@@ -85,7 +92,10 @@ try {
     console.log('[WhatsApp] Client disconnected:', reason);
   });
 
-  waClient.initialize();
+  waClient.initialize().catch(err => {
+    console.error('[WhatsApp] Client initialization failed asynchronously (probably offline):', err.message);
+    waStatus = 'ERROR';
+  });
 } catch (error) {
   console.error('[WhatsApp] Failed to init:', error);
   waStatus = 'ERROR';

@@ -331,9 +331,9 @@ const Login = () => {
             <span 
               onClick={() => {
                 if (selectedRole === 'admin') {
-                  setFormData({ email: 'admin', password: 'pass' });
+                  setFormData({ email: 'admin', password: 'password' });
                 } else if (selectedRole === 'teacher') {
-                  setFormData({ email: 'teacher', password: 'pass' });
+                  setFormData({ email: 'teacher', password: 'password' });
                 } else {
                   setFormData({ email: 'jaspreetmuskan93@gmail.com', password: 'Jaspreet@2005' });
                 }

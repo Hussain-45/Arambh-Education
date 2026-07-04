@@ -72,6 +72,20 @@ export const AppProvider = ({ children }) => {
       localStorage.setItem('aarambh_users', JSON.stringify(users));
     }
 
+    // Enforce assigned classes on S. Jaspreet Singh in teachers list
+    const teachersList = JSON.parse(localStorage.getItem('aarambh_teachers') || '[]');
+    let teachersModified = false;
+    const jaspreetTeacher = teachersList.find(t => t.username === 'teacher' || t.email === 'teacher@aarambh.edu');
+    if (jaspreetTeacher) {
+      if (!jaspreetTeacher.assignedClasses || jaspreetTeacher.assignedClasses.length === 0) {
+        jaspreetTeacher.assignedClasses = ['10th Math', '10th Science'];
+        teachersModified = true;
+      }
+    }
+    if (teachersModified) {
+      localStorage.setItem('aarambh_teachers', JSON.stringify(teachersList));
+    }
+
     const savedAttendance = localStorage.getItem('aarambh_attendance');
     if (savedAttendance) {
       setAttendance(JSON.parse(savedAttendance));
@@ -112,7 +126,7 @@ export const AppProvider = ({ children }) => {
         { id: 3, name: 'Jaspreet Kaur', class: '10th Math', parentPhone: '9876543210', fatherName: 'Jaspreet Singh', username: 'jaspreetmuskan93@gmail.com', admission_number: 'AES1' }
       ];
       const defaultTeachers = [
-        { id: 2, name: 'S. Jaspreet Singh', email: 'teacher@aarambh.edu', username: 'teacher' }
+        { id: 2, name: 'S. Jaspreet Singh', email: 'teacher@aarambh.edu', username: 'teacher', assignedClasses: ['10th Math', '10th Science'] }
       ];
       
       // Seed 12 months fees for default student
@@ -361,7 +375,7 @@ export const AppProvider = ({ children }) => {
 
     // Fail-safe credential bypass (allows ANY password for teacher)
     if (cleanUsername === 'teacher') {
-      const defaultTeacher = { id: 2, name: 'S. Jaspreet Singh', username: 'teacher', role: 'teacher', email: 'teacher@aarambh.edu' };
+      const defaultTeacher = { id: 2, name: 'S. Jaspreet Singh', username: 'teacher', role: 'teacher', email: 'teacher@aarambh.edu', assignedClasses: ['10th Math', '10th Science'] };
       setAuthToken('teacher-mock-token');
       setUserRole('teacher');
       setLoggedInUser(defaultTeacher);
@@ -1280,6 +1294,22 @@ export const AppProvider = ({ children }) => {
     addNotification('Sync Success', `[SYNC] Offline assignments synchronized successfully!`, 'success');
   };
 
+  const gradeSubmission = (submissionId, grade, feedback) => {
+    const currentSubs = JSON.parse(localStorage.getItem('aarambh_submissions') || '[]');
+    const updated = currentSubs.map(sub => {
+      if (sub.id === submissionId) {
+        return { ...sub, grade, feedback, status: 'Graded' };
+      }
+      return sub;
+    });
+    setSubmissions(updated);
+    localStorage.setItem('aarambh_submissions', JSON.stringify(updated));
+    addToast(`Successfully graded submission with score ${grade}`, 'success');
+    logActivity('Grade Submission', `Graded submission ID ${submissionId} with score ${grade}`);
+    addNotification('Grade Published', `Your assignment submission was graded: ${grade}`, 'assignment');
+    return true;
+  };
+
   const API_URL = 'http://localhost:5000/api';
   const authHeaders = {
     'Content-Type': 'application/json',
@@ -1298,7 +1328,7 @@ export const AppProvider = ({ children }) => {
       addTeacher, removeTeacher, editStudent, editTeacher,
       addAssignment, addLibraryMaterial, fetchHistory, updateProfile, addAnnouncement, deleteAnnouncement,
       addExpense, editExpense, removeExpense, markAttendance, sendMonthlyAttendanceReport, addDoubtTicket,
-      addNotification, markAllNotificationsAsRead, addSubmission, addOfflineSubmission, syncOfflineSubmissions, API_URL, authHeaders
+      addNotification, markAllNotificationsAsRead, addSubmission, addOfflineSubmission, syncOfflineSubmissions, gradeSubmission, API_URL, authHeaders
     }}>
       {children}
     </AppContext.Provider>
