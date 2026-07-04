@@ -201,7 +201,7 @@ const seedClasses = () => {
     });
   });
 };
-seedClasses();
+// seedClasses();
 
 // --- AUTH ROUTES ---
 
