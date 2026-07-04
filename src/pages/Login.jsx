@@ -331,11 +331,11 @@ const Login = () => {
             <span 
               onClick={() => {
                 if (selectedRole === 'admin') {
-                  setFormData({ email: 'admin', password: 'password' });
+                  setFormData({ email: 'admin', password: 'pass' });
                 } else if (selectedRole === 'teacher') {
-                  setFormData({ email: 'teacher', password: 'password' });
+                  setFormData({ email: 'teacher@aarambh.edu', password: 'password' });
                 } else {
-                  setFormData({ email: 'jaspreetmuskan93@gmail.com', password: 'Jaspreet@2005' });
+                  setFormData({ email: 'student@aarambh.edu', password: 'password' });
                 }
               }}
               style={{ color: '#3b82f6', cursor: 'pointer', fontWeight: 800 }}

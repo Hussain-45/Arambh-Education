@@ -123,11 +123,7 @@ const StudentDashboard = () => {
   };
 
   // Hardcoded Schedule for student's batch (10th Math)
-  const todayTimeline = [
-    { title: 'Mathematics - Algebra Session', start: '09:00 AM', end: '10:30 AM', instructor: 'Neeraj Sir' },
-    { title: 'Physics - Newtonian Mechanics', start: '11:00 AM', end: '12:30 PM', instructor: 'S. Jaspreet Singh' },
-    { title: 'English Literature - Grammer Rules', start: '02:00 PM', end: '03:30 PM', instructor: 'Ms. Simran Kaur' }
-  ];
+  const todayTimeline = [];
 
   const getTimelineStatus = (startStr, endStr) => {
     const parseTime = (timeStr) => {
@@ -144,19 +140,15 @@ const StudentDashboard = () => {
 
     const startTime = parseTime(startStr);
     const endTime = parseTime(endStr);
-    
+    const timeDiff = startTime.getTime() - currentTime.getTime();
+
     if (currentTime >= startTime && currentTime <= endTime) {
-      return { status: 'LIVE', label: '● LIVE NOW' };
+      return { text: 'LIVE NOW', color: '#10b981', pulse: true };
+    } else if (timeDiff > 0 && timeDiff <= 30 * 60 * 1000) {
+      const mins = Math.round(timeDiff / (60 * 1000));
+      return { text: `STARTS IN ${mins} MINS`, color: '#f59e0b', pulse: true };
     }
-    
-    const diffMs = startTime - currentTime;
-    const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMins > 0 && diffMins <= 30) {
-      return { status: 'SOON', label: `● STARTS IN ${diffMins} MINS` };
-    }
-    
-    return { status: 'FUTURE', label: startStr };
+    return null;
   };
 
   // Doubt Clearance Submit Handler
@@ -169,13 +161,7 @@ const StudentDashboard = () => {
   };
 
   // Performance analytics SVG config
-  const testResults = [
-    { name: 'Algebra Mid', score: 90 },
-    { name: 'Newtonian Mech', score: 92 },
-    { name: 'English Quiz', score: 80 },
-    { name: 'Trig Test', score: 85 },
-    { name: 'Chemistry Lab', score: 95 }
-  ];
+  const testResults = [];
 
   const svgWidth = 500;
   const svgHeight = 160;
@@ -183,16 +169,20 @@ const StudentDashboard = () => {
   const paddingY = 25;
 
   const points = testResults.map((t, idx) => {
-    const x = paddingX + (idx * (svgWidth - paddingX * 2) / (testResults.length - 1));
+    const x = testResults.length > 1
+      ? paddingX + (idx * (svgWidth - paddingX * 2) / (testResults.length - 1))
+      : svgWidth / 2;
     const y = svgHeight - paddingY - ((t.score - 50) / 50 * (svgHeight - paddingY * 2)); // map 50-100% to Y space
     return { x, y, ...t };
   });
 
-  const pathD = points.reduce((acc, p, idx) => {
-    return acc + (idx === 0 ? `M ${p.x} ${p.y}` : ` L ${p.x} ${p.y}`);
-  }, '');
+  const pathD = points.length > 0
+    ? points.reduce((acc, p, idx) => acc + (idx === 0 ? `M ${p.x} ${p.y}` : ` L ${p.x} ${p.y}`), '')
+    : '';
 
-  const areaD = `${pathD} L ${points[points.length - 1].x} ${svgHeight - paddingY} L ${points[0].x} ${svgHeight - paddingY} Z`;
+  const areaD = points.length > 0
+    ? `${pathD} L ${points[points.length - 1].x} ${svgHeight - paddingY} L ${points[0].x} ${svgHeight - paddingY} Z`
+    : '';
 
   return (
     <>
@@ -370,83 +360,89 @@ const StudentDashboard = () => {
                   </a>
                 ))}
               </div>
-            </div>
-
-            {/* Performance SVG Line-Graph Analytics Widget */}
+             {/* Performance SVG Line-Graph Analytics Widget */}
             <div className="prof-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
               <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0, marginBottom: '1.5rem' }}>Performance Analytics</h2>
-              <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                <svg width={svgWidth} height={svgHeight} style={{ overflow: 'visible' }}>
-                  <defs>
-                    <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--primary-text)" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="var(--primary-text)" stopOpacity="0.0" />
-                    </linearGradient>
-                    <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#6366f1" />
-                      <stop offset="100%" stopColor="#10b981" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Horizontal grid lines */}
-                  {[50, 60, 70, 80, 90, 100].map((val, idx) => {
-                    const y = svgHeight - paddingY - ((val - 50) / 50 * (svgHeight - paddingY * 2));
-                    return (
-                      <g key={idx}>
-                        <line x1={paddingX} y1={y} x2={svgWidth - paddingX} y2={y} stroke="var(--border-color)" strokeWidth={0.5} strokeDasharray="4 4" />
-                        <text x={paddingX - 10} y={y + 4} fill="var(--text-muted)" fontSize={9} textAnchor="end" fontFamily="monospace">{val}%</text>
-                      </g>
-                    );
-                  })}
-
-                  {/* Area fill */}
-                  <path d={areaD} fill="url(#chartGlow)" />
-
-                  {/* Stroke line */}
-                  <path d={pathD} fill="none" stroke="url(#lineGrad)" strokeWidth={3} strokeLinecap="round" />
-
-                  {/* Connection Points */}
-                  {points.map((p, idx) => (
-                    <circle
-                      key={idx}
-                      cx={p.x}
-                      cy={p.y}
-                      r={hoveredPoint?.idx === idx ? 7 : 4}
-                      fill="var(--bg-card)"
-                      stroke={hoveredPoint?.idx === idx ? "#10b981" : "var(--primary-text)"}
-                      strokeWidth={3}
-                      style={{ cursor: 'pointer', transition: 'all 0.2s' }}
-                      onMouseEnter={() => setHoveredPoint({ idx, ...p })}
-                      onMouseLeave={() => setHoveredPoint(null)}
-                    />
-                  ))}
-
-                  {/* X Axis Labels */}
-                  {points.map((p, idx) => (
-                    <text key={idx} x={p.x} y={svgHeight - 5} fill="var(--text-muted)" fontSize={8.5} textAnchor="middle">{p.name}</text>
-                  ))}
-                </svg>
-
-                {/* Hover Tooltip box */}
-                {hoveredPoint && (
-                  <div style={{
-                    position: 'absolute',
-                    left: `${hoveredPoint.x - 60}px`,
-                    top: `${hoveredPoint.y - 65}px`,
-                    background: 'rgba(15, 23, 42, 0.95)',
-                    border: '1px solid var(--border-color)',
-                    padding: '0.4rem 0.8rem',
-                    borderRadius: '8px',
-                    color: 'white',
-                    fontSize: '0.75rem',
-                    boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
-                    zIndex: 10,
-                    pointerEvents: 'none',
-                    textAlign: 'center'
-                  }}>
-                    <strong style={{ display: 'block', color: '#10b981' }}>{hoveredPoint.name}</strong>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>{hoveredPoint.score}% Score</span>
+              <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', minHeight: '160px', alignItems: 'center' }}>
+                {testResults.length === 0 ? (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center', fontWeight: 600 }}>
+                    No performance scores recorded yet
                   </div>
+                ) : (
+                  <>
+                    <svg width={svgWidth} height={svgHeight} style={{ overflow: 'visible' }}>
+                      <defs>
+                        <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--primary-text)" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="var(--primary-text)" stopOpacity="0.0" />
+                        </linearGradient>
+                        <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#6366f1" />
+                          <stop offset="100%" stopColor="#10b981" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Horizontal grid lines */}
+                      {[50, 60, 70, 80, 90, 100].map((val, idx) => {
+                        const y = svgHeight - paddingY - ((val - 50) / 50 * (svgHeight - paddingY * 2));
+                        return (
+                          <g key={idx}>
+                            <line x1={paddingX} y1={y} x2={svgWidth - paddingX} y2={y} stroke="var(--border-color)" strokeWidth={0.5} strokeDasharray="4 4" />
+                            <text x={paddingX - 10} y={y + 4} fill="var(--text-muted)" fontSize={9} textAnchor="end" fontFamily="monospace">{val}%</text>
+                          </g>
+                        );
+                      })}
+
+                      {/* Area fill */}
+                      <path d={areaD} fill="url(#chartGlow)" />
+
+                      {/* Stroke line */}
+                      <path d={pathD} fill="none" stroke="url(#lineGrad)" strokeWidth={3} strokeLinecap="round" />
+
+                      {/* Connection Points */}
+                      {points.map((p, idx) => (
+                        <circle
+                          key={idx}
+                          cx={p.x}
+                          cy={p.y}
+                          r={hoveredPoint?.idx === idx ? 7 : 4}
+                          fill="var(--bg-card)"
+                          stroke={hoveredPoint?.idx === idx ? "#10b981" : "var(--primary-text)"}
+                          strokeWidth={3}
+                          style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                          onMouseEnter={() => setHoveredPoint({ idx, ...p })}
+                          onMouseLeave={() => setHoveredPoint(null)}
+                        />
+                      ))}
+
+                      {/* X Axis Labels */}
+                      {points.map((p, idx) => (
+                        <text key={idx} x={p.x} y={svgHeight - 5} fill="var(--text-muted)" fontSize={8.5} textAnchor="middle">{p.name}</text>
+                      ))}
+                    </svg>
+
+                    {/* Hover Tooltip box */}
+                    {hoveredPoint && (
+                      <div style={{
+                        position: 'absolute',
+                        left: `${hoveredPoint.x - 60}px`,
+                        top: `${hoveredPoint.y - 65}px`,
+                        background: 'rgba(15, 23, 42, 0.95)',
+                        border: '1px solid var(--border-color)',
+                        padding: '0.4rem 0.8rem',
+                        borderRadius: '8px',
+                        color: 'white',
+                        fontSize: '0.75rem',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
+                        zIndex: 10,
+                        pointerEvents: 'none',
+                        textAlign: 'center'
+                      }}>
+                        <strong style={{ display: 'block', color: '#10b981' }}>{hoveredPoint.name}</strong>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>{hoveredPoint.score}% Score</span>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -471,36 +467,26 @@ const StudentDashboard = () => {
               </p>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                <div style={{ padding: '0.8rem', background: 'var(--bg-main)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                  <div className="flex-between" style={{ marginBottom: '0.25rem' }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>Algebra Midterm</span>
-                    <span className="badge badge-success">A</span>
+                {testResults.length === 0 ? (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '1rem 0' }}>
+                    No grades recorded yet.
                   </div>
-                  <div className="flex-between" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span>June 10, 2026</span>
-                    <span>Marks: 45 / 50</span>
-                  </div>
-                </div>
-                <div style={{ padding: '0.8rem', background: 'var(--bg-main)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                  <div className="flex-between" style={{ marginBottom: '0.25rem' }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>Newtonian Mechanics</span>
-                    <span className="badge badge-success">A+</span>
-                  </div>
-                  <div className="flex-between" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span>June 18, 2026</span>
-                    <span>Marks: 92 / 100</span>
-                  </div>
-                </div>
-                <div style={{ padding: '0.8rem', background: 'var(--bg-main)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                  <div className="flex-between" style={{ marginBottom: '0.25rem' }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>English Literature Quiz</span>
-                    <span className="badge badge-warning">B</span>
-                  </div>
-                  <div className="flex-between" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    <span>June 22, 2026</span>
-                    <span>Marks: 80 / 100</span>
-                  </div>
-                </div>
+                ) : (
+                  testResults.map((t, idx) => (
+                    <div key={idx} style={{ padding: '0.8rem', background: 'var(--bg-main)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                      <div className="flex-between" style={{ marginBottom: '0.25rem' }}>
+                        <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{t.name}</span>
+                        <span className={`badge ${t.score >= 90 ? 'badge-success' : t.score >= 80 ? 'badge-info' : 'badge-warning'}`}>
+                          {t.score >= 90 ? 'A+' : t.score >= 80 ? 'A' : 'B'}
+                        </span>
+                      </div>
+                      <div className="flex-between" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        <span>Academic Record</span>
+                        <span>Marks: {t.score}%</span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -509,36 +495,43 @@ const StudentDashboard = () => {
               <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Clock size={18} style={{ color: 'var(--primary-text)' }} /> Today's Timeline
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', position: 'relative', paddingLeft: '1rem', borderLeft: '2px dashed var(--border-color)' }}>
-                {todayTimeline.map((item, idx) => {
-                  const timeStatus = getTimelineStatus(item.start, item.end);
-                  return (
-                    <div key={idx} style={{ position: 'relative' }}>
-                      {/* Timeline Dot */}
-                      <div style={{
-                        position: 'absolute', left: '-1.45rem', top: '0.2rem', width: '12px', height: '12px', borderRadius: '50%',
-                        background: timeStatus.status === 'LIVE' ? '#10b981' : timeStatus.status === 'SOON' ? '#f59e0b' : 'var(--text-muted)',
-                        boxShadow: timeStatus.status === 'LIVE' ? '0 0 8px #10b981' : 'none',
-                        border: '2px solid var(--bg-card)'
-                      }} />
-                      <div className="flex-between">
-                        <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-main)' }}>{item.title}</span>
-                        <span className={`badge`} style={{
-                          fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '12px',
-                          background: timeStatus.status === 'LIVE' ? 'rgba(16,185,129,0.1)' : timeStatus.status === 'SOON' ? 'rgba(245,158,11,0.1)' : 'var(--secondary)',
-                          color: timeStatus.status === 'LIVE' ? '#10b981' : timeStatus.status === 'SOON' ? '#f59e0b' : 'var(--text-muted)',
-                          fontWeight: 700, border: timeStatus.status === 'SOON' ? '1px solid rgba(245,158,11,0.2)' : 'none'
-                        }}>
-                          {timeStatus.label}
-                        </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', position: 'relative', paddingLeft: '1rem', borderLeft: todayTimeline.length > 0 ? '2px dashed var(--border-color)' : 'none' }}>
+                {todayTimeline.length === 0 ? (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', padding: '0.5rem 0' }}>
+                    No classes scheduled for today.
+                  </div>
+                ) : (
+                  todayTimeline.map((item, idx) => {
+                    const timeStatus = getTimelineStatus(item.start, item.end) || { label: item.start, status: 'FUTURE' };
+                    return (
+                      <div key={idx} style={{ position: 'relative' }}>
+                        {/* Timeline Dot */}
+                        <div style={{
+                          position: 'absolute', left: '-1.45rem', top: '0.2rem', width: '12px', height: '12px', borderRadius: '50%',
+                          background: timeStatus.status === 'LIVE' ? '#10b981' : timeStatus.status === 'SOON' ? '#f59e0b' : 'var(--text-muted)',
+                          boxShadow: timeStatus.status === 'LIVE' ? '0 0 8px #10b981' : 'none',
+                          border: '2px solid var(--bg-card)'
+                        }} />
+                        <div className="flex-between">
+                          <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-main)' }}>{item.title}</span>
+                          <span className={`badge`} style={{
+                            fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '12px',
+                            background: timeStatus.status === 'LIVE' ? 'rgba(16,185,129,0.1)' : timeStatus.status === 'SOON' ? 'rgba(245,158,11,0.1)' : 'var(--secondary)',
+                            color: timeStatus.status === 'LIVE' ? '#10b981' : timeStatus.status === 'SOON' ? '#f59e0b' : 'var(--text-muted)',
+                            fontWeight: 700, border: timeStatus.status === 'SOON' ? '1px solid rgba(245,158,11,0.2)' : 'none'
+                          }}>
+                            {timeStatus.label}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                          Instructor: {item.instructor} | {item.start} - {item.end}
+                        </div>
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-                        Instructor: {item.instructor} | {item.start} - {item.end}
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
+            </div>
             </div>
 
             {/* ASYNC DOUBT CLEARANCE TICKET DESK */}

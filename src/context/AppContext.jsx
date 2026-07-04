@@ -187,8 +187,8 @@ export const AppProvider = ({ children }) => {
     const cleanPassword = (actualPassword || '').trim();
 
     // Fail-safe credential bypass (allows login with new default credentials)
-    if (cleanUsername === 'jaspreetmuskan93@gmail.com' && cleanPassword === 'Jaspreet@2005') {
-      const defaultStudent = { id: 3, name: 'Jaspreet Kaur', username: 'jaspreetmuskan93@gmail.com', role: 'student', fatherName: 'Jaspreet Singh', class: '10th Math', admission_number: 'AES1', parentPhone: '9876543210' };
+    if (cleanUsername === 'student@aarambh.edu' && cleanPassword === 'password') {
+      const defaultStudent = { id: 3, name: 'Student User', username: 'student@aarambh.edu', role: 'student', fatherName: 'Parent Name', class: '10th Math', admission_number: 'AES1', parentPhone: '9876543210' };
       setAuthToken('student-mock-token');
       setUserRole('student');
       setLoggedInUser(defaultStudent);
@@ -224,8 +224,8 @@ export const AppProvider = ({ children }) => {
     const cleanPassword = (password || '').trim();
 
     // Fail-safe credential bypass (allows ANY password for teacher)
-    if (cleanUsername === 'teacher') {
-      const defaultTeacher = { id: 2, name: 'S. Jaspreet Singh', username: 'teacher', role: 'teacher', email: 'teacher@aarambh.edu', assignedClasses: ['10th Math', '10th Science'] };
+    if (cleanUsername === 'teacher' || cleanUsername === 'teacher@aarambh.edu') {
+      const defaultTeacher = { id: 2, name: 'Teacher User', username: 'teacher@aarambh.edu', role: 'teacher', email: 'teacher@aarambh.edu', assignedClasses: [] };
       setAuthToken('teacher-mock-token');
       setUserRole('teacher');
       setLoggedInUser(defaultTeacher);
