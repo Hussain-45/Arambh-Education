@@ -6,14 +6,16 @@ Aarambh is a comprehensive, multi-role School Management System designed to stre
 
 - **Multi-Role Dashboards**: Dedicated interfaces for Admins, Teachers, and Students.
 - **Attendance Management**: Track and monitor student attendance.
-- **Fee Management**: Manage and track fee payments and dues.
-- **Assignments**: Teachers can upload assignments; students can view and submit them.
-- **Library System**: Manage school library resources.
+- **Fee Management**: Manage and track fee payments and dues. Automatically filters and starts ledgers from the month the student joined.
+- **Assignments**: Teachers can upload worksheets and grade submissions; students can upload links/files, submit them, and delete/resubmit ungraded work.
+- **Academic Doubt Desk**: Students can submit doubts directly; teachers can review pending academic doubts and reply inline.
+- **Library System**: Manage school library resources and revision material.
 - **Calendar & Events**: School-wide calendar for events and holidays.
 - **Real-time Notifications**: Integrated with WhatsApp Web JS for automated WhatsApp notifications.
-- **Email Integration**: Ethereal email configured for zero-config testing.
+- **Email Integration**: Ethereal & secure Gmail SMTP server configuration for notifications.
 - **File Uploads**: Secure file uploads using Multer.
-- **Authentication & Security**: JWT-based authentication and Bcrypt password hashing.
+- **Authentication & Security**: JWT-based authentication, Bcrypt password hashing, and active database password updates.
+- **Dynamic Personalization**: Day-of Class Timeline status countdowns and live graded performance charts.
 
 ## 🛠️ Technology Stack
 
@@ -45,8 +47,8 @@ Before you begin, ensure you have met the following requirements:
 
 1. **Clone the repository** (if not already done):
    ```bash
-   git clone https://github.com/Jaspreet-93/Aarambh-.git
-   cd Aarambh-
+   git clone https://github.com/Hussain-45/Aarambh-Education.git
+   cd Aarambh-Education
    ```
 
 2. **Install Frontend Dependencies:**
@@ -63,9 +65,10 @@ Before you begin, ensure you have met the following requirements:
    ```
 
 4. **Environment Variables:**
-   Create a `.env` file in the `server` directory based on the provided setup. Example:
+   Create a `.env` file in the `server` directory. Example:
    ```env
    SECRET_KEY=your_secret_jwt_key
+   PORT=5000
    ```
 
 ## ▶️ Execution Flow
@@ -90,6 +93,30 @@ The backend server handles API requests, database interactions, and the WhatsApp
    ```
 3. Open your browser and navigate to the URL provided by Vite (usually `http://localhost:5173`).
 
+---
+
+## 📱 Compiling to a Mobile App (APK)
+
+Aarambh can be compiled into a real mobile app (APK) using **Capacitor** for free local distribution:
+
+1. **Install Capacitor CLI & Android Platform**:
+   ```bash
+   npm install @capacitor/core @capacitor/cli
+   npx cap init Aarambh AarambhApp --web-dir=dist
+   npm install @capacitor/android
+   npx cap add android
+   ```
+2. **Build the Web App**:
+   ```bash
+   npm run build
+   npx cap sync
+   ```
+3. **Generate APK**:
+   * Open the project in Android Studio: `npx cap open android`.
+   * Go to **Build** ➔ **Build Bundle(s) / APK(s)** ➔ **Build APK(s)**.
+
+---
+
 ## 📊 Working & Execution Flowchart
 
 ```mermaid
@@ -107,11 +134,11 @@ graph TD
     C -->|Triggers| I[Nodemailer Email]
     
     H -->|Send Notification| J[WhatsApp User]
-    I -->|Send Email| K[Ethereal / User Email]
+    I -->|Send Email| K[Gmail / SMTP Email]
     
     E -->|Manage| L[Fees, Attendance, Students, Classes]
-    F -->|Manage| M[Assignments, Attendance]
-    G -->|View| N[Assignments, Fees, Calendar]
+    F -->|Manage| M[Assignments, Attendance, Doubt Desk]
+    G -->|View / Submit| N[Assignments, Fees, Doubts, Timeline]
 ```
 
 ## 📝 Available Commands
@@ -124,7 +151,4 @@ graph TD
 
 ### Backend (`server` Directory)
 - `node server.js`: Starts the Express server and initializes the WhatsApp client.
-- `node migrate.js` / `node migrate-assignments.js`: Run database migration scripts (if needed).
-
-## 🤝 Contributing
-Contributions are welcome! Feel free to open a pull request or an issue if you have suggestions.
+- `node migrate.js`: Run database migration scripts (if needed).
