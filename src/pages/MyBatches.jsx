@@ -40,41 +40,101 @@ const BatchesMainView = () => {
           <p style={{ color: 'var(--text-muted)', marginTop: '0.4rem', fontSize: '0.95rem' }}>Overview of active classes and student counts.</p>
         </div>
 
-        {/* Batches Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
-          {myClasses.map((cls) => {
-            const enrolledCount = students.filter(s => s.class === cls.name).length;
-            return (
-              <div 
-                key={cls.id} 
-                onClick={() => navigate(`/classes/${cls.id}`)}
-                className="prof-card"
-                style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '1.2rem', padding: '1.5rem' }}
-              >
-                <div className="flex-between">
-                  <span className="badge badge-primary" style={{ padding: '0.35rem 0.7rem', fontWeight: 700 }}>{cls.grade || 'Grade Level'}</span>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{cls.time}</span>
-                </div>
-                
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>{cls.name}</h3>
-                  <p style={{ margin: 0, marginTop: '0.25rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Weekly Session Slot</p>
-                </div>
+        {/* Split Dashboard View */}
+        <div style={{ display: 'grid', gridTemplateColumns: '3fr 1.5fr', gap: '2rem', alignItems: 'start' }}>
+          
+          {/* Left Column: Batches Grid */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+              {myClasses.map((cls) => {
+                const enrolledCount = students.filter(s => s.class === cls.name).length;
+                return (
+                  <div 
+                    key={cls.id} 
+                    onClick={() => navigate(`/classes/${cls.id}`)}
+                    className="prof-card"
+                    style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '1.2rem', padding: '1.5rem', transition: 'all 0.25s ease' }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.transform = 'translateY(-3px)';
+                      e.currentTarget.style.borderColor = 'var(--primary-text)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.transform = 'none';
+                      e.currentTarget.style.borderColor = 'var(--border-color)';
+                    }}
+                  >
+                    <div className="flex-between">
+                      <span className="badge badge-primary" style={{ padding: '0.35rem 0.7rem', fontWeight: 700 }}>{cls.grade || 'Grade Level'}</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{cls.time}</span>
+                    </div>
+                    
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>{cls.name}</h3>
+                      <p style={{ margin: 0, marginTop: '0.25rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Weekly Session Slot</p>
+                    </div>
 
-                <div className="flex-between" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.2rem', marginTop: '0.8rem' }}>
-                  <span className="flex-center gap-1" style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600 }}>
-                    <Users size={16} color="var(--primary-text)" /> Enrolled
-                  </span>
-                  <span style={{ fontWeight: 850, color: 'var(--text-main)', fontSize: '1.05rem' }}>{enrolledCount} Students</span>
+                    <div className="flex-between" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.2rem', marginTop: '0.8rem' }}>
+                      <span className="flex-center gap-1" style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600 }}>
+                        <Users size={16} color="var(--primary-text)" /> Enrolled
+                      </span>
+                      <span style={{ fontWeight: 850, color: 'var(--text-main)', fontSize: '1.05rem' }}>{enrolledCount} Students</span>
+                    </div>
+                  </div>
+                );
+              })}
+              {myClasses.length === 0 && (
+                <div className="prof-card" style={{ gridColumn: 'span 3', padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+                  No batches assigned to your teacher profile yet.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Teacher Stats & Timeline */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="prof-card" style={{ padding: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 750, margin: 0, marginBottom: '1.2rem', color: 'var(--text-main)' }}>Allotment Statistics</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.6rem', borderBottom: '1px dashed var(--border-color)' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Total Active Batches</span>
+                  <strong style={{ color: 'var(--text-main)', fontSize: '0.85rem' }}>{myClasses.length} Batches</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.6rem', borderBottom: '1px dashed var(--border-color)' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Enrolled Roster</span>
+                  <strong style={{ color: 'var(--text-main)', fontSize: '0.85rem' }}>
+                    {students.filter(s => myClasses.map(c=>c.name).includes(s.class)).length} Students
+                  </strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '0.6rem', borderBottom: '1px dashed var(--border-color)' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Weekly Lecture Hours</span>
+                  <strong style={{ color: 'var(--text-main)', fontSize: '0.85rem' }}>{myClasses.length * 7.5} Hours</strong>
                 </div>
               </div>
-            );
-          })}
-          {myClasses.length === 0 && (
-            <div className="prof-card" style={{ gridColumn: 'span 3', padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-              No batches assigned to your teacher profile yet.
             </div>
-          )}
+
+            <div className="prof-card" style={{ padding: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 750, margin: 0, marginBottom: '1.2rem', color: 'var(--text-main)' }}>Lecture Roster Schedule</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {myClasses.map((cls, idx) => (
+                  <div key={cls.id} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                    <div style={{ 
+                      width: '6px', height: '6px', borderRadius: '50%', 
+                      background: idx % 2 === 0 ? 'var(--primary-text)' : 'var(--warning)', 
+                      marginTop: '6px', flexShrink: 0 
+                    }}></div>
+                    <div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)' }}>{cls.name}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>{cls.time}</div>
+                    </div>
+                  </div>
+                ))}
+                {myClasses.length === 0 && (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>No lectures scheduled today.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
         </div>
       </main>
     </>
@@ -83,12 +143,16 @@ const BatchesMainView = () => {
 
 // 2. DETAILED BATCH ROSTER & WORKSPACE DRILLDOWN
 const BatchDrilldown = ({ classId }) => {
-  const { classes, students, assignments, library, attendance, teachers, loggedInUser, markAttendance } = useContext(AppContext);
+  const { classes, students, assignments, library, attendance, teachers, loggedInUser, markAttendance, triggerMarkAttendance } = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
 
   const classData = classes.find(c => c.id === classId);
-  const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'roster');
+  const [activeTab, setActiveTab] = useState(() => {
+    const passed = location.state?.activeTab;
+    if (passed === 'academics') return 'deployed';
+    return passed || 'roster';
+  });
 
   // Date default to today
   const todayStr = new Date().toISOString().split('T')[0];
@@ -270,7 +334,7 @@ const BatchDrilldown = ({ classId }) => {
                           </a>
                         </div>
                       </td>
-                      <td style={{ fontSize: '0.9rem', color: 'var(--text-muted)', padding: '1.2rem 1rem', fontWeight: 500 }}>{student.email}</td>
+                      <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)', padding: '1.2rem 1rem', fontWeight: 500, wordBreak: 'break-all' }}>{student.email}</td>
                       <td style={{ textAlign: 'center', fontWeight: 800, color: '#10b981', padding: '1.2rem 1rem' }}>
                         {calculateAttendanceRate(student.id)}
                       </td>
@@ -334,6 +398,7 @@ const BatchDrilldown = ({ classId }) => {
                   <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
                     <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800 }}>ROLL NUMBER</th>
                     <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800 }}>STUDENT NAME</th>
+                    <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800 }}>STATUS</th>
                     <th style={{ textAlign: 'center', padding: '1rem', width: '340px', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800 }}>TOGGLE STATUS</th>
                   </tr>
                 </thead>
@@ -345,9 +410,40 @@ const BatchDrilldown = ({ classId }) => {
                       <tr key={student.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.2s ease' }}>
                         <td style={{ fontWeight: 750, color: 'var(--primary-text)', padding: '1.2rem 1rem' }}>{student.admission_number || `#00${student.id}`}</td>
                         <td style={{ fontWeight: 600, color: 'var(--text-main)', padding: '1.2rem 1rem' }}>{student.name}</td>
+                        <td style={{ padding: '1.2rem 1rem' }}>
+                          {currentStatus ? (
+                            <span style={{ 
+                              fontSize: '0.75rem', 
+                              color: '#10b981', 
+                              background: 'rgba(16, 185, 129, 0.1)', 
+                              padding: '0.25rem 0.6rem', 
+                              borderRadius: '6px', 
+                              fontWeight: 600,
+                              border: '1px solid rgba(16, 185, 129, 0.2)',
+                              display: 'inline-flex',
+                              alignItems: 'center'
+                            }}>
+                              ✓ Marked: {currentStatus}
+                            </span>
+                          ) : (
+                            <span style={{ 
+                              fontSize: '0.75rem', 
+                              color: 'var(--text-muted)', 
+                              background: 'rgba(255,255,255,0.03)', 
+                              padding: '0.25rem 0.6rem', 
+                              borderRadius: '6px', 
+                              fontWeight: 500,
+                              border: '1px solid var(--border-color)',
+                              display: 'inline-flex',
+                              alignItems: 'center'
+                            }}>
+                              Not Marked
+                            </span>
+                          )}
+                        </td>
                         <td style={{ padding: '1rem', display: 'flex', gap: '0.6rem', justifyContent: 'center', alignItems: 'center' }}>
                           <button 
-                            onClick={() => markAttendance(student.id, selectedDate, 'Present')}
+                            onClick={() => triggerMarkAttendance(student.id, selectedDate, 'Present')}
                             style={{
                               flex: 1,
                               padding: '0.5rem 0.8rem',
@@ -365,7 +461,7 @@ const BatchDrilldown = ({ classId }) => {
                             Present
                           </button>
                           <button 
-                            onClick={() => markAttendance(student.id, selectedDate, 'Late')}
+                            onClick={() => triggerMarkAttendance(student.id, selectedDate, 'Late')}
                             style={{
                               flex: 1,
                               padding: '0.5rem 0.8rem',
@@ -383,7 +479,7 @@ const BatchDrilldown = ({ classId }) => {
                             Late
                           </button>
                           <button 
-                            onClick={() => markAttendance(student.id, selectedDate, 'Absent')}
+                            onClick={() => triggerMarkAttendance(student.id, selectedDate, 'Absent')}
                             style={{
                               flex: 1,
                               padding: '0.5rem 0.8rem',
@@ -406,7 +502,7 @@ const BatchDrilldown = ({ classId }) => {
                   })}
                   {classStudents.length === 0 && (
                     <tr>
-                      <td colSpan="3" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                      <td colSpan="4" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
                         No students enrolled in this batch.
                       </td>
                     </tr>

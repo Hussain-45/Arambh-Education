@@ -2,18 +2,10 @@ import React, { useState, useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 
 const ProfitLoss = () => {
-  const { userRole } = useContext(AppContext);
-
-  // local state to store ledger items
-  const [ledgerItems, setLedgerItems] = useState([
-    { id: 1, category: 'Student Fees', desc: 'Course fee collected dynamically', amount: 70000, type: 'Income', date: '2026-07-02' },
-    { id: 2, category: 'Infrastructure Rent', desc: 'Monthly facility rent allocation', amount: -8000, type: 'Expense', date: '2026-07-01' },
-    { id: 3, category: 'Faculty Payroll', desc: 'Monthly core teacher payout allocation', amount: -5000, type: 'Expense', date: '2026-07-01' },
-    { id: 4, category: 'Software Server Cloud', desc: 'Database cloud server host billing', amount: -2000, type: 'Expense', date: '2026-06-30' },
-  ]);
+  const { userRole, fees, expenses, students, addExpense, removeExpense, addToast } = useContext(AppContext);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newForm, setNewForm] = useState({
@@ -39,17 +31,38 @@ const ProfitLoss = () => {
     );
   }
 
+  // Combined ledger calculation from actual fees & expenses
+  const feeIncomeItems = fees
+    .filter(f => (f.paid || 0) > 0)
+    .map(f => {
+      const student = students.find(s => s.id === f.studentId || s.id === f.student_id);
+      return {
+        id: `fee_${f.id}`,
+        category: 'Student Fees',
+        desc: `Tuition Fee: ${student?.name || 'Student'} (${f.month || 'Current'})`,
+        amount: f.paid,
+        type: 'Income',
+        date: f.due_date || '2026-07-10',
+        isFee: true
+      };
+    });
+
+  const expenseItems = expenses.map(e => ({
+    id: `exp_${e.id}`,
+    category: e.title,
+    desc: 'Recorded Expense',
+    amount: -e.amount,
+    type: 'Expense',
+    date: e.date,
+    isExpense: true,
+    rawId: e.id
+  }));
+
+  const ledgerItems = [...feeIncomeItems, ...expenseItems].sort((a, b) => new Date(b.date) - new Date(a.date));
+
   // Dynamic Calculations
-  const grossRevenue = ledgerItems
-    .filter(t => t.amount > 0)
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const operatingCosts = Math.abs(
-    ledgerItems
-      .filter(t => t.amount < 0)
-      .reduce((sum, t) => sum + t.amount, 0)
-  );
-
+  const grossRevenue = fees.reduce((sum, f) => sum + (f.paid || 0), 0);
+  const operatingCosts = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
   const netIncome = grossRevenue - operatingCosts;
   const profitMargin = grossRevenue > 0 ? ((netIncome / grossRevenue) * 100).toFixed(1) : '0.0';
 
@@ -58,30 +71,27 @@ const ProfitLoss = () => {
     return '₹' + val.toLocaleString('en-IN');
   };
 
-  const handleAddSubmit = (e) => {
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
     const amountVal = parseFloat(newForm.amount);
     if (isNaN(amountVal) || amountVal <= 0) return;
 
-    const newItem = {
-      id: Date.now(),
-      category: newForm.category,
-      desc: newForm.desc,
-      amount: newForm.type === 'Income' ? amountVal : -amountVal,
-      type: newForm.type,
-      date: newForm.date
-    };
+    if (newForm.type === 'Income') {
+      addToast('Direct Income entries are managed via Fee Collections.', 'warning');
+      return;
+    }
 
-    setLedgerItems(prev => [newItem, ...prev]);
-    setShowAddForm(false);
-    // Reset form
-    setNewForm({
-      category: '',
-      desc: '',
-      amount: '',
-      type: 'Expense',
-      date: new Date().toISOString().split('T')[0]
-    });
+    const success = await addExpense(newForm.category, amountVal);
+    if (success) {
+      setShowAddForm(false);
+      setNewForm({
+        category: '',
+        desc: '',
+        amount: '',
+        type: 'Expense',
+        date: new Date().toISOString().split('T')[0]
+      });
+    }
   };
 
   return (
@@ -243,7 +253,8 @@ const ProfitLoss = () => {
                   <th style={{ textAlign: 'left', padding: '1rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)' }}>Description</th>
                   <th style={{ textAlign: 'center', padding: '1rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)' }}>Amount</th>
                   <th style={{ textAlign: 'center', padding: '1rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)' }}>Type</th>
-                  <th style={{ textAlign: 'right', padding: '1rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)' }}>Date</th>
+                  <th style={{ textAlign: 'center', padding: '1rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)' }}>Date</th>
+                  <th style={{ textAlign: 'right', padding: '1rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-color)' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -286,8 +297,43 @@ const ProfitLoss = () => {
                         </span>
                       </td>
                       {/* Date */}
-                      <td style={{ padding: '1.25rem 1rem', fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'right', fontWeight: 600 }}>
+                      <td style={{ padding: '1.25rem 1rem', fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', fontWeight: 600 }}>
                         {item.date}
+                      </td>
+                      {/* Actions */}
+                      <td style={{ padding: '1.25rem 1rem', textAlign: 'right' }}>
+                        {item.isExpense ? (
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Are you sure you want to delete this expense: ${item.category}?`)) {
+                                removeExpense(item.rawId);
+                              }
+                            }}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#ef4444',
+                              cursor: 'pointer',
+                              padding: '4px'
+                            }}
+                            title="Delete Expense"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        ) : (
+                          <span style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: 'var(--text-muted)',
+                            background: 'var(--secondary)',
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border-color)',
+                            display: 'inline-block'
+                          }}>
+                            System Generated
+                          </span>
+                        )}
                       </td>
                     </tr>
                   );

@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import { UserPlus, Download, Trash2, Edit2, Search, Filter } from 'lucide-react';
+import { UserPlus, Download, Trash2, Edit2, Search, Filter, Phone, User, Calendar, MapPin, Award, Percent } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 
 const Students = () => {
@@ -17,67 +17,151 @@ const Students = () => {
   // Add Form State
   const [newName, setNewName] = useState('');
   const [newClass, setNewClass] = useState('');
-  const [newPhone, setNewPhone] = useState('');
+  const [newParentPhone, setNewParentPhone] = useState('');
   const [newFatherName, setNewFatherName] = useState('');
+  const [newMotherName, setNewMotherName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newBirthdate, setNewBirthdate] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newGender, setNewGender] = useState('');
+  const [newBloodGroup, setNewBloodGroup] = useState('');
+  const [newAddress, setNewAddress] = useState('');
+  const [newDiscountPercent, setNewDiscountPercent] = useState('0');
+  const [newRegDate, setNewRegDate] = useState(new Date().toISOString().split('T')[0]);
+  const [newPassword, setNewPassword] = useState('');
 
   // Edit Form State
   const [editName, setEditName] = useState('');
   const [editClass, setEditClass] = useState('');
-  const [editPhone, setEditPhone] = useState('');
+  const [editParentPhone, setEditParentPhone] = useState('');
   const [editFatherName, setEditFatherName] = useState('');
+  const [editMotherName, setEditMotherName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editBirthdate, setEditBirthdate] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editGender, setEditGender] = useState('');
+  const [editBloodGroup, setEditBloodGroup] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editDiscountPercent, setEditDiscountPercent] = useState('0');
+  const [editRegDate, setEditRegDate] = useState('');
+  const [editPassword, setEditPassword] = useState('');
 
   const displayClasses = userRole === 'teacher' 
     ? classes.filter(c => (loggedInUser?.assignedClasses || []).includes(c.name))
     : classes;
 
   const handleExportCSV = () => {
-    const headers = ['ID', 'Name', 'Class', 'Parent Phone', 'Father Name', 'Email', 'Birthdate'];
-    const rows = students.map(s => [s.id, s.name, s.class, s.parentPhone, s.fatherName, s.email, s.birthdate]);
+    const headers = ['Admission ID', 'Name', 'Class', 'Father Name', 'Mother Name', 'Parent Phone', 'Student Phone', 'Email', 'Birthdate', 'Gender', 'Blood Group', 'Address', 'Scholarship Discount (%)', 'Enrollment Date'];
+    const rows = students.map(s => [
+      s.admission_number || 'N/A', 
+      s.name, 
+      s.class, 
+      s.fatherName, 
+      s.motherName || 'N/A', 
+      s.parentPhone, 
+      s.phone || 'N/A', 
+      s.email || 'N/A', 
+      s.birthdate || 'N/A',
+      s.gender || 'N/A',
+      s.bloodGroup || 'N/A',
+      s.address || 'N/A',
+      s.discountPercent || 0,
+      s.registrationDate || 'N/A'
+    ]);
     exportToCSV('students_list', rows, headers);
   };
 
-  const handleAddStudent = () => {
-    if (!newName || !newClass || !newPhone || !newFatherName) {
-      addToast('Please fill in all required fields.', 'warning');
+  const handleAddStudent = async () => {
+    if (!newName || !newClass || !newParentPhone || !newFatherName) {
+      addToast('Please fill in all required fields (Name, Batch, Parent Phone, Father Name).', 'warning');
       return;
     }
     
-    addStudent(newName, newClass, newPhone, newFatherName, newEmail, newBirthdate);
-    setShowModal(false);
-    
-    // Reset form
-    setNewName('');
-    setNewClass('');
-    setNewPhone('');
-    setNewFatherName('');
-    setNewEmail('');
-    setNewBirthdate('');
+    const studentObj = {
+      name: newName,
+      class: newClass,
+      parentPhone: newParentPhone,
+      fatherName: newFatherName,
+      motherName: newMotherName,
+      email: newEmail,
+      birthdate: newBirthdate,
+      phone: newPhone,
+      gender: newGender,
+      bloodGroup: newBloodGroup,
+      address: newAddress,
+      discountPercent: parseInt(newDiscountPercent) || 0,
+      registrationDate: newRegDate,
+      password: newPassword || 'password'
+    };
+
+    const success = await addStudent(studentObj);
+    if (success) {
+      setShowModal(false);
+      // Reset form
+      setNewName('');
+      setNewClass('');
+      setNewParentPhone('');
+      setNewFatherName('');
+      setNewMotherName('');
+      setNewEmail('');
+      setNewBirthdate('');
+      setNewPhone('');
+      setNewGender('');
+      setNewBloodGroup('');
+      setNewAddress('');
+      setNewDiscountPercent('0');
+      setNewRegDate(new Date().toISOString().split('T')[0]);
+      setNewPassword('');
+    }
   };
 
   const handleOpenEditModal = (student) => {
     setEditingStudent(student);
     setEditName(student.name || '');
     setEditClass(student.class || '');
-    setEditPhone(student.parentPhone || '');
+    setEditParentPhone(student.parentPhone || '');
     setEditFatherName(student.fatherName || '');
+    setEditMotherName(student.motherName || '');
     setEditEmail(student.email || '');
     setEditBirthdate(student.birthdate || '');
+    setEditPhone(student.phone || '');
+    setEditGender(student.gender || '');
+    setEditBloodGroup(student.bloodGroup || '');
+    setEditAddress(student.address || '');
+    setEditDiscountPercent(student.discountPercent || '0');
+    setEditRegDate(student.registrationDate || '');
+    setEditPassword('');
     setShowEditModal(true);
   };
 
-  const handleSaveEdit = () => {
-    if (!editName || !editClass || !editPhone || !editFatherName) {
+  const handleSaveEdit = async () => {
+    if (!editName || !editClass || !editParentPhone || !editFatherName) {
       addToast('Please fill in all required fields.', 'warning');
       return;
     }
 
-    editStudent(editingStudent.id, editName, editClass, editPhone, editFatherName, editEmail, editBirthdate);
-    setShowEditModal(false);
-    setEditingStudent(null);
+    const studentObj = {
+      name: editName,
+      class: editClass,
+      parentPhone: editParentPhone,
+      fatherName: editFatherName,
+      motherName: editMotherName,
+      email: editEmail,
+      birthdate: editBirthdate,
+      phone: editPhone,
+      gender: editGender,
+      bloodGroup: editBloodGroup,
+      address: editAddress,
+      discountPercent: parseInt(editDiscountPercent) || 0,
+      registrationDate: editRegDate,
+      password: editPassword || null
+    };
+
+    const success = await editStudent(editingStudent.id, studentObj);
+    if (success) {
+      setShowEditModal(false);
+      setEditingStudent(null);
+    }
   };
 
   const handleDeleteStudent = (id, name) => {
@@ -111,6 +195,7 @@ const Students = () => {
     const matchesSearch = 
       (student.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (student.fatherName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (student.admission_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (student.parentPhone || '').toLowerCase().includes(searchTerm.toLowerCase());
       
     const matchesBatch = selectedBatch === 'all' || student.class === selectedBatch;
@@ -145,7 +230,7 @@ const Students = () => {
               <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
               <input 
                 type="text" 
-                placeholder="Search students by name, father's name, phone..."
+                placeholder="Search students by name, ID, phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="prof-input"
@@ -170,7 +255,7 @@ const Students = () => {
           </div>
           
           {/* Card Grid Layout */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
             {filteredStudents.map((student) => (
               <div key={student.id} className="prof-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'relative' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -187,35 +272,60 @@ const Students = () => {
                     <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {student.name}
                     </h3>
-                    <span className="badge badge-warning" style={{ fontSize: '0.75rem', marginTop: '0.25rem', display: 'inline-block' }}>
-                      {student.class}
-                    </span>
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '0.25rem', flexWrap: 'wrap' }}>
+                      <span className="badge badge-warning" style={{ fontSize: '0.75rem' }}>
+                        {student.class}
+                      </span>
+                      {student.discountPercent > 0 && (
+                        <span className="badge badge-success" style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          <Percent size={10} /> {student.discountPercent}% Sch.
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Roll No / Admission:</span>
-                    <span style={{ fontWeight: 600 }}>{student.admission_number || `AES${student.id}`}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>Admission ID:</span>
+                    <span style={{ fontWeight: 600, color: 'var(--primary-color)' }}>{student.admission_number || 'AES-N/A'}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: 'var(--text-muted)' }}>Father's Name:</span>
                     <span style={{ fontWeight: 600 }}>{student.fatherName}</span>
                   </div>
+                  {student.motherName && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Mother's Name:</span>
+                      <span style={{ fontWeight: 600 }}>{student.motherName}</span>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: 'var(--text-muted)' }}>Parent Phone:</span>
                     <span style={{ fontWeight: 600 }}>{student.parentPhone}</span>
                   </div>
-                  {student.email && (
+                  {student.phone && (
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>Email:</span>
-                      <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px' }}>{student.email}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>Student Phone:</span>
+                      <span style={{ fontWeight: 600 }}>{student.phone}</span>
                     </div>
                   )}
-                  {student.birthdate && (
+                  {student.gender && (
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>Birthdate:</span>
-                      <span style={{ fontWeight: 600 }}>{student.birthdate}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>Gender / Blood:</span>
+                      <span style={{ fontWeight: 600 }}>{student.gender} ({student.bloodGroup || 'N/A'})</span>
+                    </div>
+                  )}
+                  {student.address && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>Address:</span>
+                      <span style={{ fontWeight: 500, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }} title={student.address}>{student.address}</span>
+                    </div>
+                  )}
+                  {student.registrationDate && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Enrolled Date:</span>
+                      <span style={{ fontWeight: 600 }}>{student.registrationDate}</span>
                     </div>
                   )}
                 </div>
@@ -227,7 +337,7 @@ const Students = () => {
                       className="prof-btn prof-btn-secondary" 
                       style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
                     >
-                      <Edit2 size={12} style={{ marginRight: '4px' }} /> Edit
+                      <Edit2 size={12} style={{ marginRight: '4px' }} /> Edit Profile
                     </button>
                     <button 
                       onClick={() => handleDeleteStudent(student.id, student.name)} 
@@ -251,61 +361,189 @@ const Students = () => {
         {/* Add Student Modal */}
         {showModal && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 999 }}>
-            <div className="prof-card" style={{ width: '400px' }}>
+            <div className="prof-card" style={{ width: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
               <h3>Add New Student</h3>
-              <input 
-                type="text" 
-                placeholder="Full Name" 
-                className="prof-input" 
-                style={{ marginTop: '1rem' }} 
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-              />
-              <input 
-                type="text" 
-                placeholder="Father's Name" 
-                className="prof-input" 
-                style={{ marginTop: '1rem' }} 
-                value={newFatherName}
-                onChange={(e) => setNewFatherName(e.target.value)}
-              />
-              <select 
-                className="prof-input" 
-                style={{ marginTop: '1rem', width: '100%' }}
-                value={newClass}
-                onChange={(e) => setNewClass(e.target.value)}
-              >
-                <option value="">Select Batch/Class</option>
-                {classes.map(cls => (
-                  <option key={cls.id} value={cls.name}>{cls.name}</option>
-                ))}
-              </select>
-              <input 
-                type="tel" 
-                placeholder="Parent Phone" 
-                className="prof-input" 
-                style={{ marginTop: '1rem' }} 
-                value={newPhone}
-                onChange={(e) => setNewPhone(e.target.value)}
-              />
-              <input 
-                type="email" 
-                placeholder="Parent Email Address" 
-                className="prof-input" 
-                style={{ marginTop: '1rem' }} 
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-              />
-              <div style={{ position: 'relative', marginTop: '1rem' }}>
-                <input 
-                  type="date" 
-                  placeholder="Student Birthdate" 
-                  className="prof-input" 
-                  value={newBirthdate}
-                  onChange={(e) => setNewBirthdate(e.target.value)}
-                />
-                <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Birthdate</span>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Student Name *</label>
+                  <input 
+                    type="text" 
+                    placeholder="Full Name" 
+                    className="prof-input" 
+                    style={{ marginTop: '4px' }}
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Father's Name *</label>
+                    <input 
+                      type="text" 
+                      placeholder="Father's Name" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={newFatherName}
+                      onChange={(e) => setNewFatherName(e.target.value)}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Mother's Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="Mother's Name" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={newMotherName}
+                      onChange={(e) => setNewMotherName(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Assign Batch/Class *</label>
+                    <select 
+                      className="prof-input" 
+                      style={{ marginTop: '4px', width: '100%' }}
+                      value={newClass}
+                      onChange={(e) => setNewClass(e.target.value)}
+                    >
+                      <option value="">Select Batch/Class</option>
+                      {classes.map(cls => (
+                        <option key={cls.id} value={cls.name}>{cls.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Scholarship Discount (%)</label>
+                    <input 
+                      type="number" 
+                      min="0" 
+                      max="100" 
+                      placeholder="0" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={newDiscountPercent}
+                      onChange={(e) => setNewDiscountPercent(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Parent Mobile (Login ID) *</label>
+                    <input 
+                      type="tel" 
+                      placeholder="10-digit Parent Mobile" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={newParentPhone}
+                      onChange={(e) => setNewParentPhone(e.target.value)}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Student Personal Mobile</label>
+                    <input 
+                      type="tel" 
+                      placeholder="Student Mobile" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Portal Password (default: password)</label>
+                  <input 
+                    type="password" 
+                    placeholder="Login Password" 
+                    className="prof-input" 
+                    style={{ marginTop: '4px' }}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Parent Email Address</label>
+                    <input 
+                      type="email" 
+                      placeholder="Email Address" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Birthdate</label>
+                    <input 
+                      type="date" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={newBirthdate}
+                      onChange={(e) => setNewBirthdate(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Gender</label>
+                    <select 
+                      className="prof-input" 
+                      style={{ marginTop: '4px', width: '100%' }}
+                      value={newGender}
+                      onChange={(e) => setNewGender(e.target.value)}
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Blood Group</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. O+, A-" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={newBloodGroup}
+                      onChange={(e) => setNewBloodGroup(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Home Address</label>
+                  <textarea 
+                    placeholder="Residential Address" 
+                    className="prof-input" 
+                    style={{ marginTop: '4px', height: '60px', resize: 'vertical' }}
+                    value={newAddress}
+                    onChange={(e) => setNewAddress(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Enrollment Date</label>
+                  <input 
+                    type="date" 
+                    className="prof-input" 
+                    style={{ marginTop: '4px' }}
+                    value={newRegDate}
+                    onChange={(e) => setNewRegDate(e.target.value)}
+                  />
+                </div>
               </div>
+
               <div className="flex-between" style={{ marginTop: '1.5rem' }}>
                 <button onClick={() => setShowModal(false)} className="prof-btn prof-btn-secondary">Cancel</button>
                 <button onClick={handleAddStudent} className="prof-btn">Save Student</button>
@@ -317,74 +555,189 @@ const Students = () => {
         {/* Edit Student Modal */}
         {showEditModal && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 999 }}>
-            <div className="prof-card" style={{ width: '400px' }}>
-              <h3>Edit Student Details</h3>
+            <div className="prof-card" style={{ width: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+              <h3>Edit Student Profile</h3>
+              
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Full Name *</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Student Name *</label>
                   <input 
                     type="text" 
                     placeholder="Full Name" 
                     className="prof-input" 
+                    style={{ marginTop: '4px' }}
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                   />
                 </div>
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Father's Name *</label>
+                    <input 
+                      type="text" 
+                      placeholder="Father's Name" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={editFatherName}
+                      onChange={(e) => setEditFatherName(e.target.value)}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Mother's Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="Mother's Name" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={editMotherName}
+                      onChange={(e) => setEditMotherName(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Batch/Class *</label>
+                    <select 
+                      className="prof-input" 
+                      style={{ marginTop: '4px', width: '100%' }}
+                      value={editClass}
+                      onChange={(e) => setEditClass(e.target.value)}
+                    >
+                      <option value="">Select Batch/Class</option>
+                      {classes.map(cls => (
+                        <option key={cls.id} value={cls.name}>{cls.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Scholarship Discount (%)</label>
+                    <input 
+                      type="number" 
+                      min="0" 
+                      max="100" 
+                      placeholder="0" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={editDiscountPercent}
+                      onChange={(e) => setEditDiscountPercent(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Parent Mobile (Login ID) *</label>
+                    <input 
+                      type="tel" 
+                      placeholder="Parent Phone" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={editParentPhone}
+                      onChange={(e) => setEditParentPhone(e.target.value)}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Student Personal Mobile</label>
+                    <input 
+                      type="tel" 
+                      placeholder="Student Phone" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Father's Name *</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>New Password (leave blank to keep current)</label>
                   <input 
-                    type="text" 
-                    placeholder="Father's Name" 
+                    type="password" 
+                    placeholder="••••••••" 
                     className="prof-input" 
-                    value={editFatherName}
-                    onChange={(e) => setEditFatherName(e.target.value)}
+                    style={{ marginTop: '4px' }}
+                    value={editPassword}
+                    onChange={(e) => setEditPassword(e.target.value)}
                   />
                 </div>
-                <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Batch/Class *</label>
-                  <select 
-                    className="prof-input" 
-                    style={{ width: '100%' }}
-                    value={editClass}
-                    onChange={(e) => setEditClass(e.target.value)}
-                  >
-                    <option value="">Select Batch/Class</option>
-                    {classes.map(cls => (
-                      <option key={cls.id} value={cls.name}>{cls.name}</option>
-                    ))}
-                  </select>
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Parent Email Address</label>
+                    <input 
+                      type="email" 
+                      placeholder="Email Address" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Birthdate</label>
+                    <input 
+                      type="date" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={editBirthdate}
+                      onChange={(e) => setEditBirthdate(e.target.value)}
+                    />
+                  </div>
                 </div>
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Gender</label>
+                    <select 
+                      className="prof-input" 
+                      style={{ marginTop: '4px', width: '100%' }}
+                      value={editGender}
+                      onChange={(e) => setEditGender(e.target.value)}
+                    >
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Blood Group</label>
+                    <input 
+                      type="text" 
+                      placeholder="Blood Group" 
+                      className="prof-input" 
+                      style={{ marginTop: '4px' }}
+                      value={editBloodGroup}
+                      onChange={(e) => setNewBloodGroup(e.target.value)}
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Parent Phone *</label>
-                  <input 
-                    type="tel" 
-                    placeholder="Parent Phone" 
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Home Address</label>
+                  <textarea 
+                    placeholder="Address" 
                     className="prof-input" 
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
+                    style={{ marginTop: '4px', height: '60px', resize: 'vertical' }}
+                    value={editAddress}
+                    onChange={(e) => setEditAddress(e.target.value)}
                   />
                 </div>
+
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Parent Email Address</label>
-                  <input 
-                    type="email" 
-                    placeholder="Parent Email Address" 
-                    className="prof-input" 
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Student Birthdate</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>Enrollment Date</label>
                   <input 
                     type="date" 
-                    placeholder="Student Birthdate" 
                     className="prof-input" 
-                    value={editBirthdate}
-                    onChange={(e) => setEditBirthdate(e.target.value)}
+                    style={{ marginTop: '4px' }}
+                    value={editRegDate}
+                    onChange={(e) => setEditRegDate(e.target.value)}
                   />
                 </div>
               </div>
+
               <div className="flex-between" style={{ marginTop: '1.5rem' }}>
                 <button onClick={() => { setShowEditModal(false); setEditingStudent(null); }} className="prof-btn prof-btn-secondary">Cancel</button>
                 <button onClick={handleSaveEdit} className="prof-btn">Save Changes</button>

@@ -5,7 +5,7 @@ import Header from '../components/Header';
 import { Users, Calendar as CalendarIcon, CheckCircle2, AlertTriangle, XCircle, Sparkles } from 'lucide-react';
 
 const TeacherAttendance = () => {
-  const { loggedInUser, classes, students, attendance, markAttendance, teachers } = useContext(AppContext);
+  const { loggedInUser, classes, students, attendance, markAttendance, triggerMarkAttendance, teachers } = useContext(AppContext);
   
   // Date default to today
   const todayStr = new Date().toISOString().split('T')[0];
@@ -25,6 +25,22 @@ const TeacherAttendance = () => {
   if (!loggedInUser) return null;
 
   const classStudents = students.filter(s => s.class === selectedClass);
+
+  // Dynamic metrics calculations
+  const totalCount = classStudents.length;
+  const presentCount = classStudents.filter(s => {
+    const record = attendance.find(a => a.studentId === s.id && a.date === selectedDate);
+    return record && record.status === 'Present';
+  }).length;
+  const lateCount = classStudents.filter(s => {
+    const record = attendance.find(a => a.studentId === s.id && a.date === selectedDate);
+    return record && record.status === 'Late';
+  }).length;
+  const absentCount = classStudents.filter(s => {
+    const record = attendance.find(a => a.studentId === s.id && a.date === selectedDate);
+    return record && record.status === 'Absent';
+  }).length;
+  const unmarkedCount = totalCount - (presentCount + lateCount + absentCount);
 
   const handleMarkAllPresent = async () => {
     for (const student of classStudents) {
@@ -117,6 +133,30 @@ const TeacherAttendance = () => {
           </div>
         </div>
 
+        {/* Attendance Summary Metrics Bar */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+          <div className="prof-card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: '4px solid var(--primary-text)' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)' }}>TOTAL ROSTER</span>
+            <span style={{ fontSize: '1.4rem', fontWeight: 850 }}>{totalCount} Students</span>
+          </div>
+          <div className="prof-card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: '4px solid #10b981' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)' }}>PRESENT</span>
+            <span style={{ fontSize: '1.4rem', fontWeight: 850, color: '#10b981' }}>{presentCount}</span>
+          </div>
+          <div className="prof-card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: '4px solid #f59e0b' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)' }}>LATE</span>
+            <span style={{ fontSize: '1.4rem', fontWeight: 850, color: '#f59e0b' }}>{lateCount}</span>
+          </div>
+          <div className="prof-card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: '4px solid #ef4444' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)' }}>ABSENT</span>
+            <span style={{ fontSize: '1.4rem', fontWeight: 850, color: '#ef4444' }}>{absentCount}</span>
+          </div>
+          <div className="prof-card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: '4px solid var(--border-color)' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)' }}>UNMARKED</span>
+            <span style={{ fontSize: '1.4rem', fontWeight: 850, color: 'var(--text-muted)' }}>{unmarkedCount}</span>
+          </div>
+        </div>
+
         {/* Student Roster Matrix */}
         <div className="prof-card" style={{ padding: '1.8rem' }}>
           <div className="flex-between" style={{ marginBottom: '1.8rem' }}>
@@ -132,6 +172,7 @@ const TeacherAttendance = () => {
                 <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
                   <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.05em' }}>ADMISSION ROLL</th>
                   <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.05em' }}>STUDENT NAME</th>
+                  <th style={{ textAlign: 'left', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.05em' }}>STATUS</th>
                   <th style={{ textAlign: 'center', padding: '1rem', width: '360px', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.05em' }}>ATTENDANCE STATUS</th>
                 </tr>
               </thead>
@@ -143,11 +184,42 @@ const TeacherAttendance = () => {
                     <tr key={student.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.2s ease' }}>
                       <td style={{ fontWeight: 700, color: 'var(--primary-text)', padding: '1.2rem 1rem' }}>{student.admission_number || `#00${student.id}`}</td>
                       <td style={{ fontWeight: 600, color: 'var(--text-main)', padding: '1.2rem 1rem' }}>{student.name}</td>
+                      <td style={{ padding: '1.2rem 1rem' }}>
+                        {currentStatus ? (
+                          <span style={{ 
+                            fontSize: '0.75rem', 
+                            color: '#10b981', 
+                            background: 'rgba(16, 185, 129, 0.1)', 
+                            padding: '0.25rem 0.6rem', 
+                            borderRadius: '6px', 
+                            fontWeight: 600,
+                            border: '1px solid rgba(16, 185, 129, 0.2)',
+                            display: 'inline-flex',
+                            alignItems: 'center'
+                          }}>
+                            ✓ Marked: {currentStatus}
+                          </span>
+                        ) : (
+                          <span style={{ 
+                            fontSize: '0.75rem', 
+                            color: 'var(--text-muted)', 
+                            background: 'rgba(255,255,255,0.03)', 
+                            padding: '0.25rem 0.6rem', 
+                            borderRadius: '6px', 
+                            fontWeight: 500,
+                            border: '1px solid var(--border-color)',
+                            display: 'inline-flex',
+                            alignItems: 'center'
+                          }}>
+                            Not Marked
+                          </span>
+                        )}
+                      </td>
                       <td style={{ padding: '1rem', display: 'flex', gap: '0.6rem', justifyContent: 'center', alignItems: 'center' }}>
                         
                         {/* Present Toggle */}
                         <button 
-                          onClick={() => markAttendance(student.id, selectedDate, 'Present')}
+                          onClick={() => triggerMarkAttendance(student.id, selectedDate, 'Present')}
                           style={{
                             flex: 1,
                             padding: '0.5rem 0.8rem',
@@ -171,7 +243,7 @@ const TeacherAttendance = () => {
 
                         {/* Late Toggle */}
                         <button 
-                          onClick={() => markAttendance(student.id, selectedDate, 'Late')}
+                          onClick={() => triggerMarkAttendance(student.id, selectedDate, 'Late')}
                           style={{
                             flex: 1,
                             padding: '0.5rem 0.8rem',
@@ -195,7 +267,7 @@ const TeacherAttendance = () => {
 
                         {/* Absent Toggle */}
                         <button 
-                          onClick={() => markAttendance(student.id, selectedDate, 'Absent')}
+                          onClick={() => triggerMarkAttendance(student.id, selectedDate, 'Absent')}
                           style={{
                             flex: 1,
                             padding: '0.5rem 0.8rem',
@@ -223,7 +295,7 @@ const TeacherAttendance = () => {
                 })}
                 {classStudents.length === 0 && (
                   <tr>
-                    <td colSpan="3" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+                    <td colSpan="4" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
                       No students enrolled in this batch.
                     </td>
                   </tr>

@@ -76,6 +76,7 @@ const Sidebar = () => {
             <SidebarItem icon={BookOpen} label="Assignments" active={path === '/assignments'} onClick={() => navigate('/assignments')} />
             <SidebarItem icon={BookOpen} label="Study Material" active={path === '/library'} onClick={() => navigate('/library')} />
             <SidebarItem icon={MessageSquare} label="Announcements" active={path === '/messages'} onClick={() => navigate('/messages')} />
+            <SidebarItem icon={Calendar} label="Events" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
             <SidebarItem icon={ClipboardList} label="Requests" active={path === '/requests'} onClick={() => navigate('/requests')} />
             <SidebarItem icon={Clock} label="System History" active={path === '/history'} onClick={() => navigate('/history')} />
           </>

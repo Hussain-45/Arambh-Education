@@ -2,13 +2,13 @@ import React, { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import { Plus, Check, FileText, Users, ChevronRight, Wifi, WifiOff } from 'lucide-react';
+import { Plus, Check, FileText, Users, ChevronRight, Wifi, WifiOff, Trash } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Assignments = () => {
   const { 
     userRole, assignments, submissions, students, loggedInUser, addAssignment, classes,
-    addSubmission, addOfflineSubmission, syncOfflineSubmissions, pendingUploads 
+    addSubmission, deleteSubmission, addOfflineSubmission, syncOfflineSubmissions, pendingUploads 
   } = useContext(AppContext);
   
   const [showModal, setShowModal] = useState(false);
@@ -18,6 +18,7 @@ const Assignments = () => {
   const [submittingAssignment, setSubmittingAssignment] = useState(null);
   const [submitLink, setSubmitLink] = useState('');
   const [submitText, setSubmitText] = useState('');
+  const [submitFile, setSubmitFile] = useState(null);
 
   const navigate = useNavigate();
   
@@ -79,13 +80,14 @@ const Assignments = () => {
     if (isOfflineSimulated || !navigator.onLine) {
       addOfflineSubmission(submittingAssignment.id, loggedInUser.id, submitLink, submitText);
     } else {
-      addSubmission(submittingAssignment.id, loggedInUser.id, submitLink, submitText);
+      addSubmission(submittingAssignment.id, loggedInUser.id, submitLink, submitText, submitFile);
     }
 
     // Reset and close
     setSubmittingAssignment(null);
     setSubmitLink('');
     setSubmitText('');
+    setSubmitFile(null);
   };
 
   // If Admin or Teacher
@@ -269,23 +271,40 @@ const Assignments = () => {
                 </div>
                 <div>
                   {sub ? (
-                    <span 
-                      className={`badge badge-${
-                        sub.status === 'Syncing Offline' 
-                          ? 'warning' 
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                      <span 
+                        className={`badge badge-${
+                          sub.status === 'Syncing Offline' 
+                            ? 'warning' 
+                            : sub.grade 
+                              ? 'success' 
+                              : 'warning'
+                        }`}
+                        style={sub.status === 'Syncing Offline' ? { animation: 'pulse 1.5s infinite', border: '1px solid var(--warning)' } : {}}
+                      >
+                        {sub.status === 'Syncing Offline' 
+                          ? '⏳ Syncing Offline' 
                           : sub.grade 
-                            ? 'success' 
-                            : 'warning'
-                      }`}
-                      style={sub.status === 'Syncing Offline' ? { animation: 'pulse 1.5s infinite', border: '1px solid var(--warning)' } : {}}
-                    >
-                      {sub.status === 'Syncing Offline' 
-                        ? '⏳ Syncing Offline' 
-                        : sub.grade 
-                          ? `Graded: ${sub.grade}` 
-                          : 'Submitted'
-                      }
-                    </span>
+                            ? `Graded: ${sub.grade}` 
+                            : 'Submitted'
+                        }
+                      </span>
+                      {!sub.grade && (
+                        <button 
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to delete this submission and send it again?')) {
+                              deleteSubmission(sub.id);
+                            }
+                          }}
+                          className="prof-btn prof-btn-secondary"
+                          style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.2)' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                        >
+                          <Trash size={12} /> Delete & Resubmit
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <button 
                       onClick={() => setSubmittingAssignment(a)}
@@ -313,8 +332,19 @@ const Assignments = () => {
               <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
                 Assignment: <strong>{submittingAssignment.title}</strong>
               </p>
-
+              
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
+                    Upload Submission File (PDF, image, doc, etc.)
+                  </label>
+                  <input 
+                    type="file" 
+                    onChange={(e) => setSubmitFile(e.target.files[0])}
+                    className="prof-input"
+                  />
+                </div>
+
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>
                     Submission Link / URL (Drive, Github, etc.)
@@ -368,6 +398,7 @@ const Assignments = () => {
                     setSubmittingAssignment(null);
                     setSubmitLink('');
                     setSubmitText('');
+                    setSubmitFile(null);
                   }} 
                   className="prof-btn prof-btn-outline"
                 >
@@ -375,11 +406,11 @@ const Assignments = () => {
                 </button>
                 <button 
                   onClick={handleSubmitWork}
-                  disabled={!submitLink.trim()}
+                  disabled={!submitLink.trim() && !submitFile && !submitText.trim()}
                   className="prof-btn"
-                  style={{ opacity: submitLink.trim() ? 1 : 0.6, cursor: submitLink.trim() ? 'pointer' : 'not-allowed' }}
+                  style={{ opacity: (submitLink.trim() || submitFile || submitText.trim()) ? 1 : 0.6, cursor: (submitLink.trim() || submitFile || submitText.trim()) ? 'pointer' : 'not-allowed' }}
                 >
-                  Submit
+                  Turn In
                 </button>
               </div>
             </div>

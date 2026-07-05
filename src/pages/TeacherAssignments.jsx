@@ -394,9 +394,36 @@ const TeacherAssignments = () => {
                   </div>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--text-muted)', textAlign: 'center', gap: '0.8rem', padding: '2rem' }}>
-                  <AlertCircle size={36} color="var(--text-muted)" />
-                  <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Select a student's submission from the checklist to open evaluation fields.</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1, padding: '0.5rem 0' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                    <p style={{ margin: 0, lineHeight: 1.4 }}>Select a student's submission from the checklist on the left to grade, or review the current coursework statistics below.</p>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
+                    <div style={{ padding: '1.2rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)' }}>DEPLOYED</span>
+                      <div style={{ fontSize: '1.6rem', fontWeight: 850, marginTop: '4px', color: 'var(--text-main)' }}>{myAssignments.length} Tasks</div>
+                    </div>
+                    <div style={{ padding: '1.2rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)' }}>SUBMISSIONS</span>
+                      <div style={{ fontSize: '1.6rem', fontWeight: 850, marginTop: '4px', color: 'var(--primary-text)' }}>{submissions.filter(s => myAssignments.some(a => a.id === s.assignmentId)).length} Total</div>
+                    </div>
+                    <div style={{ padding: '1.2rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)' }}>GRADED</span>
+                      <div style={{ fontSize: '1.6rem', fontWeight: 850, marginTop: '4px', color: '#10b981' }}>{submissions.filter(s => myAssignments.some(a => a.id === s.assignmentId) && s.grade).length} Checked</div>
+                    </div>
+                    <div style={{ padding: '1.2rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)' }}>PENDING</span>
+                      <div style={{ fontSize: '1.6rem', fontWeight: 850, marginTop: '4px', color: '#f59e0b' }}>{submissions.filter(s => myAssignments.some(a => a.id === s.assignmentId) && !s.grade).length} Reviews</div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 'auto', padding: '1.2rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.15)', borderRadius: '12px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <AlertCircle size={20} color="var(--primary-text)" style={{ flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                      Select a student's submission from the checklist on the left to review their uploaded attachment, notes, and assign numerical scores and feedback.
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

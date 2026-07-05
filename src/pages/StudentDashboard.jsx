@@ -6,7 +6,7 @@ import { exportToPDF } from '../utils/exportUtils';
 import FeeReceiptModal from '../components/FeeReceiptModal';
 
 const StudentDashboard = () => {
-  const { loggedInUser, theme, setTheme, fees, assignments, submissions, library, announcements, doubtTickets, addDoubtTicket } = useContext(AppContext);
+  const { loggedInUser, theme, setTheme, fees, assignments, submissions, library, announcements, doubtTickets, addDoubtTicket, students, teachers, classes } = useContext(AppContext);
   
   // Receipt modal states
   const [selectedReceiptFee, setSelectedReceiptFee] = useState(null);
@@ -63,7 +63,22 @@ const StudentDashboard = () => {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
   
-  const myFeesList = fees.filter(f => f.studentId === loggedInUser.id);
+  const getJoiningMonthIndex = (regDateStr) => {
+    if (!regDateStr) return 0;
+    const parts = regDateStr.split('-');
+    if (parts.length >= 2) {
+      const monthNum = parseInt(parts[1], 10);
+      if (!isNaN(monthNum) && monthNum >= 1 && monthNum <= 12) {
+        return monthNum - 1;
+      }
+    }
+    return 0;
+  };
+
+  const studentProfile = students.find(s => s.id === loggedInUser.id);
+  const regDate = studentProfile?.registrationDate || loggedInUser.registrationDate || loggedInUser.registration_date;
+  const joiningMonthIndex = getJoiningMonthIndex(regDate);
+  const myFeesList = fees.filter(f => f.studentId === loggedInUser.id && monthsOrder.indexOf(f.month) >= joiningMonthIndex);
   const sortedFees = [...myFeesList].sort((a, b) => monthsOrder.indexOf(a.month) - monthsOrder.indexOf(b.month));
 
   // Determine allowed months for the last 6 months (ending with the current month)
@@ -77,13 +92,17 @@ const StudentDashboard = () => {
   // Filter list to only the last 6 months
   const last6MonthsFees = sortedFees.filter(f => allowedMonths.includes(f.month));
 
-  const totalAssigned = last6MonthsFees.reduce((sum, f) => sum + f.total, 0);
-  const totalPaid = last6MonthsFees.reduce((sum, f) => sum + f.paid, 0);
+  const totalAssigned = sortedFees.reduce((sum, f) => sum + f.total, 0);
+  const totalPaid = sortedFees.reduce((sum, f) => sum + f.paid, 0);
   const totalPending = totalAssigned - totalPaid;
 
   const mySubmissions = submissions.filter(s => s.studentId === loggedInUser.id);
   const myAssignments = assignments.filter(a => a.subject === loggedInUser.class);
   const myLibrary = library.filter(l => l.subject === loggedInUser.class);
+  const gradedSubmissions = mySubmissions.filter(s => s.grade);
+  const latestGrade = gradedSubmissions.length > 0
+    ? gradedSubmissions[gradedSubmissions.length - 1].grade
+    : 'No Graded Work';
   
   // Mapped doubt tickets for current student
   const myDoubtTickets = doubtTickets.filter(t => t.studentId === loggedInUser.id);
@@ -122,20 +141,39 @@ const StudentDashboard = () => {
     return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  // Hardcoded Schedule for student's batch (10th Math)
+  // Dynamic Schedule for student's batch
+  const studentClass = classes.find(c => c.name === loggedInUser.class);
   const todayTimeline = [];
+  if (studentClass && studentClass.time) {
+    const timeParts = studentClass.time.split('-');
+    if (timeParts.length === 2) {
+      const start = timeParts[0].trim();
+      const end = timeParts[1].trim();
+      const classTeacher = teachers.find(t => t.assignedClasses?.includes(studentClass.name));
+      todayTimeline.push({
+        title: `${studentClass.name} Session`,
+        start,
+        end,
+        instructor: classTeacher ? classTeacher.name : 'Allotted Faculty'
+      });
+    }
+  }
 
   const getTimelineStatus = (startStr, endStr) => {
     const parseTime = (timeStr) => {
-      const d = new Date(currentTime);
-      const [time, modifier] = timeStr.split(' ');
-      let [hours, minutes] = time.split(':');
-      hours = parseInt(hours, 10);
-      minutes = parseInt(minutes, 10);
-      if (modifier === 'PM' && hours < 12) hours += 12;
-      if (modifier === 'AM' && hours === 12) hours = 0;
-      d.setHours(hours, minutes, 0, 0);
-      return d;
+      try {
+        const d = new Date(currentTime);
+        const [time, modifier] = timeStr.split(' ');
+        let [hours, minutes] = time.split(':');
+        hours = parseInt(hours, 10);
+        minutes = parseInt(minutes, 10);
+        if (modifier === 'PM' && hours < 12) hours += 12;
+        if (modifier === 'AM' && hours === 12) hours = 0;
+        d.setHours(hours, minutes, 0, 0);
+        return d;
+      } catch (e) {
+        return new Date();
+      }
     };
 
     const startTime = parseTime(startStr);
@@ -143,12 +181,12 @@ const StudentDashboard = () => {
     const timeDiff = startTime.getTime() - currentTime.getTime();
 
     if (currentTime >= startTime && currentTime <= endTime) {
-      return { text: 'LIVE NOW', color: '#10b981', pulse: true };
+      return { label: 'LIVE NOW', status: 'LIVE' };
     } else if (timeDiff > 0 && timeDiff <= 30 * 60 * 1000) {
       const mins = Math.round(timeDiff / (60 * 1000));
-      return { text: `STARTS IN ${mins} MINS`, color: '#f59e0b', pulse: true };
+      return { label: `Starts in ${mins}m`, status: 'SOON' };
     }
-    return null;
+    return { label: startStr, status: 'FUTURE' };
   };
 
   // Doubt Clearance Submit Handler
@@ -250,7 +288,7 @@ const StudentDashboard = () => {
             </div>
             <div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Latest Academic Grade</div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--success)', marginTop: '0.2rem' }}>A+ (Excellent)</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--success)', marginTop: '0.2rem' }}>{latestGrade}</div>
             </div>
           </div>
 
@@ -360,6 +398,8 @@ const StudentDashboard = () => {
                   </a>
                 ))}
               </div>
+            </div>
+
              {/* Performance SVG Line-Graph Analytics Widget */}
             <div className="prof-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
               <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0, marginBottom: '1.5rem' }}>Performance Analytics</h2>
@@ -531,7 +571,6 @@ const StudentDashboard = () => {
                   })
                 )}
               </div>
-            </div>
             </div>
 
             {/* ASYNC DOUBT CLEARANCE TICKET DESK */}

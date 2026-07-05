@@ -3,11 +3,12 @@ import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import StatCard from '../components/StatCard';
-import { Users, CheckSquare, BookOpen, Clock, Bell, ArrowRight, Zap, GraduationCap } from 'lucide-react';
+import { Users, CheckSquare, BookOpen, Clock, Bell, ArrowRight, Zap, GraduationCap, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import WhatsAppStatus from '../components/WhatsAppStatus';
 
 const TeacherDashboard = () => {
-  const { loggedInUser, classes, students, announcements, teachers } = useContext(AppContext);
+  const { loggedInUser, classes, students, announcements, teachers, doubtTickets, replyToDoubtTicket } = useContext(AppContext);
   const navigate = useNavigate();
 
   if (!loggedInUser) return null;
@@ -51,9 +52,10 @@ const TeacherDashboard = () => {
         </div>
 
         {/* Summary Stats Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
           <StatCard title="My Batches" value={totalBatches.toString()} icon={BookOpen} trend={0} />
           <StatCard title="Enrolled Students" value={totalStudents.toString()} icon={Users} trend={2} />
+          <StatCard title="Allotted Workload" value={`${totalBatches * 1.5} hrs/day`} icon={Clock} trend={0} />
           <StatCard title="Notice Bulletins" value={totalBulletins.toString()} icon={Bell} trend={1} />
         </div>
 
@@ -184,6 +186,9 @@ const TeacherDashboard = () => {
               </div>
             </div>
 
+            {/* WhatsApp Robot Status */}
+            <WhatsAppStatus dashboard={true} />
+
             {/* Bulletins Panel */}
             <div className="prof-card" style={{ flex: 1, padding: '1.5rem' }}>
               <h2 style={{ fontSize: '1.2rem', fontWeight: 750, margin: 0, marginBottom: '1.5rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -244,6 +249,64 @@ const TeacherDashboard = () => {
 
           </div>
 
+        </div>
+
+        {/* Academic Doubts Clearance Desk (Full Width) */}
+        <div className="prof-card" style={{ marginTop: '2rem' }}>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 750, margin: 0, marginBottom: '1.5rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <HelpCircle size={20} style={{ color: 'var(--primary-text)' }} /> Student Doubts Clearance Desk
+          </h2>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {doubtTickets.filter(t => t.status === 'Pending' && allottedClasses.includes(t.studentClass)).length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>
+                No pending doubt tickets from your allotted classes. All clear!
+              </p>
+            ) : (
+              doubtTickets.filter(t => t.status === 'Pending' && allottedClasses.includes(t.studentClass)).map(ticket => (
+                <div key={ticket.id} style={{ padding: '1.2rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+                  <div className="flex-between" style={{ marginBottom: '0.6rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div>
+                      <span className="badge badge-warning" style={{ marginRight: '0.5rem' }}>{ticket.studentClass}</span>
+                      <strong style={{ color: 'var(--text-main)' }}>{ticket.subject}</strong>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginLeft: '0.5rem' }}>by {ticket.studentName}</span>
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{ticket.timestamp}</span>
+                  </div>
+                  <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: 'var(--text-main)', lineHeight: '1.4' }}>{ticket.description}</p>
+                  
+                  <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                    <input 
+                      type="text" 
+                      placeholder="Type your explanation / reply here..." 
+                      id={`reply-input-${ticket.id}`}
+                      className="prof-input"
+                      style={{ flex: 1, fontSize: '0.85rem', padding: '0.5rem 0.8rem' }}
+                      onKeyDown={async (e) => {
+                        if (e.key === 'Enter' && e.target.value.trim()) {
+                          const success = await replyToDoubtTicket(ticket.id, e.target.value.trim());
+                          if (success) e.target.value = '';
+                        }
+                      }}
+                    />
+                    <button 
+                      onClick={async () => {
+                        const inputEl = document.getElementById(`reply-input-${ticket.id}`);
+                        if (inputEl && inputEl.value.trim()) {
+                          const success = await replyToDoubtTicket(ticket.id, inputEl.value.trim());
+                          if (success) inputEl.value = '';
+                        }
+                      }}
+                      className="prof-btn"
+                      style={{ padding: '0.5rem 1.2rem', fontSize: '0.85rem' }}
+                    >
+                      Submit Reply
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </>

@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Users, BookOpen, CheckSquare, ArrowRight, Plus, Calendar as CalendarIcon, IndianRupee, Check } from 'lucide-react';
+import { Users, BookOpen, CheckSquare, ArrowRight, Plus, Calendar as CalendarIcon, IndianRupee, Check, Clock } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import StatCard from '../components/StatCard';
@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const AdminDashboard = () => {
-  const { fees, students, classes, registrationRequests } = useContext(AppContext);
+  const { fees, students, classes, registrationRequests, announcements, calendarEvents } = useContext(AppContext);
   const navigate = useNavigate();
 
   // Calculate analytics locally
@@ -57,35 +57,103 @@ const AdminDashboard = () => {
         {/* Middle Section: Recent Activity & Actions */}
         <div style={{ display: 'flex', gap: '2rem', flexDirection: 'row', flexWrap: 'wrap', marginBottom: '2rem' }}>
           
-          <div className="prof-card" style={{ flex: '2 1 450px' }}>
-             <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
-               <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>Pending Requests</h2>
-               <button onClick={() => navigate('/requests')} className="prof-btn prof-btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>View All</button>
-             </div>
-             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-               {pendingRequests.slice(0, 3).map(req => (
-                 <div key={req.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--secondary)', borderRadius: '8px' }}>
-                   <div>
-                     <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{req.name}</div>
-                     <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Role: {req.role} | Class: {req.className}</div>
+          <div style={{ flex: '2 1 450px', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* Pending Requests Card */}
+            <div className="prof-card" style={{ padding: '1.8rem' }}>
+               <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
+                 <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>Pending Requests</h2>
+                 <button onClick={() => navigate('/requests')} className="prof-btn prof-btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>View All</button>
+               </div>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                 {pendingRequests.slice(0, 3).map(req => (
+                   <div key={req.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--secondary)', borderRadius: '8px' }}>
+                     <div>
+                       <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{req.name}</div>
+                       <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Role: {req.role} | Class: {req.className}</div>
+                     </div>
+                     <button onClick={() => navigate('/requests')} className="prof-btn" style={{ padding: '0.4rem 1rem' }}>Review</button>
                    </div>
-                   <button onClick={() => navigate('/requests')} className="prof-btn" style={{ padding: '0.4rem 1rem' }}>Review</button>
-                 </div>
-               ))}
-               {pendingRequests.length === 0 && (
-                 <div style={{ padding: '3rem 2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', gap: '0.75rem' }}>
-                   <div style={{ 
-                     width: '40px', height: '40px', borderRadius: '50%', 
-                     border: '2px solid var(--success)', display: 'flex', 
-                     alignItems: 'center', justifyContent: 'center',
-                     boxShadow: '0 0 10px rgba(16, 185, 129, 0.2)'
-                   }}>
-                     <Check size={20} color="var(--success)" />
+                 ))}
+                 {pendingRequests.length === 0 && (
+                   <div style={{ padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', gap: '0.75rem' }}>
+                     <div style={{ 
+                       width: '32px', height: '32px', borderRadius: '50%', 
+                       border: '2px solid var(--success)', display: 'flex', 
+                       alignItems: 'center', justifyContent: 'center',
+                       boxShadow: '0 0 10px rgba(16, 185, 129, 0.2)'
+                     }}>
+                       <Check size={16} color="var(--success)" />
+                     </div>
+                     <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-muted)' }}>All registration requests cleared</div>
                    </div>
-                   <div style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-muted)' }}>All registration requests cleared</div>
-                 </div>
-               )}
-             </div>
+                 )}
+               </div>
+            </div>
+
+            {/* Notice Board & Announcements Card */}
+            <div className="prof-card" style={{ padding: '1.8rem' }}>
+              <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>Notice Board & Announcements</h2>
+                <button onClick={() => navigate('/messages')} className="prof-btn prof-btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>Manage</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {announcements.slice(-3).reverse().map(ann => (
+                  <div key={ann.id} style={{ padding: '1rem', background: 'var(--secondary)', borderRadius: '8px', borderLeft: '3px solid var(--primary-text)' }}>
+                    <div className="flex-between" style={{ marginBottom: '0.4rem' }}>
+                      <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.95rem' }}>{ann.title}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{ann.date}</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                      {ann.content && ann.content.length > 80 ? `${ann.content.slice(0, 80)}...` : ann.content}
+                    </p>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--primary-text)', fontWeight: 600, marginTop: '0.4rem' }}>
+                      Target: {ann.target_class || ann.targetClass || 'All'}
+                    </div>
+                  </div>
+                ))}
+                {announcements.length === 0 && (
+                  <div style={{ padding: '1.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                    No announcements published yet.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Upcoming Events Card */}
+            <div className="prof-card" style={{ padding: '1.8rem' }}>
+              <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>Upcoming Events & Reminders</h2>
+                <button onClick={() => navigate('/calendar')} className="prof-btn prof-btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>View Calendar</button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                {calendarEvents.slice(0, 3).map(ev => {
+                  let badgeClass = 'badge-primary';
+                  if (ev.type === 'Exam') badgeClass = 'badge-danger';
+                  else if (ev.type === 'Holiday') badgeClass = 'badge-warning';
+                  else if (ev.type === 'Special Event' || ev.type === 'Event') badgeClass = 'badge-purple';
+                  
+                  return (
+                    <div key={ev.id} style={{ padding: '1rem', background: 'var(--secondary)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.6rem' }}>
+                      <div className="flex-between">
+                        <span className={`badge ${badgeClass}`} style={{ fontSize: '0.65rem', padding: '0.2rem 0.5rem', fontWeight: 700 }}>{ev.type}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{ev.date}</span>
+                      </div>
+                      <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)' }}>{ev.title}</h4>
+                      {ev.time && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Clock size={12} /> {ev.time}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {calendarEvents.length === 0 && (
+                  <div style={{ gridColumn: '1 / -1', padding: '1.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                    No upcoming events scheduled.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div style={{ flex: '1 1 350px', display: 'flex', flexDirection: 'column', gap: '2rem' }}>

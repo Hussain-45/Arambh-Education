@@ -167,15 +167,31 @@ const Settings = () => {
     addToast('Preferences saved successfully!', 'success');
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (!currentPassword || !newPassword) {
       addToast('Please fill out both password fields.', 'danger');
       return;
     }
-    // In a real app, this would hit an API endpoint
-    addToast('Password updated successfully!', 'success');
-    setCurrentPassword('');
-    setNewPassword('');
+    try {
+      const res = await fetch(`${API_URL}/auth/update-password`, {
+        method: 'POST',
+        headers: {
+          ...authHeaders,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        addToast(data.message || 'Password updated successfully!', 'success');
+        setCurrentPassword('');
+        setNewPassword('');
+      } else {
+        addToast(data.error || 'Failed to update password', 'danger');
+      }
+    } catch (e) {
+      addToast('Network error updating password', 'danger');
+    }
   };
 
   const handleSaveProfile = async (e) => {
@@ -254,313 +270,345 @@ const Settings = () => {
       <main className="main-content">
         <Header />
         
-        <div style={{ maxWidth: '800px', margin: '0 auto', paddingBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '2rem' }}>Account Settings</h2>
+        <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', paddingBottom: '2rem' }}>
+          <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: 0, marginBottom: '2rem', color: 'var(--text-main)', letterSpacing: '-0.02em' }}>Account Settings</h2>
 
-          {(loggedInUser?.role === 'admin' || loggedInUser?.role === 'teacher') && (
-            <div style={{ marginBottom: '2rem' }}>
-              <WhatsAppStatus />
-            </div>
-          )}
-
-          {loggedInUser?.role === 'admin' && (
-            <div className="prof-card" style={{ marginBottom: '2rem' }}>
-              <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Cloud size={18} /> Email Notification Settings (Gmail SMTP)
-              </h3>
-              <form onSubmit={handleSaveSmtpSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div>
-                    <label className="prof-label" style={{ marginBottom: '0.4rem', display: 'block' }}>Gmail Address</label>
-                    <input 
-                      type="email" 
-                      value={smtpEmail} 
-                      onChange={e => setSmtpEmail(e.target.value)} 
-                      placeholder="aarambhinstitute46@gmail.com" 
-                      className="prof-input"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="prof-label" style={{ marginBottom: '0.4rem', display: 'block' }}>Gmail App Password / Passkey</label>
-                    <input 
-                      type="password" 
-                      value={smtpPassword} 
-                      onChange={e => setSmtpPassword(e.target.value)} 
-                      placeholder="••••••••••••••••" 
-                      className="prof-input"
-                    />
-                  </div>
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  To link your Gmail, you must generate a 16-character <strong>App Password</strong> in your Google Account Security settings instead of using your main account password.
-                </div>
-                <button type="submit" className="prof-btn" style={{ alignSelf: 'flex-start' }}>Save SMTP Configuration</button>
-              </form>
-            </div>
-          )}
-
-          <div className="prof-card" style={{ marginBottom: '2rem' }}>
-            <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <User size={18} /> Profile Information
-            </h3>
-            <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Full Name</label>
-                  <input 
-                    type="text" 
-                    className="prof-input" 
-                    value={profileName} 
-                    onChange={e => setProfileName(e.target.value)} 
-                    required 
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email Address (Admin notifications/backups)</label>
-                  <input 
-                    type="email" 
-                    className="prof-input" 
-                    value={profileEmail} 
-                    onChange={e => setProfileEmail(e.target.value)} 
-                    placeholder="Enter email address" 
-                  />
-                </div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Account Role</label>
-                <input type="text" className="prof-input" disabled value={(loggedInUser?.role || 'Admin').toUpperCase()} />
-              </div>
-              <button type="submit" className="prof-btn" style={{ alignSelf: 'flex-start' }}>Save Profile</button>
-            </form>
-          </div>
-
-          {loggedInUser?.role === 'admin' && (
-            <div className="prof-card" style={{ marginBottom: '2rem' }}>
-              <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Cloud size={18} /> Database Backups & Reports
-              </h3>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.2rem' }}>
-                Quickly mail system updates and database backups directly to your configured email address.
-              </p>
-              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                <button 
-                  onClick={handleEmailBackup}
-                  className="prof-btn"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                  Email Database Backup
-                </button>
-                <button 
-                  onClick={handleSendWeeklyReport}
-                  className="prof-btn prof-btn-outline"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                  Send Weekly Report Now
-                </button>
-                <button 
-                  onClick={handleSendMonthlyAttendanceReport}
-                  className="prof-btn prof-btn-outline"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                  📊 Email Monthly Attendance Reports
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="prof-card" style={{ marginBottom: '2rem' }}>
-            <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Moon size={18} /> Appearance
-            </h3>
-            <div className="flex-between">
-              <div>
-                <p style={{ margin: 0, fontWeight: 500 }}>Dark Mode</p>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Toggle between light and dark themes</p>
-              </div>
-              <button 
-                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} 
-                className={`prof-btn ${theme === 'dark' ? '' : 'prof-btn-outline'}`}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-              >
-                {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-                {theme === 'light' ? 'Enable Dark Mode' : 'Enable Light Mode'}
-              </button>
-            </div>
-          </div>
-
-          <div className="prof-card" style={{ marginBottom: '2rem' }}>
-            <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Bell size={18} /> Notification Preferences
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-                <div>
-                  <span style={{ fontWeight: 500, display: 'block' }}>Email Notifications (General)</span>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Receive daily summaries and alerts via email</span>
-                </div>
-                <input type="checkbox" checked={emailAlerts} onChange={(e) => setEmailAlerts(e.target.checked)} style={{ transform: 'scale(1.2)' }} />
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-                <div>
-                  <span style={{ fontWeight: 500, display: 'block' }}>SMS Alerts</span>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Receive instant text messages for urgent updates</span>
-                </div>
-                <input type="checkbox" checked={smsAlerts} onChange={(e) => setSmsAlerts(e.target.checked)} style={{ transform: 'scale(1.2)' }} />
-              </label>
-
-              {loggedInUser?.role === 'admin' && (
-                <>
-                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '2rem', alignItems: 'start', marginBottom: '2rem' }}>
+            
+            {/* Left Column: Personal, Security & billing */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              
+              {/* Profile Card */}
+              <div className="prof-card" style={{ margin: 0 }}>
+                <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <User size={18} /> Profile Information
+                </h3>
+                <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div>
-                      <span style={{ fontWeight: 500, display: 'block' }}>Auto-Send Fee Reminders via Email</span>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Send billing reminder emails to parents when triggering dues alerts</span>
+                      <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Full Name</label>
+                      <input 
+                        type="text" 
+                        className="prof-input" 
+                        value={profileName} 
+                        onChange={e => setProfileName(e.target.value)} 
+                        required 
+                      />
                     </div>
-                    <input type="checkbox" checked={emailFeeAlerts} onChange={(e) => handleToggleSetting('emailFeeAlerts', e.target.checked)} style={{ transform: 'scale(1.2)' }} />
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email Address (Admin notifications/backups)</label>
+                      <input 
+                        type="email" 
+                        className="prof-input" 
+                        value={profileEmail} 
+                        onChange={e => setProfileEmail(e.target.value)} 
+                        placeholder="Enter email address" 
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Account Role</label>
+                    <input type="text" className="prof-input" disabled value={(loggedInUser?.role || 'Admin').toUpperCase()} />
+                  </div>
+                  <button type="submit" className="prof-btn" style={{ alignSelf: 'flex-start' }}>Save Profile</button>
+                </form>
+              </div>
+
+              {/* Security Card */}
+              <div className="prof-card" style={{ margin: 0 }}>
+                <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Lock size={18} /> Security & Authentication
+                </h3>
+                
+                <div className="flex-between" style={{ paddingBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500 }}>Two-Factor Authentication (2FA)</p>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Secure your account with an additional verification step.</p>
+                  </div>
+                  <button className="prof-btn prof-btn-outline" style={{ padding: '0.5rem 1rem' }}>Enable 2FA</button>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Current Password</label>
+                    <input type="password" placeholder="••••••••" className="prof-input" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>New Password</label>
+                    <input type="password" placeholder="••••••••" className="prof-input" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                  </div>
+                </div>
+                <div className="flex-between">
+                  <button onClick={handleChangePassword} className="prof-btn">Update Password</button>
+                  
+                  <button className="prof-btn prof-btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <MonitorSmartphone size={16} /> Log out of all devices
+                  </button>
+                </div>
+              </div>
+
+              {/* Data & Privacy Card */}
+              <div className="prof-card" style={{ margin: 0, border: '1px solid var(--danger)' }}>
+                <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--danger)' }}>
+                  <Lock size={18} /> Data & Privacy
+                </h3>
+                
+                <div className="flex-between" style={{ paddingBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500 }}>Export Account Data</p>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Download all your data in JSON or CSV format.</p>
+                  </div>
+                  <button className="prof-btn prof-btn-outline" style={{ padding: '0.5rem 1rem' }}>Request Data</button>
+                </div>
+
+                <div className="flex-between">
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500, color: 'var(--danger)' }}>Delete Account</p>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Permanently delete your account and all associated data.</p>
+                  </div>
+                  <button className="prof-btn" style={{ background: 'var(--danger)', color: 'white', borderColor: 'var(--danger)', padding: '0.5rem 1rem' }}>Delete Account</button>
+                </div>
+              </div>
+
+              {/* Billing Card (Admin Only) */}
+              {loggedInUser?.role === 'admin' && (
+                <div className="prof-card" style={{ margin: 0 }}>
+                  <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <MonitorSmartphone size={18} /> Billing & Subscription
+                  </h3>
+                  <div style={{ padding: '1rem', background: 'var(--bg-main)', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '1rem' }}>
+                    <div className="flex-between" style={{ marginBottom: '0.5rem' }}>
+                      <span style={{ fontWeight: 600 }}>Aarambh Premium Plan</span>
+                      <span className="badge badge-success">Active</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Next billing date: Jan 01, 2025</p>
+                  </div>
+                  <button className="prof-btn prof-btn-outline" style={{ padding: '0.5rem 1rem' }}>Manage Subscription</button>
+                </div>
+              )}
+
+            </div>
+
+            {/* Right Column: Communications, Preferences & Backup */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              
+              {/* WhatsApp Robot Link */}
+              {(loggedInUser?.role === 'admin' || loggedInUser?.role === 'teacher') && (
+                <WhatsAppStatus />
+              )}
+
+              {/* Gmail SMTP Settings (Admin Only) */}
+              {loggedInUser?.role === 'admin' && (
+                <div className="prof-card" style={{ margin: 0 }}>
+                  <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Cloud size={18} /> Email Notification Settings (Gmail SMTP)
+                  </h3>
+                  <form onSubmit={handleSaveSmtpSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label className="prof-label" style={{ marginBottom: '0.4rem', display: 'block' }}>Gmail Address</label>
+                        <input 
+                          type="email" 
+                          value={smtpEmail} 
+                          onChange={e => setSmtpEmail(e.target.value)} 
+                          placeholder="aarambhinstitute46@gmail.com" 
+                          className="prof-input"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="prof-label" style={{ marginBottom: '0.4rem', display: 'block' }}>Gmail App Password / Passkey</label>
+                        <input 
+                          type="password" 
+                          value={smtpPassword} 
+                          onChange={e => setSmtpPassword(e.target.value)} 
+                          placeholder="••••••••••••••••" 
+                          className="prof-input"
+                        />
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      To link your Gmail, you must generate a 16-character <strong>App Password</strong> in your Google Account Security settings instead of using your main account password.
+                    </div>
+                    <button type="submit" className="prof-btn" style={{ alignSelf: 'flex-start' }}>Save SMTP Configuration</button>
+                  </form>
+                </div>
+              )}
+
+              {/* Database Backups & Reports (Admin Only) */}
+              {loggedInUser?.role === 'admin' && (
+                <div className="prof-card" style={{ margin: 0 }}>
+                  <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Cloud size={18} /> Database Backups & Reports
+                  </h3>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.2rem' }}>
+                    Quickly mail system updates and database backups directly to your configured email address.
+                  </p>
+                  <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                    <button 
+                      onClick={handleEmailBackup}
+                      className="prof-btn"
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                      Email Database Backup
+                    </button>
+                    <a 
+                      href={`${API_URL}/admin/backup/download?token=${localStorage.getItem('token')}`}
+                      download="aarambh_backup.db"
+                      className="prof-btn"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', background: 'var(--primary)', color: 'white' }}
+                    >
+                      📥 Download Backup (Direct)
+                    </a>
+                    <button 
+                      onClick={handleSendWeeklyReport}
+                      className="prof-btn prof-btn-outline"
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                      Send Weekly Report Now
+                    </button>
+                    <button 
+                      onClick={handleSendMonthlyAttendanceReport}
+                      className="prof-btn prof-btn-outline"
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                      📊 Email Monthly Attendance Reports
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Notification Preferences */}
+              <div className="prof-card" style={{ margin: 0 }}>
+                <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Bell size={18} /> Notification Preferences
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                    <div>
+                      <span style={{ fontWeight: 500, display: 'block' }}>Email Notifications (General)</span>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Receive daily summaries and alerts via email</span>
+                    </div>
+                    <input type="checkbox" checked={emailAlerts} onChange={(e) => handleToggleGeneralNotification('emailAlerts', e.target.checked)} style={{ transform: 'scale(1.2)' }} />
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
                     <div>
-                      <span style={{ fontWeight: 500, display: 'block' }}>Auto-Send Monthly Attendance Reports</span>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Allow sending structured monthly attendance HTML reports to parents</span>
+                      <span style={{ fontWeight: 500, display: 'block' }}>SMS Alerts</span>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Receive instant text messages for urgent updates</span>
                     </div>
-                    <input type="checkbox" checked={emailAttendanceAlerts} onChange={(e) => handleToggleSetting('emailAttendanceAlerts', e.target.checked)} style={{ transform: 'scale(1.2)' }} />
+                    <input type="checkbox" checked={smsAlerts} onChange={(e) => handleToggleGeneralNotification('smsAlerts', e.target.checked)} style={{ transform: 'scale(1.2)' }} />
                   </label>
-                </>
-              )}
-            </div>
-          </div>
 
-          <div className="prof-card" style={{ marginBottom: '2rem' }}>
-            <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Globe size={18} /> Regional Settings
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Display Language</label>
-                <select className="prof-input" value={language} onChange={e => setLanguage(e.target.value)}>
-                  <option value="English">English</option>
-                  <option value="Hindi">Hindi</option>
-                  <option value="Spanish">Spanish</option>
-                  <option value="French">French</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Timezone</label>
-                <select className="prof-input" disabled>
-                  <option>Asia/Kolkata (IST)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div className="prof-card" style={{ marginBottom: '2rem' }}>
-            <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Lock size={18} /> Security & Authentication
-            </h3>
-            
-            <div className="flex-between" style={{ paddingBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
-              <div>
-                <p style={{ margin: 0, fontWeight: 500 }}>Two-Factor Authentication (2FA)</p>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Secure your account with an additional verification step.</p>
-              </div>
-              <button className="prof-btn prof-btn-outline" style={{ padding: '0.5rem 1rem' }}>Enable 2FA</button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Current Password</label>
-                <input type="password" placeholder="••••••••" className="prof-input" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>New Password</label>
-                <input type="password" placeholder="••••••••" className="prof-input" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-              </div>
-            </div>
-            <div className="flex-between">
-              <button onClick={handleChangePassword} className="prof-btn">Update Password</button>
-              
-              <button className="prof-btn prof-btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <MonitorSmartphone size={16} /> Log out of all devices
-              </button>
-            </div>
-          </div>
-
-          <div className="prof-card" style={{ marginBottom: '2rem' }}>
-            <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Cloud size={18} /> Connected Apps & Integrations
-            </h3>
-            
-            <div className="flex-between" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
-              <div>
-                <p style={{ margin: 0, fontWeight: 500 }}>Google Drive Sync</p>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Automatically backup Library materials and Assignments</p>
-              </div>
-              <button 
-                onClick={() => setDriveConnected(!driveConnected)} 
-                className={`prof-btn ${driveConnected ? 'prof-btn-outline' : ''}`}
-                style={{ padding: '0.5rem 1rem' }}
-              >
-                {driveConnected ? 'Disconnect' : 'Connect'}
-              </button>
-            </div>
-
-            <div className="flex-between" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
-              <div>
-                <p style={{ margin: 0, fontWeight: 500 }}>Zoom Integration</p>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Generate live class links directly from the calendar</p>
-              </div>
-              <button className="prof-btn" style={{ padding: '0.5rem 1rem' }}>Connect</button>
-            </div>
-
-            <div className="flex-between">
-              <div>
-                <p style={{ margin: 0, fontWeight: 500 }}>WhatsApp Business API</p>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Send automated fee reminders via WhatsApp</p>
-              </div>
-              <button className="prof-btn" style={{ padding: '0.5rem 1rem' }}>Connect</button>
-            </div>
-          </div>
-
-          {loggedInUser?.role === 'admin' && (
-            <div className="prof-card" style={{ marginBottom: '2rem' }}>
-              <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <MonitorSmartphone size={18} /> Billing & Subscription
-              </h3>
-              <div style={{ padding: '1rem', background: 'var(--bg-main)', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '1rem' }}>
-                <div className="flex-between" style={{ marginBottom: '0.5rem' }}>
-                  <span style={{ fontWeight: 600 }}>Aarambh Premium Plan</span>
-                  <span className="badge badge-success">Active</span>
+                  {loggedInUser?.role === 'admin' && (
+                    <>
+                      <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                        <div>
+                          <span style={{ fontWeight: 500, display: 'block' }}>Auto-Send Fee Reminders via Email</span>
+                          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Send billing reminder emails to parents when triggering dues alerts</span>
+                        </div>
+                        <input type="checkbox" checked={emailFeeAlerts} onChange={(e) => handleToggleSetting('emailFeeAlerts', e.target.checked)} style={{ transform: 'scale(1.2)' }} />
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+                        <div>
+                          <span style={{ fontWeight: 500, display: 'block' }}>Auto-Send Monthly Attendance Reports</span>
+                          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Allow sending structured monthly attendance HTML reports to parents</span>
+                        </div>
+                        <input type="checkbox" checked={emailAttendanceAlerts} onChange={(e) => handleToggleSetting('emailAttendanceAlerts', e.target.checked)} style={{ transform: 'scale(1.2)' }} />
+                      </label>
+                    </>
+                  )}
                 </div>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Next billing date: Jan 01, 2025</p>
               </div>
-              <button className="prof-btn prof-btn-outline" style={{ padding: '0.5rem 1rem' }}>Manage Subscription</button>
-            </div>
-          )}
 
-          <div className="prof-card" style={{ marginBottom: '2rem', border: '1px solid var(--danger)' }}>
-            <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--danger)' }}>
-              <Lock size={18} /> Data & Privacy
-            </h3>
-            
-            <div className="flex-between" style={{ paddingBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
-              <div>
-                <p style={{ margin: 0, fontWeight: 500 }}>Export Account Data</p>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Download all your data in JSON or CSV format.</p>
+              {/* Regional Settings */}
+              <div className="prof-card" style={{ margin: 0 }}>
+                <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Globe size={18} /> Regional Settings
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Display Language</label>
+                    <select className="prof-input" value={language} onChange={e => handleLanguageChange(e.target.value)}>
+                      <option value="English">English</option>
+                      <option value="Hindi">Hindi</option>
+                      <option value="Spanish">Spanish</option>
+                      <option value="French">French</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Timezone</label>
+                    <select className="prof-input" disabled>
+                      <option>Asia/Kolkata (IST)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
-              <button className="prof-btn prof-btn-outline" style={{ padding: '0.5rem 1rem' }}>Request Data</button>
+
+              {/* Connected Apps & Integrations */}
+              <div className="prof-card" style={{ margin: 0 }}>
+                <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Cloud size={18} /> Connected Apps & Integrations
+                </h3>
+                
+                <div className="flex-between" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500 }}>Google Drive Sync</p>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Automatically backup Library materials and Assignments</p>
+                  </div>
+                  <button 
+                    onClick={() => setDriveConnected(!driveConnected)} 
+                    className={`prof-btn ${driveConnected ? 'prof-btn-outline' : ''}`}
+                    style={{ padding: '0.5rem 1rem' }}
+                  >
+                    {driveConnected ? 'Disconnect' : 'Connect'}
+                  </button>
+                </div>
+
+                <div className="flex-between" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500 }}>Zoom Integration</p>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Generate live class links directly from the calendar</p>
+                  </div>
+                  <button className="prof-btn" style={{ padding: '0.5rem 1rem' }}>Connect</button>
+                </div>
+
+                <div className="flex-between">
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500 }}>WhatsApp Business API</p>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Send automated fee reminders via WhatsApp</p>
+                  </div>
+                  <button className="prof-btn" style={{ padding: '0.5rem 1rem' }}>Connect</button>
+                </div>
+              </div>
+
+              {/* Appearance */}
+              <div className="prof-card" style={{ margin: 0 }}>
+                <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Moon size={18} /> Appearance
+                </h3>
+                <div className="flex-between">
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500 }}>Dark Mode</p>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Toggle between light and dark themes</p>
+                  </div>
+                  <button 
+                    onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} 
+                    className={`prof-btn ${theme === 'dark' ? '' : 'prof-btn-outline'}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                  >
+                    {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+                    {theme === 'light' ? 'Enable Dark Mode' : 'Enable Light Mode'}
+                  </button>
+                </div>
+              </div>
+
             </div>
 
-            <div className="flex-between">
-              <div>
-                <p style={{ margin: 0, fontWeight: 500, color: 'var(--danger)' }}>Delete Account</p>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Permanently delete your account and all associated data.</p>
-              </div>
-              <button className="prof-btn" style={{ background: 'var(--danger)', color: 'white', borderColor: 'var(--danger)', padding: '0.5rem 1rem' }}>Delete Account</button>
-            </div>
           </div>
 
+          {/* Full-width System History & Logs (Admin Only) */}
           {loggedInUser?.role === 'admin' && (
-            <div className="prof-card" style={{ marginBottom: '2rem' }}>
+            <div className="prof-card" style={{ marginTop: '2rem' }}>
               <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Clock size={18} /> System History & Logs
               </h3>

@@ -105,11 +105,27 @@ const Requests = () => {
                       </span>
                     </td>
                     <td style={{ padding: '1rem 0.5rem' }}>
-                      <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{req.name || req.username}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{req.name || req.username}</div>
+                        {req.fatherName === 'FIRST_LOGIN' && (
+                          <span style={{ 
+                            padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
+                            background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.2)'
+                          }}>
+                            First Connection
+                          </span>
+                        )}
+                      </div>
                       {req.role === 'teacher' && <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>@{req.username}</div>}
                     </td>
                     <td style={{ padding: '1rem 0.5rem', color: 'var(--text-muted)' }}>
-                      {req.role === 'student' ? (
+                      {req.fatherName === 'FIRST_LOGIN' ? (
+                        <div>
+                          <strong style={{ color: 'var(--text-main)', fontSize: '0.85rem' }}>First-Time Connection Request</strong>
+                          <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>User requires admin authorization to connect and log in.</div>
+                          {req.className && <div style={{ fontSize: '0.8rem', marginTop: '2px' }}>Class/Batch: {req.className}</div>}
+                        </div>
+                      ) : req.role === 'student' ? (
                         <>
                           <div>Class: {req.className}</div>
                           <div style={{ fontSize: '0.85rem' }}>Phone: {req.parentPhone}</div>

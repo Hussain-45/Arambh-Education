@@ -4,14 +4,14 @@ import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import FeeReceiptModal from '../components/FeeReceiptModal';
-import { ArrowLeft, Users, IndianRupee, BookOpen, Download, FileText } from 'lucide-react';
+import { ArrowLeft, Users, IndianRupee, BookOpen, Download, FileText, Trash2 } from 'lucide-react';
 import { exportToPDF } from '../utils/exportUtils';
 
 const ClassDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { userRole, classes, students, fees, assignments, library, addStudent, removeStudent, removeBatch, sendMessage, addToast, recordFeePayment, markAttendance } = useContext(AppContext);
+  const { userRole, classes, students, fees, assignments, library, attendance, addStudent, removeStudent, removeBatch, sendMessage, addToast, recordFeePayment, markAttendance, triggerMarkAttendance, deleteAssignment, deleteLibraryMaterial } = useContext(AppContext);
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'roster');
   
   const [showAddStudent, setShowAddStudent] = useState(false);
@@ -44,6 +44,20 @@ const ClassDetails = () => {
     exportToPDF(`${classData.name} - Fee Report (${selectedMonth})`, 'fee_report', rows, ['Student', 'Total', 'Paid', 'Balance', 'Status']);
   };
 
+  const handleDeleteAssignment = async (e, assignId, title) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to delete assignment "${title}"?`)) {
+      await deleteAssignment(assignId);
+    }
+  };
+
+  const handleDeleteLibraryMaterial = async (e, materialId, title) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to delete study material "${title}"?`)) {
+      await deleteLibraryMaterial(materialId);
+    }
+  };
+
   const handleAddStudent = async () => {
     if (!newStudentName || !newStudentPhone) return;
     await addStudent(newStudentName, classData.name, newStudentPhone, null, newStudentEmail, newStudentBirthdate);
@@ -56,8 +70,8 @@ const ClassDetails = () => {
 
   const handleMarkAttendance = async (student, status) => {
     const today = new Date().toISOString().split('T')[0];
-    await markAttendance(student.id, today, status);
-    if (status === 'Absent') {
+    const success = await triggerMarkAttendance(student.id, today, status);
+    if (success && status === 'Absent') {
       sendMessage(student.parentPhone, 'Auto-WhatsApp', `${student.name} is marked Absent today.`);
     }
   };
@@ -236,20 +250,104 @@ const ClassDetails = () => {
             <div style={{ overflowX: 'auto' }}>
               <table className="prof-table">
                 <thead>
-                  <tr><th>Student</th><th>Actions</th></tr>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
                 </thead>
                 <tbody>
-                  {classStudents.map((student) => (
-                    <tr key={student.id}>
-                      <td style={{ fontWeight: 500 }}>{student.name} <span style={{fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: '0.5rem'}}>{student.admission_number || `#${student.id}`}</span></td>
-                      <td style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button onClick={() => handleMarkAttendance(student, 'Present')} className="prof-btn prof-btn-secondary" style={{ color: 'var(--success)', borderColor: 'var(--success)', background: 'transparent' }}>Present</button>
-                        <button onClick={() => handleMarkAttendance(student, 'Late')} className="prof-btn prof-btn-secondary" style={{ color: 'var(--warning)', borderColor: 'var(--warning)', background: 'transparent' }}>Late</button>
-                        <button onClick={() => handleMarkAttendance(student, 'Absent')} className="prof-btn prof-btn-secondary" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', background: 'transparent' }}>Absent</button>
-                      </td>
-                    </tr>
-                  ))}
-                  {classStudents.length === 0 && <tr><td colSpan="2" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No students enrolled.</td></tr>}
+                  {classStudents.map((student) => {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const todayRecord = attendance.find(a => a.student_id === student.id && a.date === todayStr);
+                    const todayStatus = todayRecord ? todayRecord.status : null;
+                    return (
+                      <tr key={student.id}>
+                        <td>
+                          <span className="badge badge-secondary">
+                            {student.admission_number || `#${student.id}`}
+                          </span>
+                        </td>
+                        <td style={{ fontWeight: 500 }}>{student.name}</td>
+                        <td>
+                          {todayStatus ? (
+                            <span style={{ 
+                              fontSize: '0.75rem', 
+                              color: '#10b981', 
+                              background: 'rgba(16, 185, 129, 0.1)', 
+                              padding: '0.25rem 0.6rem', 
+                              borderRadius: '6px', 
+                              fontWeight: 600,
+                              border: '1px solid rgba(16, 185, 129, 0.2)',
+                              display: 'inline-flex',
+                              alignItems: 'center'
+                            }}>
+                              ✓ Marked: {todayStatus}
+                            </span>
+                          ) : (
+                            <span style={{ 
+                              fontSize: '0.75rem', 
+                              color: 'var(--text-muted)', 
+                              background: 'rgba(255,255,255,0.03)', 
+                              padding: '0.25rem 0.6rem', 
+                              borderRadius: '6px', 
+                              fontWeight: 500,
+                              border: '1px solid var(--border-color)',
+                              display: 'inline-flex',
+                              alignItems: 'center'
+                            }}>
+                              Not Marked
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button 
+                              onClick={() => handleMarkAttendance(student, 'Present')} 
+                              className="prof-btn prof-btn-secondary" 
+                              style={{ 
+                                color: todayStatus === 'Present' ? 'white' : 'var(--success)', 
+                                borderColor: 'var(--success)', 
+                                background: todayStatus === 'Present' ? 'var(--success)' : 'transparent',
+                                padding: '0.4rem 0.8rem',
+                                fontSize: '0.85rem'
+                              }}
+                            >
+                              Present
+                            </button>
+                            <button 
+                              onClick={() => handleMarkAttendance(student, 'Late')} 
+                              className="prof-btn prof-btn-secondary" 
+                              style={{ 
+                                color: todayStatus === 'Late' ? 'white' : 'var(--warning)', 
+                                borderColor: 'var(--warning)', 
+                                background: todayStatus === 'Late' ? 'var(--warning)' : 'transparent',
+                                padding: '0.4rem 0.8rem',
+                                fontSize: '0.85rem'
+                              }}
+                            >
+                              Late
+                            </button>
+                            <button 
+                              onClick={() => handleMarkAttendance(student, 'Absent')} 
+                              className="prof-btn prof-btn-secondary" 
+                              style={{ 
+                                color: todayStatus === 'Absent' ? 'white' : 'var(--danger)', 
+                                borderColor: 'var(--danger)', 
+                                background: todayStatus === 'Absent' ? 'var(--danger)' : 'transparent',
+                                padding: '0.4rem 0.8rem',
+                                fontSize: '0.85rem'
+                              }}
+                            >
+                              Absent
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {classStudents.length === 0 && <tr><td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No students enrolled.</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -263,8 +361,24 @@ const ClassDetails = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {classAssignments.map(a => (
                   <div key={a.id} className="flex-between" style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
-                    <span style={{ fontWeight: 500 }}>{a.title}</span>
-                    <span className="badge badge-warning">Due: {a.dueDate}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontWeight: 500 }}>{a.title}</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Due: {a.dueDate}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      {a.link && (
+                        <a href={a.link} target="_blank" rel="noopener noreferrer" className="badge badge-warning" style={{ textDecoration: 'none', cursor: 'pointer' }}>View</a>
+                      )}
+                      {(userRole === 'admin' || userRole === 'teacher') && (
+                        <button 
+                          onClick={(e) => handleDeleteAssignment(e, a.id, a.title)}
+                          style={{ background: 'none', border: 'none', color: '#ff4d4f', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                          title="Delete Assignment"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
                 {classAssignments.length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No assignments.</p>}
@@ -276,8 +390,24 @@ const ClassDetails = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {classLibrary.map(item => (
                   <div key={item.id} className="flex-between" style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
-                    <span style={{ fontWeight: 500 }}>{item.title}</span>
-                    <span className="badge badge-success">{item.type}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontWeight: 500 }}>{item.title}</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Type: {item.type}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      {item.link && (
+                        <a href={item.link} target="_blank" rel="noopener noreferrer" className="badge badge-success" style={{ textDecoration: 'none', cursor: 'pointer' }}>View</a>
+                      )}
+                      {(userRole === 'admin' || userRole === 'teacher') && (
+                        <button 
+                          onClick={(e) => handleDeleteLibraryMaterial(e, item.id, item.title)}
+                          style={{ background: 'none', border: 'none', color: '#ff4d4f', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                          title="Delete Material"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
                 {classLibrary.length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No materials uploaded.</p>}

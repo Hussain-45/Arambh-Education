@@ -15,6 +15,7 @@ dist-ssr
 
 # Heavy folders and auth
 server/.wwebjs_auth
+server/.wwebjs_cache
 server/uploads
 .env
 server/.env

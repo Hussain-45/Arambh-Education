@@ -2,11 +2,11 @@ import React, { useContext, useState } from 'react';
 import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import { BookOpen, Video, FileText, Download, Plus, Users, ChevronRight } from 'lucide-react';
+import { BookOpen, Video, FileText, Download, Plus, Users, ChevronRight, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Library = () => {
-  const { userRole, library, loggedInUser, addLibraryMaterial, classes, students } = useContext(AppContext);
+  const { userRole, library, loggedInUser, addLibraryMaterial, deleteLibraryMaterial, classes, students } = useContext(AppContext);
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
   
@@ -24,6 +24,13 @@ const Library = () => {
     : userRole === 'teacher'
       ? library.filter(l => loggedInUser.assignedClasses?.includes(l.subject))
       : library;
+
+  const handleDeleteMaterial = async (e, id, title) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to delete study material "${title}"?`)) {
+      await deleteLibraryMaterial(id);
+    }
+  };
 
   const handleCreateMaterial = async () => {
     if (!newTitle || !newSubject) return;
@@ -57,27 +64,66 @@ const Library = () => {
       </div>
 
       {userRole !== 'student' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
-          {classOptions.map((cls) => {
-            const enrolled = students.filter(s => s.class === cls.name).length;
-            return (
-              <div key={cls.id} className="prof-card" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '1rem' }} onClick={() => navigate(`/classes/${cls.id}`, { state: { activeTab: 'academics' } })}>
-                <div className="flex-between">
-                  <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{cls.name}</h3>
-                  <span className="badge badge-warning">{cls.grade}</span>
-                </div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Users size={16} /> {enrolled} Students Enrolled
-                </div>
-                <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
-                  <button className="prof-btn prof-btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>
-                    Manage Materials <ChevronRight size={14} style={{ marginLeft: '4px' }}/>
-                  </button>
-                </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '3fr 1.5fr', gap: '2rem', alignItems: 'start' }}>
+          {/* Left Panel: Class Cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.5rem' }}>
+              {classOptions.map((cls) => {
+                const enrolled = students.filter(s => s.class === cls.name).length;
+                return (
+                  <div key={cls.id} className="prof-card" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '1rem', transition: 'all 0.2s ease' }} onClick={() => navigate(`/classes/${cls.id}`, { state: { activeTab: 'academics' } })}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary-text)'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
+                  >
+                    <div className="flex-between">
+                      <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{cls.name}</h3>
+                      <span className="badge badge-warning">{cls.grade}</span>
+                    </div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Users size={16} /> {enrolled} Students Enrolled
+                    </div>
+                    <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
+                      <button className="prof-btn prof-btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>
+                        Manage Materials <ChevronRight size={14} style={{ marginLeft: '4px' }}/>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              {classOptions.length === 0 && <p style={{ color: 'var(--text-muted)' }}>No classes available.</p>}
+            </div>
+          </div>
+
+          {/* Right Panel: Upload Guidelines & Quick Reference */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="prof-card" style={{ padding: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 750, margin: 0, marginBottom: '0.8rem', color: 'var(--text-main)' }}>Upload Checklist</h3>
+              <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-muted)', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', lineHeight: '1.4' }}>
+                <li>Select the correct class matching target student batches.</li>
+                <li>Prefer PDF for worksheets and reference slides.</li>
+                <li>Use hosted URL links (e.g. YouTube) for lecture recordings.</li>
+                <li>Files are scanned automatically for compatibility.</li>
+              </ul>
+            </div>
+
+            <div className="prof-card" style={{ padding: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 750, margin: 0, marginBottom: '1rem', color: 'var(--text-main)' }}>Recent Library Uploads</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                {displayMaterials.slice(0, 3).map(item => (
+                  <div key={item.id} style={{ paddingBottom: '0.6rem', borderBottom: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                    <strong style={{ fontSize: '0.85rem', color: 'var(--text-main)', fontWeight: 700 }}>{item.title}</strong>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="badge badge-success" style={{ fontSize: '0.65rem', padding: '0.1rem 0.35rem' }}>{item.type}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.subject}</span>
+                    </div>
+                  </div>
+                ))}
+                {displayMaterials.length === 0 && (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0 }}>No materials uploaded yet.</p>
+                )}
               </div>
-            );
-          })}
-          {classOptions.length === 0 && <p style={{ color: 'var(--text-muted)' }}>No classes available.</p>}
+            </div>
+          </div>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
@@ -89,9 +135,20 @@ const Library = () => {
               <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>{item.title}</h3>
               <div className="flex-between" style={{ marginTop: 'auto', paddingTop: '0.5rem' }}>
                 <span className="badge badge-warning">{item.subject}</span>
-                <a href={item.link} target="_blank" rel="noopener noreferrer" className="prof-btn prof-btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', textDecoration: 'none' }}>
-                  <Download size={14}/> Open
-                </a>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <a href={item.link} target="_blank" rel="noopener noreferrer" className="prof-btn prof-btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', textDecoration: 'none' }}>
+                    <Download size={14}/> Open
+                  </a>
+                  {(userRole === 'admin' || userRole === 'teacher') && (
+                    <button 
+                      onClick={(e) => handleDeleteMaterial(e, item.id, item.title)}
+                      style={{ background: 'none', border: 'none', color: '#ff4d4f', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                      title="Delete Material"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}

@@ -35,8 +35,6 @@ const Login = () => {
     }
     if (!formData.password) {
       newErrors.password = 'Password is required.';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters long.';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -70,13 +68,16 @@ const Login = () => {
       addToast(redirectMsg, 'info');
     }
 
-    // 1.5-second Latency Delay Simulation
     setTimeout(async () => {
       try {
-        await loginAction();
+        const result = await loginAction();
         setIsLoading(false);
         setRouteOverlayMsg('');
-        navigate(targetRoute);
+        if (result && result.success) {
+          navigate(targetRoute);
+        } else {
+          setErrors({ submit: result.error || 'Authentication failed. Please verify credentials.' });
+        }
       } catch (err) {
         setIsLoading(false);
         setRouteOverlayMsg('');

@@ -108,19 +108,44 @@ const Messages = () => {
       <main className="main-content" style={{ padding: '2rem', background: 'var(--bg-main)', minHeight: '100vh' }}>
         <Header />
 
-        {/* Tab Headers */}
-        <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '2rem', paddingBottom: '0.5rem' }}>
+        {/* Segmented Control Tabs */}
+        <div style={{ 
+          display: 'inline-flex', 
+          background: 'rgba(255, 255, 255, 0.02)', 
+          border: '1px solid var(--border-color)', 
+          padding: '4px', 
+          borderRadius: '12px', 
+          marginBottom: '2.5rem' 
+        }}>
           <button 
             onClick={() => setActiveSubTab('dm')}
-            className={`prof-btn ${activeSubTab === 'dm' ? '' : 'prof-btn-secondary'}`}
-            style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem' }}
+            style={{ 
+              padding: '0.6rem 1.6rem', 
+              fontSize: '0.9rem', 
+              fontWeight: 800,
+              borderRadius: '8px', 
+              border: 'none', 
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              background: activeSubTab === 'dm' ? 'var(--primary-text)' : 'transparent',
+              color: activeSubTab === 'dm' ? '#ffffff' : 'var(--text-muted)'
+            }}
           >
             Direct Messages (WhatsApp)
           </button>
           <button 
             onClick={() => setActiveSubTab('announcements')}
-            className={`prof-btn ${activeSubTab === 'announcements' ? '' : 'prof-btn-secondary'}`}
-            style={{ padding: '0.5rem 1.2rem', fontSize: '0.9rem' }}
+            style={{ 
+              padding: '0.6rem 1.6rem', 
+              fontSize: '0.9rem', 
+              fontWeight: 800,
+              borderRadius: '8px', 
+              border: 'none', 
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              background: activeSubTab === 'announcements' ? 'var(--primary-text)' : 'transparent',
+              color: activeSubTab === 'announcements' ? '#ffffff' : 'var(--text-muted)'
+            }}
           >
             Class Announcements Board
           </button>

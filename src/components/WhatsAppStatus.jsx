@@ -10,7 +10,12 @@ const WhatsAppStatus = ({ dashboard = false }) => {
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/whatsapp/status');
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/whatsapp/status', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         setStatus(data.status || 'DISCONNECTED');
@@ -34,7 +39,13 @@ const WhatsAppStatus = ({ dashboard = false }) => {
   const handleRestart = async () => {
     setLoading(true);
     try {
-      await fetch('http://localhost:5000/api/whatsapp/restart', { method: 'POST' });
+      const token = localStorage.getItem('token');
+      await fetch('http://localhost:5000/api/whatsapp/restart', { 
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       await fetchStatus();
     } catch (e) {
       // Ignore

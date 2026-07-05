@@ -4,7 +4,7 @@ import { AppContext } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
-  const { theme, setTheme, students, classes, logout, userRole, sidebarCollapsed, setSidebarCollapsed, notifications, markAllNotificationsAsRead } = useContext(AppContext);
+  const { theme, setTheme, students, classes, logout, userRole, sidebarCollapsed, setSidebarCollapsed, notifications, markAllNotificationsAsRead, loggedInUser } = useContext(AppContext);
   const [searchVal, setSearchVal] = useState('');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -66,6 +66,9 @@ const Header = () => {
   const filteredClasses = Array.from(new Map(filteredClassesRaw.filter(c => c && c.id).map(c => [c.id, c])).values());
 
   const getInitials = () => {
+    if (loggedInUser && loggedInUser.name) {
+      return loggedInUser.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    }
     if (userRole === 'admin') return 'AD';
     if (userRole === 'teacher') return 'TE';
     return 'ST';

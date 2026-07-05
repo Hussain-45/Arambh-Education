@@ -1,13 +1,20 @@
-import React from 'react';
+import React, { useContext } from 'react';
+import { AppContext } from '../context/AppContext';
 
 const RecentAttendance = () => {
-  const records = [
-    { id: 1, name: 'Rahul Sharma', class: 'Physics 101', time: '09:00 AM', status: 'Present' },
-    { id: 2, name: 'Priya Singh', class: 'Physics 101', time: '09:05 AM', status: 'Present' },
-    { id: 3, name: 'Amit Kumar', class: 'Math 202', time: '10:15 AM', status: 'Late' },
-    { id: 4, name: 'Neha Gupta', class: 'Math 202', time: '--:--', status: 'Absent' },
-    { id: 5, name: 'Vikas Patel', class: 'Chemistry 301', time: '11:00 AM', status: 'Present' },
-  ];
+  const { attendance, students } = useContext(AppContext);
+
+  // Map database attendance records to names and classes
+  const records = attendance.slice(0, 5).map((att, index) => {
+    const student = students.find(s => s.id === att.student_id);
+    return {
+      id: att.id || index,
+      name: student ? student.name : `Student ID: ${att.student_id}`,
+      class: student ? student.class : 'N/A',
+      time: att.date, // Showing the date of attendance log
+      status: att.status
+    };
+  });
 
   return (
     <div className="prof-card" style={{ flex: 1, minHeight: '300px' }}>

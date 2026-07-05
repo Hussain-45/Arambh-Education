@@ -5,31 +5,31 @@ import Header from '../components/Header';
 import { Calendar as CalendarIcon, CheckCircle2, AlertTriangle, XCircle, Info } from 'lucide-react';
 
 const StudentAttendance = () => {
-  const { loggedInUser } = useContext(AppContext);
+  const { loggedInUser, attendance } = useContext(AppContext);
 
   if (!loggedInUser) return null;
 
-  // Mock comprehensive logs for the student
-  const attendanceLogs = [
-    { date: 'June 27, 2026', day: 'Saturday', status: 'Present', remark: 'On time' },
-    { date: 'June 26, 2026', day: 'Friday', status: 'Present', remark: 'On time' },
-    { date: 'June 25, 2026', day: 'Thursday', status: 'Present', remark: 'On time' },
-    { date: 'June 24, 2026', day: 'Wednesday', status: 'Absent', remark: 'Informed' },
-    { date: 'June 23, 2026', day: 'Tuesday', status: 'Present', remark: 'On time' },
-    { date: 'June 22, 2026', day: 'Monday', status: 'Present', remark: 'On time' },
-    { date: 'June 20, 2026', day: 'Saturday', status: 'Present', remark: 'On time' },
-    { date: 'June 19, 2026', day: 'Friday', status: 'Present', remark: 'On time' },
-    { date: 'June 18, 2026', day: 'Thursday', status: 'Late', remark: '15 mins late' },
-    { date: 'June 17, 2026', day: 'Wednesday', status: 'Present', remark: 'On time' },
-    { date: 'June 16, 2026', day: 'Tuesday', status: 'Present', remark: 'On time' },
-    { date: 'June 15, 2026', day: 'Monday', status: 'Present', remark: 'On time' },
-  ];
+  const myAttendance = attendance.filter(a => a.studentId === loggedInUser.id || a.student_id === loggedInUser.id);
 
-  const totalSessions = 26;
-  const presentCount = 24;
-  const lateCount = 1;
-  const absentCount = 1;
-  const attendancePercentage = ((presentCount / totalSessions) * 100).toFixed(1);
+  const formatDate = (dateStr) => {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  };
+
+  const getDayName = (dateStr) => {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-US', { weekday: 'long' });
+  };
+
+  const totalSessions = myAttendance.length;
+  const presentCount = myAttendance.filter(a => a.status === 'Present').length;
+  const lateCount = myAttendance.filter(a => a.status === 'Late').length;
+  const absentCount = myAttendance.filter(a => a.status === 'Absent').length;
+  const attendancePercentage = totalSessions > 0 
+    ? ((presentCount / totalSessions) * 100).toFixed(1) 
+    : '100.0';
 
   return (
     <>
@@ -66,11 +66,13 @@ const StudentAttendance = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {attendanceLogs.map((log, index) => (
+                    {myAttendance.map((log, index) => (
                       <tr key={index}>
-                        <td style={{ fontWeight: 600 }}>{log.date}</td>
-                        <td style={{ color: 'var(--text-muted)' }}>{log.day}</td>
-                        <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{log.remark}</td>
+                        <td style={{ fontWeight: 600 }}>{formatDate(log.date)}</td>
+                        <td style={{ color: 'var(--text-muted)' }}>{getDayName(log.date)}</td>
+                        <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                          {log.status === 'Present' ? 'On time' : log.status === 'Late' ? 'Late entry' : 'Absent'}
+                        </td>
                         <td style={{ textAlign: 'right' }}>
                           <span className={`badge badge-${log.status === 'Present' ? 'success' : log.status === 'Late' ? 'warning' : 'danger'}`}>
                             {log.status}
@@ -78,6 +80,13 @@ const StudentAttendance = () => {
                         </td>
                       </tr>
                     ))}
+                    {myAttendance.length === 0 && (
+                      <tr>
+                        <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                          No attendance records found in the database.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>

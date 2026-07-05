@@ -49,57 +49,106 @@ const PORT = 5000;
 const JWT_SECRET = process.env.SECRET_KEY || 'aarambh_super_secret_key_123';
 
 // --- WhatsApp Robot Setup ---
-let waClient;
+const waClients = {};
+const waQrDataUrls = {};
+const waStatuses = {};
+
+// Keep global variables for backward compatibility
+let waClient = null;
+let waStatus = 'DISCONNECTED';
 let waQrDataUrl = null;
-let waStatus = 'INITIALIZING';
 
-try {
-  console.log('Initializing WhatsApp Robot...');
-  const defaultChromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-  const hasLocalChrome = fs.existsSync(defaultChromePath);
+const initializeUserWaClient = (userId) => {
+  if (waClients[userId]) return waClients[userId];
+  
+  waStatuses[userId] = 'INITIALIZING';
+  waQrDataUrls[userId] = null;
+  console.log(`[WhatsApp User ${userId}] Initializing WhatsApp Client...`);
 
-  const puppeteerOpts = {
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  };
-  if (hasLocalChrome) {
-    puppeteerOpts.executablePath = defaultChromePath;
-    console.log('[WhatsApp] Using Google Chrome installation:', defaultChromePath);
-  } else {
-    console.log('[WhatsApp] Google Chrome not found at default path, falling back to default browser engine');
+  try {
+    const defaultChromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+    const hasLocalChrome = fs.existsSync(defaultChromePath);
+
+    const puppeteerOpts = {
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    };
+    if (hasLocalChrome) {
+      puppeteerOpts.executablePath = defaultChromePath;
+    }
+
+    const client = new Client({
+      authStrategy: new LocalAuth({ clientId: `user_${userId}` }),
+      puppeteer: puppeteerOpts
+    });
+
+    client.on('qr', async (qr) => {
+      waStatuses[userId] = 'AWAITING_SCAN';
+      waQrDataUrls[userId] = await qrcode.toDataURL(qr);
+      console.log(`[WhatsApp User ${userId}] QR Code generated. Waiting for scan...`);
+    });
+
+    client.on('ready', () => {
+      waStatuses[userId] = 'CONNECTED';
+      waQrDataUrls[userId] = null;
+      console.log(`[WhatsApp User ${userId}] Client is completely READY and connected!`);
+    });
+
+    client.on('disconnected', (reason) => {
+      waStatuses[userId] = 'DISCONNECTED';
+      waQrDataUrls[userId] = null;
+      console.log(`[WhatsApp User ${userId}] Client disconnected:`, reason);
+      try {
+        client.destroy();
+      } catch (e) {}
+      delete waClients[userId];
+    });
+
+    client.initialize().catch(err => {
+      console.error(`[WhatsApp User ${userId}] Client initialization failed asynchronously:`, err.message);
+      waStatuses[userId] = 'ERROR';
+    });
+
+    waClients[userId] = client;
+    return client;
+  } catch (error) {
+    console.error(`[WhatsApp User ${userId}] Failed to init:`, error);
+    waStatuses[userId] = 'ERROR';
   }
+};
 
-  waClient = new Client({
-    authStrategy: new LocalAuth(),
-    puppeteer: puppeteerOpts
-  });
+const getSenderWaClient = (senderId) => {
+  if (senderId && waClients[senderId]) {
+    return {
+      client: waClients[senderId],
+      status: waStatuses[senderId]
+    };
+  }
+  // Fallback to any connected client
+  for (const uid in waClients) {
+    if (waStatuses[uid] === 'CONNECTED') {
+      return {
+        client: waClients[uid],
+        status: waStatuses[uid]
+      };
+    }
+  }
+  return { client: null, status: 'DISCONNECTED' };
+};
 
-  waClient.on('qr', async (qr) => {
-    waStatus = 'AWAITING_SCAN';
-    waQrDataUrl = await qrcode.toDataURL(qr);
-    console.log('[WhatsApp] QR Code generated. Waiting for scan...');
+// Scan database and auto-initialize WhatsApp clients for users with active sessions on startup
+setTimeout(() => {
+  db.all(`SELECT id FROM users WHERE role IN ('admin', 'teacher')`, [], (err, rows) => {
+    if (err || !rows) return;
+    rows.forEach(row => {
+      const sessionPath = path.join(__dirname, '.wwebjs_auth', `session-user_${row.id}`);
+      if (fs.existsSync(sessionPath)) {
+        console.log(`[WhatsApp] Auto-reconnecting user ${row.id} session...`);
+        initializeUserWaClient(row.id);
+      }
+    });
   });
-
-  waClient.on('ready', () => {
-    waStatus = 'CONNECTED';
-    waQrDataUrl = null;
-    console.log('[WhatsApp] Client is completely READY and connected!');
-  });
-
-  waClient.on('disconnected', (reason) => {
-    waStatus = 'DISCONNECTED';
-    waQrDataUrl = null;
-    console.log('[WhatsApp] Client disconnected:', reason);
-  });
-
-  waClient.initialize().catch(err => {
-    console.error('[WhatsApp] Client initialization failed asynchronously (probably offline):', err.message);
-    waStatus = 'ERROR';
-  });
-} catch (error) {
-  console.error('[WhatsApp] Failed to init:', error);
-  waStatus = 'ERROR';
-}
+}, 2000);
 // -----------------------------
 
 // SMTP configuration
@@ -167,7 +216,10 @@ app.use('/uploads', express.static(uploadsDir));
 // Middleware for auth
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  let token = authHeader && authHeader.split(' ')[1];
+  if (!token) {
+    token = req.query.token;
+  }
   if (token == null) return res.sendStatus(401);
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
@@ -215,7 +267,18 @@ app.post('/api/auth/login', (req, res) => {
       const match = await bcrypt.compare(password, row.password);
       if (!match) return res.status(401).json({ error: 'Invalid admin credentials' });
       const token = jwt.sign({ id: row.id, role: row.role, name: row.name }, JWT_SECRET);
-      res.json({ token, user: { id: row.id, role: row.role, name: row.name } });
+      res.json({ 
+        token, 
+        user: { 
+          id: row.id, 
+          role: row.role, 
+          name: row.name, 
+          email: row.email, 
+          email_alerts: row.email_alerts !== 0 ? 1 : 0, 
+          sms_alerts: row.sms_alerts !== 0 ? 1 : 0, 
+          language: row.language || 'English' 
+        } 
+      });
     });
   } else if (role === 'teacher') {
     db.get(`SELECT * FROM users WHERE username = ? AND role = 'teacher'`, [username], async (err, row) => {
@@ -223,22 +286,79 @@ app.post('/api/auth/login', (req, res) => {
       const match = await bcrypt.compare(password, row.password);
       if (!match) return res.status(401).json({ error: 'Invalid teacher credentials' });
       
+      // First-time login approval check
+      if (row.login_approved === 0) {
+        db.get(`SELECT COUNT(*) as count FROM registration_requests WHERE username = ? AND status = 'pending'`, [row.username], (err, reqRow) => {
+          if (!err && (!reqRow || reqRow.count === 0)) {
+            db.run(`INSERT INTO registration_requests (role, name, username, password, parentPhone, className, status, fatherName, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              ['teacher', row.name, row.username, 'DUMMY_PW', row.phone, 'Teacher Account', 'pending', 'FIRST_LOGIN', row.email],
+              (err) => {
+                if (err) console.error('[Registration Request Insertion Error]', err.message);
+              });
+          }
+        });
+        return res.status(403).json({ error: 'Your account requires first-time login approval by the administrator. A request has been sent.' });
+      }
+
       // Get assigned classes
       db.all(`SELECT class_name FROM teacher_classes WHERE teacher_id = ?`, [row.id], (err, classes) => {
         row.assignedClasses = classes ? classes.map(c => c.class_name) : [];
         const token = jwt.sign({ id: row.id, role: row.role, name: row.name }, JWT_SECRET);
-        res.json({ token, user: { id: row.id, role: row.role, name: row.name, assignedClasses: row.assignedClasses } });
+        res.json({ 
+          token, 
+          user: { 
+            id: row.id, 
+            role: row.role, 
+            name: row.name, 
+            email: row.email, 
+            assignedClasses: row.assignedClasses,
+            email_alerts: row.email_alerts !== 0 ? 1 : 0, 
+            sms_alerts: row.sms_alerts !== 0 ? 1 : 0, 
+            language: row.language || 'English'
+          } 
+        });
       });
     });
   } else if (role === 'student') {
-    db.get(`SELECT * FROM users WHERE name = ? AND parentPhone = ? AND role = 'student'`, [username, phone], async (err, row) => {
+    // Support login using email, phone, parentPhone, or admission number
+    db.get(`SELECT * FROM users WHERE (email = ? OR phone = ? OR parentPhone = ? OR admission_number = ?) AND role = 'student'`, [username, username, username, username], async (err, row) => {
       if (err || !row) return res.status(401).json({ error: 'Invalid student credentials' });
       const match = await bcrypt.compare(password, row.password);
       if (!match) return res.status(401).json({ error: 'Invalid student credentials' });
+      
+      // First-time login approval check
+      if (row.login_approved === 0) {
+        const reqUsername = row.username || row.email || row.admission_number;
+        db.get(`SELECT COUNT(*) as count FROM registration_requests WHERE username = ? AND status = 'pending'`, [reqUsername], (err, reqRow) => {
+          if (!err && (!reqRow || reqRow.count === 0)) {
+            db.run(`INSERT INTO registration_requests (role, name, username, password, parentPhone, className, admission_number, status, fatherName, email, birthdate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              ['student', row.name, reqUsername, 'DUMMY_PW', row.parentPhone, row.className, row.admission_number, 'pending', 'FIRST_LOGIN', row.email, row.birthdate],
+              (err) => {
+                if (err) console.error('[Registration Request Insertion Error]', err.message);
+              });
+          }
+        });
+        return res.status(403).json({ error: 'Your account requires first-time login approval by the administrator. A request has been sent.' });
+      }
+
       const token = jwt.sign({ id: row.id, role: row.role, name: row.name, class: row.className, admission_number: row.admission_number }, JWT_SECRET);
       // Map className to class for frontend compatibility
       row.class = row.className;
-      res.json({ token, user: { id: row.id, role: row.role, name: row.name, class: row.class, admission_number: row.admission_number } });
+      res.json({ 
+        token, 
+        user: { 
+          id: row.id, 
+          role: row.role, 
+          name: row.name, 
+          class: row.class, 
+          admission_number: row.admission_number,
+          email: row.email,
+          registrationDate: row.registrationDate,
+          email_alerts: row.email_alerts !== 0 ? 1 : 0, 
+          sms_alerts: row.sms_alerts !== 0 ? 1 : 0, 
+          language: row.language || 'English'
+        } 
+      });
     });
   }
 });
@@ -256,6 +376,32 @@ app.post('/api/auth/register-admin', async (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
         const token = jwt.sign({ id: this.lastID, role: 'admin', name: 'Administrator' }, JWT_SECRET);
         res.json({ token, user: { id: this.lastID, name: 'Administrator', role: 'admin' } });
+    });
+  });
+});
+
+// Update Password (Authenticated)
+app.post('/api/auth/update-password', authenticateToken, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Both current password and new password are required' });
+  }
+
+  const userId = req.user.id;
+  db.get(`SELECT password FROM users WHERE id = ?`, [userId], async (err, row) => {
+    if (err || !row) return res.status(500).json({ error: 'User not found' });
+
+    const match = await bcrypt.compare(currentPassword, row.password);
+    if (!match) {
+      return res.status(401).json({ error: 'Incorrect current password' });
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    db.run(`UPDATE users SET password = ? WHERE id = ?`, [hashedNewPassword, userId], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      logAction('PASSWORD_CHANGED', `User ID ${userId} updated their password`);
+      res.json({ success: true, message: 'Password updated successfully' });
     });
   });
 });
@@ -306,38 +452,74 @@ app.post('/api/admin/requests/:id/approve', authenticateToken, (req, res) => {
   db.get(`SELECT * FROM registration_requests WHERE id = ?`, [reqId], (err, request) => {
     if (err || !request) return res.status(404).json({ error: 'Request not found' });
     
-    // Insert into users
-    let finalAdmissionNumber = request.admission_number;
-    if (!finalAdmissionNumber) {
-      db.get(`SELECT MAX(CAST(SUBSTR(admission_number, 4) AS INTEGER)) as max_num FROM users WHERE role = ?`, [request.role], (err, row) => {
-        const nextNum = (row && row.max_num ? row.max_num : 0) + 1;
-        finalAdmissionNumber = request.role === 'student' ? `AES${nextNum}` : request.role === 'teacher' ? `AET${nextNum}` : `ADM${nextNum}`;
-        insertUser(finalAdmissionNumber);
-      });
-    } else {
-      insertUser(finalAdmissionNumber);
-    }
+    db.get(`SELECT id FROM users WHERE username = ? OR email = ? OR phone = ? OR (admission_number = ? AND role = ?)`, [request.username, request.username, request.username, request.admission_number, request.role], (err, userRow) => {
+      if (userRow) {
+        // User already exists (First-Time Login Approval Flow)
+        db.run(`UPDATE users SET login_approved = 1 WHERE id = ?`, [userRow.id], function(err) {
+          if (err) return res.status(500).json({ error: err.message });
+          
+          db.run(`DELETE FROM registration_requests WHERE id = ?`, [reqId]);
+          logAction('REQUEST_APPROVED', `Admin approved first-time login for ${request.name || request.username} (${request.role})`);
+          
+          if (request.parentPhone) {
+            sendAutoSms(request.parentPhone, `Your first-time login request at Aarambh has been approved! You can now log in.`, req.user.id);
+          }
+          
+          res.json({ success: true, message: 'First-time login request approved' });
+        });
+      } else {
+        // Normal registration request. Create a new user account.
+        db.get(`SELECT admission_number FROM users WHERE role = ? ORDER BY id DESC LIMIT 1`, [request.role], (err, row) => {
+      let nextNum = 1;
+      if (row && row.admission_number) {
+        const parts = row.admission_number.split('-');
+        if (parts.length === 2) {
+          const currentNum = parseInt(parts[1], 10);
+          if (!isNaN(currentNum)) {
+            nextNum = currentNum + 1;
+          }
+        }
+      }
+      const prefix = request.role === 'student' ? 'AES' : request.role === 'teacher' ? 'AET' : 'ADM';
+      const finalAdmissionNumber = `${prefix}-${nextNum.toString().padStart(2, '0')}`;
+      
+      // Fetch monthly fee from class definition if student
+      if (request.role === 'student') {
+        db.get(`SELECT monthlyFee FROM classes WHERE name = ?`, [request.className], (err, classRow) => {
+          const baseFee = (classRow && classRow.monthlyFee) ? classRow.monthlyFee : 0;
+          // Calculate scholarship discount
+          const discountVal = parseInt(request.discountPercent) || 0;
+          const finalFee = Math.max(0, Math.round(baseFee * (1 - discountVal / 100)));
+          
+          insertUser(finalAdmissionNumber, finalFee);
+        });
+      } else {
+        insertUser(finalAdmissionNumber, 0);
+      }
+    });
 
-    function insertUser(admNum) {
-      db.run(`INSERT INTO users (name, username, password, role, parentPhone, className, admission_number, fatherName, email, birthdate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
-        [request.name || request.username, request.username, request.password, request.role, request.parentPhone, request.className, admNum, request.fatherName, request.email, request.birthdate], 
+    function insertUser(admNum, monthlyFee) {
+      const regDate = new Date().toISOString().split('T')[0];
+      db.run(`INSERT INTO users (name, username, password, role, parentPhone, className, admission_number, fatherName, email, birthdate, registrationDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+        [request.name || request.username, request.username, request.password, request.role, request.parentPhone, request.className, admNum, request.fatherName, request.email, request.birthdate, regDate], 
         function(err) {
           if (err) return res.status(500).json({ error: err.message });
           const newUserId = this.lastID;
           
-          // If student, create fee records for all 12 months (Jan to Dec)
+          // If student, create fee records starting from the month they joined (registration month)
           if (request.role === 'student') {
             const monthsList = [
               'January', 'February', 'March', 'April', 'May', 'June', 
               'July', 'August', 'September', 'October', 'November', 'December'
             ];
-            const yearlyTotal = request.fees || 12000;
-            const monthlyFee = Math.round(yearlyTotal / 12);
+            const currentMonthIdx = new Date().getMonth(); // 0-based index
             monthsList.forEach((m, idx) => {
-              const monthNum = String(idx + 1).padStart(2, '0');
-              const dueDate = `2024-${monthNum}-10`; // e.g. 10th of each month
-              db.run(`INSERT INTO fees (student_id, total, paid, status, due_date, month) VALUES (?, ?, 0, 'Pending', ?, ?)`, 
-                [newUserId, monthlyFee, dueDate, m]);
+              if (idx >= currentMonthIdx) {
+                const monthNum = String(idx + 1).padStart(2, '0');
+                const dueDate = `10/${monthNum}/2026`;
+                db.run(`INSERT INTO fees (student_id, total, paid, status, due_date, month) VALUES (?, ?, 0, 'Pending', ?, ?)`, 
+                  [newUserId, monthlyFee, dueDate, m]);
+              }
             });
           }
           
@@ -353,6 +535,8 @@ app.post('/api/admin/requests/:id/approve', authenticateToken, (req, res) => {
           res.json({ success: true, admission_number: admNum });
       });
     }
+      }
+    });
   });
 });
 
@@ -379,11 +563,43 @@ app.get('/api/classes', (req, res) => {
 // Add a class (Admin only)
 app.post('/api/classes', authenticateToken, (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const { name, grade, time } = req.body;
-  db.run(`INSERT INTO classes (name, grade, time) VALUES (?, ?, ?)`, [name, grade, time], function(err) {
+  const { name, grade, time, monthlyFee } = req.body;
+  const fee = parseInt(monthlyFee) || 0;
+  db.run(`INSERT INTO classes (name, grade, time, monthlyFee) VALUES (?, ?, ?, ?)`, [name, grade, time, fee], function(err) {
     if (err) return res.status(500).json({ error: err.message });
     logAction('CLASS_ADDED', `Admin created new batch: ${name}`);
-    res.json({ id: this.lastID, name, grade, time });
+    res.json({ id: this.lastID, name, grade, time, monthlyFee: fee });
+  });
+});
+
+// Edit a class (Admin only)
+app.put('/api/classes/:id', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const classId = parseInt(req.params.id);
+  const { name, grade, time, monthlyFee } = req.body;
+  const fee = parseInt(monthlyFee) || 0;
+
+  db.get(`SELECT name FROM classes WHERE id = ?`, [classId], (err, row) => {
+    if (err || !row) return res.status(404).json({ error: 'Class not found' });
+    const oldName = row.name;
+
+    db.run(`UPDATE classes SET name = ?, grade = ?, time = ?, monthlyFee = ? WHERE id = ?`, 
+      [name, grade, time, fee, classId], 
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        // Cascade class name change to students, teachers, assignments, and library
+        if (oldName !== name) {
+          db.run(`UPDATE users SET className = ? WHERE className = ? AND role = 'student'`, [name, oldName]);
+          db.run(`UPDATE teacher_classes SET class_name = ? WHERE class_name = ?`, [name, oldName]);
+          db.run(`UPDATE assignments SET subject = ? WHERE subject = ?`, [name, oldName]);
+          db.run(`UPDATE library SET subject = ? WHERE subject = ?`, [name, oldName]);
+        }
+        
+        logAction('CLASS_UPDATED', `Admin updated batch: ${name}`);
+        res.json({ id: classId, name, grade, time, monthlyFee: fee });
+      }
+    );
   });
 });
 
@@ -397,6 +613,7 @@ app.delete('/api/classes/:id', authenticateToken, (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       // Remove students from this class
       db.run(`DELETE FROM users WHERE className = ? AND role = 'student'`, [row.name]);
+      db.run(`DELETE FROM teacher_classes WHERE class_name = ?`, [row.name]);
       logAction('CLASS_DELETED', `Admin deleted batch: ${row.name}`);
       res.json({ success: true });
     });
@@ -405,7 +622,7 @@ app.delete('/api/classes/:id', authenticateToken, (req, res) => {
 
 // Get all students
 app.get('/api/students', authenticateToken, (req, res) => {
-  db.all(`SELECT id, name, parentPhone, className as class, password, fatherName, admission_number FROM users WHERE role = 'student'`, [], (err, rows) => {
+  db.all(`SELECT id, name, parentPhone, className as class, password, fatherName, admission_number, email, phone, motherName, gender, bloodGroup, address, discountPercent, registrationDate FROM users WHERE role = 'student'`, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
@@ -414,39 +631,144 @@ app.get('/api/students', authenticateToken, (req, res) => {
 // Add a student (Admin only)
 app.post('/api/students', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const { name, className, parentPhone, fatherName, email, birthdate } = req.body;
-  const hashedPassword = await bcrypt.hash('pass', 10); // default password
+  const { name, className, parentPhone, fatherName, email, birthdate, phone, motherName, gender, bloodGroup, address, discountPercent, registrationDate, password } = req.body;
+  
+  const studentPassword = password || 'password';
+  const hashedPassword = await bcrypt.hash(studentPassword, 10);
+  const formattedName = name ? name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : name;
+  const formattedFatherName = fatherName ? fatherName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : null;
+  const discountVal = parseInt(discountPercent) || 0;
+  const regDate = registrationDate || new Date().toISOString().split('T')[0];
+
+  // Fetch monthly fee from class definition
+  db.get(`SELECT monthlyFee FROM classes WHERE name = ?`, [className], (err, classRow) => {
+    const baseFee = (classRow && classRow.monthlyFee) ? classRow.monthlyFee : 0;
+    const finalFee = Math.max(0, Math.round(baseFee * (1 - discountVal / 100)));
+
+    // Generate unique AES admission number (AES-01, AES-02...)
+    db.get(`SELECT admission_number FROM users WHERE role = 'student' ORDER BY id DESC LIMIT 1`, (err, row) => {
+      let nextNum = 1;
+      if (row && row.admission_number) {
+        const parts = row.admission_number.split('-');
+        if (parts.length === 2) {
+          const currentNum = parseInt(parts[1], 10);
+          if (!isNaN(currentNum)) {
+            nextNum = currentNum + 1;
+          }
+        }
+      }
+      const admissionNumber = `AES-${nextNum.toString().padStart(2, '0')}`;
+      
+      db.run(`INSERT INTO users (name, role, className, parentPhone, password, admission_number, fatherName, email, birthdate, phone, motherName, gender, bloodGroup, address, discountPercent, registrationDate, login_approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`, 
+        [formattedName, 'student', className, parentPhone, hashedPassword, admissionNumber, formattedFatherName, email || null, birthdate || null, phone || null, motherName || null, gender || null, bloodGroup || null, address || null, discountVal, regDate], 
+        function(err) {
+          if (err) return res.status(500).json({ error: err.message });
+          const newUserId = this.lastID;
+
+          const parts = regDate.split('-');
+          let startingMonthIdx = 0;
+          if (parts.length >= 2) {
+            const parsedMonth = parseInt(parts[1], 10);
+            if (!isNaN(parsedMonth) && parsedMonth >= 1 && parsedMonth <= 12) {
+              startingMonthIdx = parsedMonth - 1;
+            }
+          }
+
+          // Create initial fee records for student starting from registration month
+          const monthsList = [
+            'January', 'February', 'March', 'April', 'May', 'June', 
+            'July', 'August', 'September', 'October', 'November', 'December'
+          ];
+          monthsList.forEach((m, idx) => {
+            if (idx >= startingMonthIdx) {
+              const monthNum = String(idx + 1).padStart(2, '0');
+              const dueDate = `10/${monthNum}/2026`;
+              db.run(`INSERT INTO fees (student_id, total, paid, status, due_date, month) VALUES (?, ?, 0, 'Pending', ?, ?)`, 
+                [newUserId, finalFee, dueDate, m]);
+            }
+          });
+          
+          logAction('STUDENT_ADDED', `Admin added new student: ${formattedName} (${admissionNumber}) to class ${className}`);
+          
+          res.json({ 
+            id: newUserId, 
+            name: formattedName, 
+            class: className, 
+            parentPhone, 
+            admission_number: admissionNumber, 
+            fatherName: formattedFatherName, 
+            email,
+            phone,
+            motherName,
+            gender,
+            bloodGroup,
+            address,
+            discountPercent: discountVal,
+            registrationDate: regDate
+          });
+      });
+    });
+  });
+});
+
+// Edit a student (Admin only)
+app.put('/api/students/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const studentId = parseInt(req.params.id);
+  const { name, className, parentPhone, fatherName, email, birthdate, phone, motherName, gender, bloodGroup, address, discountPercent, registrationDate, password } = req.body;
+  
+  const discountVal = parseInt(discountPercent) || 0;
   const formattedName = name ? name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : name;
   const formattedFatherName = fatherName ? fatherName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : null;
 
-  // Generate unique AES admission number
-  db.get(`SELECT MAX(CAST(SUBSTR(admission_number, 4) AS INTEGER)) as max_num FROM users WHERE role = 'student'`, [], (err, row) => {
-    const nextNum = (row && row.max_num ? row.max_num : 0) + 1;
-    const admissionNumber = `AES${nextNum}`;
-    
-    db.run(`INSERT INTO users (name, role, className, parentPhone, password, admission_number, fatherName, email, birthdate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
-      [formattedName, 'student', className, parentPhone, hashedPassword, admissionNumber, formattedFatherName, email || null, birthdate || null], 
-      function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        const newUserId = this.lastID;
-        // Create initial fee records for student (Jan to Dec)
-        const monthsList = [
-          'January', 'February', 'March', 'April', 'May', 'June', 
-          'July', 'August', 'September', 'October', 'November', 'December'
-        ];
-        const monthlyFee = 1000; // standard default monthly fee
-        monthsList.forEach((m, idx) => {
-          const monthNum = String(idx + 1).padStart(2, '0');
-          const dueDate = `2024-${monthNum}-10`;
-          db.run(`INSERT INTO fees (student_id, total, paid, status, due_date, month) VALUES (?, ?, 0, 'Pending', ?, ?)`, 
-            [newUserId, monthlyFee, dueDate, m]);
+  const updateStudentDb = (hashedPassword) => {
+    let query = `UPDATE users SET name = ?, className = ?, parentPhone = ?, fatherName = ?, email = ?, birthdate = ?, phone = ?, motherName = ?, gender = ?, bloodGroup = ?, address = ?, discountPercent = ?, registrationDate = ?`;
+    let params = [formattedName, className, parentPhone, formattedFatherName, email, birthdate, phone, motherName, gender, bloodGroup, address, discountVal, registrationDate];
+
+    if (hashedPassword) {
+      query += `, password = ?`;
+      params.push(hashedPassword);
+    }
+    query += ` WHERE id = ? AND role = 'student'`;
+    params.push(studentId);
+
+    db.run(query, params, function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+
+      // Update future unpaid fees totals based on new class/discount fee mapping
+      db.get(`SELECT monthlyFee FROM classes WHERE name = ?`, [className], (err, classRow) => {
+        const baseFee = (classRow && classRow.monthlyFee) ? classRow.monthlyFee : 0;
+        const finalFee = Math.max(0, Math.round(baseFee * (1 - discountVal / 100)));
+
+        db.run(`UPDATE fees SET total = ? WHERE student_id = ? AND status = 'Pending'`, [finalFee, studentId], (err) => {
+          logAction('STUDENT_UPDATED', `Admin updated student record: ${formattedName}`);
+          res.json({
+            id: studentId,
+            name: formattedName,
+            class: className,
+            parentPhone,
+            fatherName: formattedFatherName,
+            email,
+            birthdate,
+            phone,
+            motherName,
+            gender,
+            bloodGroup,
+            address,
+            discountPercent: discountVal,
+            registrationDate
+          });
         });
-        
-        logAction('STUDENT_ADDED', `Admin added new student: ${formattedName} to class ${className}`);
-        
-        res.json({ id: newUserId, name: formattedName, class: className, parentPhone, admission_number: admissionNumber, fatherName: formattedFatherName, email });
+      });
     });
-  });
+  };
+
+  if (password && password.trim() !== '') {
+    const hash = await bcrypt.hash(password, 10);
+    updateStudentDb(hash);
+  } else {
+    updateStudentDb(null);
+  }
 });
 
 // Delete a student (Admin only)
@@ -467,6 +789,33 @@ app.delete('/api/students/:id', authenticateToken, (req, res) => {
   });
 });
 
+// Helper for immediate attendance alert
+const triggerImmediateAttendanceAlert = (studentId, date, status, senderId = null) => {
+  if (status !== 'Absent' && status !== 'Late') return;
+
+  db.get(`SELECT name, parentPhone FROM users WHERE id = ?`, [studentId], async (err, student) => {
+    if (err || !student || !student.parentPhone) return;
+
+    const messageBody = `*Aarambh Attendance Alert* ⚠️\n\nDear Parent, this is to inform you that your child *${student.name}* has been marked *${status}* on *${date}*.\n\nPlease contact the school desk if you have any questions.\n\nThank you,\n*Aarambh Institution*`;
+    
+    console.log(`[Auto-SMS] Dispatching immediate attendance alert to ${student.parentPhone} via WhatsApp...`);
+    
+    const { client, status: senderStatus } = getSenderWaClient(senderId);
+    if (senderStatus === 'CONNECTED' && client) {
+      try {
+        const sanitizedNumber = student.parentPhone.replace(/[^\d]/g, '');
+        const chatId = sanitizedNumber.length <= 10 ? `91${sanitizedNumber}@c.us` : `${sanitizedNumber}@c.us`;
+        await client.sendMessage(chatId, messageBody);
+        console.log(`[Auto-SMS] Sent immediate attendance alert via WhatsApp to ${chatId}`);
+      } catch (e) {
+        console.error('[Auto-SMS Error] WhatsApp transmission failed:', e.message);
+      }
+    } else {
+      console.log(`[Auto-SMS Fallback] WhatsApp offline. Logged simulated attendance SMS: "${messageBody}"`);
+    }
+  });
+};
+
 // Mark or update daily attendance
 app.post('/api/attendance', authenticateToken, (req, res) => {
   const { studentId, date, status } = req.body;
@@ -481,14 +830,24 @@ app.post('/api/attendance', authenticateToken, (req, res) => {
     if (row) {
       db.run(`UPDATE attendance SET status = ? WHERE id = ?`, [status, row.id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
+        triggerImmediateAttendanceAlert(studentId, date, status, req.user.id);
         res.json({ success: true, updated: true });
       });
     } else {
       db.run(`INSERT INTO attendance (student_id, date, status) VALUES (?, ?, ?)`, [studentId, date, status], function(err) {
         if (err) return res.status(500).json({ error: err.message });
+        triggerImmediateAttendanceAlert(studentId, date, status, req.user.id);
         res.json({ success: true, inserted: true });
       });
     }
+  });
+});
+
+// Get all attendance logs
+app.get('/api/attendance', authenticateToken, (req, res) => {
+  db.all(`SELECT * FROM attendance ORDER BY date DESC`, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
   });
 });
 
@@ -504,7 +863,7 @@ app.get('/api/attendance/:studentId', authenticateToken, (req, res) => {
 // Send monthly attendance progress card email
 app.post('/api/admin/attendance-report', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  if (!transporter) return res.status(500).json({ error: 'Email service not ready' });
+  if (!transporter) return res.status(200).json({ success: false, error: 'Email service is offline or unverified. Please verify your Gmail SMTP configuration in settings.' });
 
   db.get(`SELECT value FROM system_settings WHERE key = 'email_attendance_alerts'`, (err, settingRow) => {
     const emailAttendanceEnabled = settingRow ? settingRow.value === 'true' : true;
@@ -630,7 +989,7 @@ app.post('/api/admin/attendance-report', authenticateToken, async (req, res) => 
 
 // Get all teachers
 app.get('/api/teachers', authenticateToken, (req, res) => {
-  db.all(`SELECT id, name, username, password FROM users WHERE role = 'teacher'`, [], (err, rows) => {
+  db.all(`SELECT id, name, username, password, email, phone, salary, specialization, admission_number as teacherIdNumber FROM users WHERE role = 'teacher'`, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     
     // Get assigned classes for each
@@ -638,13 +997,146 @@ app.get('/api/teachers', authenticateToken, (req, res) => {
       return new Promise((resolve, reject) => {
         db.all(`SELECT class_name FROM teacher_classes WHERE teacher_id = ?`, [teacher.id], (err, classes) => {
           if (err) reject(err);
-          teacher.assignedClasses = classes.map(c => c.class_name);
+          teacher.assignedClasses = classes ? classes.map(c => c.class_name) : [];
           resolve(teacher);
         });
       });
     });
 
-    Promise.all(promises).then(teachers => res.json(teachers)).catch(err => res.status(500).json({ error: err }));
+    Promise.all(promises).then(teachers => res.json(teachers)).catch(err => res.status(500).json({ error: err.message }));
+  });
+});
+
+// Add a teacher (Admin only)
+app.post('/api/teachers', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const { name, email, phone, salary, specialization, assignedClasses, password } = req.body;
+  const teacherSalary = parseInt(salary) || 0;
+  const teacherPassword = password || '1526'; // Default default password if not provided
+
+  // Generate next sequential Teacher ID (AET-01, AET-02...)
+  db.get(`SELECT admission_number FROM users WHERE role = 'teacher' ORDER BY id DESC LIMIT 1`, (err, row) => {
+    let nextNum = 1;
+    if (row && row.admission_number) {
+      const parts = row.admission_number.split('-');
+      if (parts.length === 2) {
+        const currentNum = parseInt(parts[1], 10);
+        if (!isNaN(currentNum)) {
+          nextNum = currentNum + 1;
+        }
+      }
+    }
+    const teacherIdStr = `AET-${nextNum.toString().padStart(2, '0')}`;
+
+    bcrypt.hash(teacherPassword, 10, (err, hash) => {
+      if (err) return res.status(500).json({ error: 'Password hashing failed' });
+
+      db.run(`INSERT INTO users (name, username, password, role, email, phone, salary, specialization, admission_number, login_approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+        [name, email, hash, 'teacher', email, phone, teacherSalary, specialization, teacherIdStr],
+        function(err) {
+          if (err) return res.status(500).json({ error: err.message });
+          const teacherId = this.lastID;
+
+          // Insert class assignments
+          if (assignedClasses && assignedClasses.length > 0) {
+            const stmt = db.prepare(`INSERT INTO teacher_classes (teacher_id, class_name) VALUES (?, ?)`);
+            assignedClasses.forEach(c => stmt.run(teacherId, c));
+            stmt.finalize();
+          }
+
+          logAction('TEACHER_ADDED', `Admin added teacher: ${name} (${teacherIdStr})`);
+          res.json({
+            id: teacherId,
+            name,
+            username: email,
+            email,
+            phone,
+            salary: teacherSalary,
+            specialization,
+            teacherIdNumber: teacherIdStr,
+            assignedClasses: assignedClasses || []
+          });
+        }
+      );
+    });
+  });
+});
+
+// Edit a teacher (Admin only)
+app.put('/api/teachers/:id', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const teacherId = parseInt(req.params.id);
+  const { name, email, phone, salary, specialization, assignedClasses, password } = req.body;
+  const teacherSalary = parseInt(salary) || 0;
+
+  const updateTeacher = (hashedPassword) => {
+    let query = `UPDATE users SET name = ?, username = ?, email = ?, phone = ?, salary = ?, specialization = ?`;
+    let params = [name, email, email, phone, teacherSalary, specialization];
+
+    if (hashedPassword) {
+      query += `, password = ?`;
+      params.push(hashedPassword);
+    }
+
+    query += ` WHERE id = ? AND role = 'teacher'`;
+    params.push(teacherId);
+
+    db.run(query, params, function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+
+      // Update class assignments: Clear old ones and insert new ones
+      db.run(`DELETE FROM teacher_classes WHERE teacher_id = ?`, [teacherId], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        if (assignedClasses && assignedClasses.length > 0) {
+          const stmt = db.prepare(`INSERT INTO teacher_classes (teacher_id, class_name) VALUES (?, ?)`);
+          assignedClasses.forEach(c => stmt.run(teacherId, c));
+          stmt.finalize();
+        }
+
+        logAction('TEACHER_UPDATED', `Admin updated teacher profile: ${name}`);
+        res.json({
+          id: teacherId,
+          name,
+          username: email,
+          email,
+          phone,
+          salary: teacherSalary,
+          specialization,
+          assignedClasses: assignedClasses || []
+        });
+      });
+    });
+  };
+
+  if (password && password.trim() !== '') {
+    bcrypt.hash(password, 10, (err, hash) => {
+      if (err) return res.status(500).json({ error: 'Password hashing failed' });
+      updateTeacher(hash);
+    });
+  } else {
+    updateTeacher(null);
+  }
+});
+
+// Delete a teacher (Admin only)
+app.delete('/api/teachers/:id', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const teacherId = parseInt(req.params.id);
+
+  db.get(`SELECT name FROM users WHERE id = ? AND role = 'teacher'`, [teacherId], (err, row) => {
+    if (err || !row) return res.status(404).json({ error: 'Teacher not found' });
+    const teacherName = row.name;
+
+    db.run(`DELETE FROM users WHERE id = ? AND role = 'teacher'`, [teacherId], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+
+      // Delete assigned classes
+      db.run(`DELETE FROM teacher_classes WHERE teacher_id = ?`, [teacherId]);
+
+      logAction('TEACHER_DELETED', `Admin deleted teacher: ${teacherName}`);
+      res.json({ success: true });
+    });
   });
 });
 
@@ -714,17 +1206,18 @@ const sendRealSms = async (phone, message) => {
 };
 
 // --- Auto SMS Helper ---
-const sendAutoSms = async (phone, message) => {
+const sendAutoSms = async (phone, message, senderId = null) => {
   if (!phone) return;
-  console.log(`[Auto-SMS] Dispatching to ${phone} via WhatsApp...`);
+  console.log(`[Auto-SMS] Dispatching to ${phone} via WhatsApp (sender: ${senderId || 'default'})...`);
   
   let sentViaWa = false;
-  if (waStatus === 'CONNECTED' && waClient) {
+  const { client, status } = getSenderWaClient(senderId);
+  if (status === 'CONNECTED' && client) {
     try {
       let rawPhone = phone.replace(/\D/g, '');
       if (rawPhone.length === 10) rawPhone = `91${rawPhone}`;
       const chatId = `${rawPhone}@c.us`;
-      await waClient.sendMessage(chatId, message);
+      await client.sendMessage(chatId, message);
       console.log(`[Auto-SMS] Sent via WhatsApp to ${chatId}`);
       sentViaWa = true;
     } catch (e) {
@@ -760,8 +1253,8 @@ app.put('/api/fees/:id/pay', authenticateToken, (req, res) => {
   const { amount, paymentMode, paymentDate, month } = req.body;
   
   const query = month 
-    ? `SELECT fees.*, users.name, users.parentPhone, users.email, users.className FROM fees JOIN users ON fees.student_id = users.id WHERE fees.student_id = ? AND fees.month = ?`
-    : `SELECT fees.*, users.name, users.parentPhone, users.email, users.className FROM fees JOIN users ON fees.student_id = users.id WHERE fees.student_id = ?`;
+    ? `SELECT fees.*, users.name, users.parentPhone, users.email, users.className, users.admission_number, users.discountPercent FROM fees JOIN users ON fees.student_id = users.id WHERE fees.student_id = ? AND fees.month = ?`
+    : `SELECT fees.*, users.name, users.parentPhone, users.email, users.className, users.admission_number, users.discountPercent FROM fees JOIN users ON fees.student_id = users.id WHERE fees.student_id = ?`;
   const params = month ? [studentId, month] : [studentId];
   
   db.get(query, params, (err, fee) => {
@@ -782,8 +1275,27 @@ app.put('/api/fees/:id/pay', authenticateToken, (req, res) => {
       
       logAction('FEE_PAID', `Recorded fee payment of Rs. ${amount} for student ID ${studentId}${month ? ` (${month})` : ''}. Mode: ${paymentMode || 'Cash'}, Status: ${newStatus}`);
       
+      const receiptNo = `REC-${Date.now().toString().slice(-6)}`;
+      
       if (fee.parentPhone) {
-        sendAutoSms(fee.parentPhone, `Dear Parent, we have received a payment of Rs. ${amount} for ${fee.name} for the month of ${month || 'Current'}. Thank you! - Aarambh`);
+        const waReceiptMessage = `*🧾 AARAMBH INSTITUTION - PAYMENT RECEIPT*\n` +
+          `----------------------------------------\n` +
+          `*Receipt No:* ${receiptNo}\n` +
+          `*Date:* ${paymentDate || new Date().toLocaleDateString()}\n` +
+          `*Student Name:* ${fee.name}\n` +
+          `*Admission No:* ${fee.admission_number || 'N/A'}\n` +
+          `*Class/Batch:* ${fee.className || 'N/A'}\n\n` +
+          `*Payment Details:*\n` +
+          `- *Month:* ${month || 'Current'}\n` +
+          `- *Total Fee:* ₹${fee.total}\n` +
+          `- *Discount Applied:* ${fee.discountPercent || 0}%\n` +
+          `- *Amount Paid:* ₹${amount}\n` +
+          `- *Payment Mode:* ${paymentMode || 'Cash'}\n` +
+          `- *Status:* PAID ✅\n\n` +
+          `Thank you for your payment!\n` +
+          `_For any queries, contact accounts@aarambh.edu_`;
+          
+        sendAutoSms(fee.parentPhone, waReceiptMessage);
       }
 
       if (fee.email && transporter) {
@@ -850,7 +1362,9 @@ app.put('/api/fees/:id/pay', authenticateToken, (req, res) => {
 });
 
 // Send automatic fee reminders to all students with pending fees
-app.post('/api/fees/remind-pending', async (req, res) => {
+app.post('/api/fees/remind-pending', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+
   db.get(`SELECT value FROM system_settings WHERE key = 'email_fee_alerts'`, (err, settingRow) => {
     const emailFeeAlertsEnabled = settingRow ? settingRow.value === 'true' : true;
 
@@ -861,19 +1375,21 @@ app.post('/api/fees/remind-pending', async (req, res) => {
       let failedCount = 0;
       let emailSentCount = 0;
       
+      const { client: adminClient, status: adminStatus } = getSenderWaClient(req.user.id);
+      
       for (const row of rows) {
         const dueAmount = row.total - row.paid;
         const message = `Dear Parent, this is a reminder from Aarambh that the tuition fee of Rs. ${dueAmount} for ${row.name} for the month of ${row.month || 'Current'} is currently pending. Please clear the dues at your earliest convenience. Thank you!`;
         
         // 1. Send via WhatsApp if phone exists
         if (row.parentPhone) {
-          if (waStatus === 'CONNECTED' && waClient) {
+          if (adminStatus === 'CONNECTED' && adminClient) {
             try {
               let phone = row.parentPhone.replace(/\D/g, '');
               if (phone.length === 10) phone = `91${phone}`;
               const chatId = `${phone}@c.us`;
               
-              await waClient.sendMessage(chatId, message);
+              await adminClient.sendMessage(chatId, message);
               sentCount++;
             } catch (e) {
               console.error(`[WhatsApp Fee Reminder Error] for ${row.name}:`, e);
@@ -1047,6 +1563,25 @@ app.get('/api/admin/history', authenticateToken, (req, res) => {
   });
 });
 
+// Delete single history log
+app.delete('/api/admin/history/:id', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const logId = parseInt(req.params.id);
+  db.run(`DELETE FROM audit_logs WHERE id = ?`, [logId], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+
+// Clear all history logs
+app.delete('/api/admin/history', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  db.run(`DELETE FROM audit_logs`, (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+
 // --- EXPENSES ROUTES (PROFIT & LOSS) ---
 app.get('/api/expenses', authenticateToken, (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
@@ -1138,58 +1673,416 @@ app.post('/api/library', authenticateToken, upload.single('file'), (req, res) =>
   });
 });
 
+// Delete assignment
+app.delete('/api/assignments/:id', authenticateToken, (req, res) => {
+  if (req.user.role === 'student') return res.sendStatus(403);
+  const assignmentId = parseInt(req.params.id);
+  db.run(`DELETE FROM assignments WHERE id = ?`, [assignmentId], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    logAction('ASSIGNMENT_DELETED', `User ${req.user.username} deleted assignment ID: ${assignmentId}`);
+    res.json({ message: 'Assignment deleted successfully' });
+  });
+});
+
+// Delete library material
+app.delete('/api/library/:id', authenticateToken, (req, res) => {
+  if (req.user.role === 'student') return res.sendStatus(403);
+  const materialId = parseInt(req.params.id);
+  db.run(`DELETE FROM library WHERE id = ?`, [materialId], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    logAction('LIBRARY_DELETED', `User ${req.user.username} deleted study material ID: ${materialId}`);
+    res.json({ message: 'Study material deleted successfully' });
+  });
+});
+
+// --- SUBMISSIONS ENDPOINTS ---
+
+// Submit an assignment (Student only, or simulated)
+app.post('/api/submissions', authenticateToken, upload.single('file'), (req, res) => {
+  const assignment_id = req.body.assignmentId || req.body.assignment_id;
+  const student_id = req.user.role === 'student' ? req.user.id : (req.body.studentId || req.body.student_id);
+  const link = req.body.link || '';
+  const text = req.body.text || '';
+  
+  if (!assignment_id || !student_id) {
+    return res.status(400).json({ error: 'assignmentId and studentId are required' });
+  }
+
+  let file_path = '';
+  if (req.file) {
+    file_path = `http://localhost:5000/uploads/${req.file.filename}`;
+  }
+
+  db.run(
+    `INSERT INTO submissions (assignment_id, student_id, link, text, file_path, status, timestamp) VALUES (?, ?, ?, ?, ?, 'Submitted', datetime('now', 'localtime'))`,
+    [assignment_id, student_id, link, text, file_path],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({
+        id: this.lastID,
+        assignmentId: parseInt(assignment_id),
+        studentId: parseInt(student_id),
+        link,
+        text,
+        file_path,
+        status: 'Submitted',
+        timestamp: new Date().toLocaleString(),
+        grade: null,
+        feedback: null
+      });
+    }
+  );
+});
+
+// Get submissions (Teachers/Admins view filtered/all, Students view only their own)
+app.get('/api/submissions', authenticateToken, (req, res) => {
+  let sql = `SELECT * FROM submissions`;
+  let params = [];
+  if (req.user.role === 'student') {
+    sql += ` WHERE student_id = ?`;
+    params.push(req.user.id);
+  } else {
+    const studentId = req.query.studentId || req.query.student_id;
+    const assignmentId = req.query.assignmentId || req.query.assignment_id;
+    let conditions = [];
+    if (studentId) {
+      conditions.push(`student_id = ?`);
+      params.push(studentId);
+    }
+    if (assignmentId) {
+      conditions.push(`assignment_id = ?`);
+      params.push(assignmentId);
+    }
+    if (conditions.length > 0) {
+      sql += ` WHERE ` + conditions.join(' AND ');
+    }
+  }
+
+  db.all(sql, params, (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows.map(r => ({
+      id: r.id,
+      assignmentId: r.assignment_id,
+      studentId: r.student_id,
+      link: r.link,
+      text: r.text,
+      file_path: r.file_path,
+      status: r.status,
+      timestamp: r.timestamp,
+      grade: r.grade,
+      feedback: r.feedback
+    })));
+  });
+});
+
+// Delete a submission (Student only, if not graded yet)
+app.delete('/api/submissions/:id', authenticateToken, (req, res) => {
+  const submissionId = parseInt(req.params.id);
+  const studentId = req.user.id;
+
+  // Verify the submission belongs to the student and is not graded
+  db.get(`SELECT * FROM submissions WHERE id = ?`, [submissionId], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Submission not found' });
+
+    if (row.student_id !== studentId) {
+      return res.status(403).json({ error: 'Unauthorized to delete this submission' });
+    }
+
+    if (row.grade) {
+      return res.status(400).json({ error: 'Cannot delete a graded submission' });
+    }
+
+    db.run(`DELETE FROM submissions WHERE id = ?`, [submissionId], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      logAction('SUBMISSION_DELETED', `Student deleted submission ID ${submissionId} for assignment ID ${row.assignment_id}`);
+      res.json({ success: true, message: 'Submission deleted successfully' });
+    });
+  });
+});
+
+// Grade a submission (Teacher/Admin only)
+app.put('/api/submissions/:id/grade', authenticateToken, (req, res) => {
+  if (req.user.role === 'student') return res.sendStatus(403);
+  const submissionId = parseInt(req.params.id);
+  const { grade, feedback } = req.body;
+
+  if (!grade) {
+    return res.status(400).json({ error: 'Grade is required' });
+  }
+
+  db.run(
+    `UPDATE submissions SET grade = ?, feedback = ?, status = 'Graded' WHERE id = ?`,
+    [grade, feedback || '', submissionId],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Submission not found' });
+      }
+
+      // Fetch details for WhatsApp and Email notifications
+      db.get(
+        `SELECT s.*, u.name as student_name, u.email as student_email, u.parentPhone as parent_phone, a.title as assignment_title
+         FROM submissions s
+         JOIN users u ON s.student_id = u.id
+         JOIN assignments a ON s.assignment_id = a.id
+         WHERE s.id = ?`,
+        [submissionId],
+        async (err, row) => {
+          if (err || !row) {
+            console.warn('[Grading Notification Warning] Could not fetch student/assignment details:', err?.message);
+            return res.json({ success: true, message: 'Graded (Notification skipped)' });
+          }
+
+          // 1. Email to Student
+          if (row.student_email) {
+            const transporter = nodemailer.createTransport({
+              host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+              port: parseInt(process.env.SMTP_PORT || '587'),
+              secure: false,
+              auth: {
+                user: process.env.SMTP_USER || 'aarambhinstitute46@gmail.com',
+                pass: process.env.SMTP_PASS || 'pass'
+              }
+            });
+
+            db.all(`SELECT key, value FROM system_settings WHERE key IN ('email_user', 'email_pass')`, [], async (err, settings) => {
+              let userVal = 'aarambhinstitute46@gmail.com';
+              let passVal = '';
+              if (!err && settings) {
+                settings.forEach(s => {
+                  if (s.key === 'email_user') userVal = s.value;
+                  if (s.key === 'email_pass') passVal = s.value;
+                });
+              }
+
+              const mailOptions = {
+                from: `"Aarambh Institute" <${userVal}>`,
+                to: row.student_email,
+                subject: `📝 Assignment Graded: ${row.assignment_title}`,
+                html: `
+                  <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+                    <h2 style="color: #4f46e5;">Your Assignment has been Graded</h2>
+                    <p>Hello <strong>${row.student_name}</strong>,</p>
+                    <p>Your submission for assignment <strong>"${row.assignment_title}"</strong> has been graded by your teacher.</p>
+                    <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                      <p style="margin: 5px 0;"><strong>Grade:</strong> <span style="font-size: 18px; color: #10b981; font-weight: bold;">${grade}</span></p>
+                      <p style="margin: 5px 0;"><strong>Feedback:</strong> ${feedback || 'No feedback provided.'}</p>
+                    </div>
+                    <p style="color: #666; font-size: 12px; margin-top: 20px;">This is an automated notification from Aarambh School Management System.</p>
+                  </div>
+                `
+              };
+
+              try {
+                const info = await transporter.sendMail(mailOptions);
+                console.log(`[Grading Email Sent] to ${row.student_email}. Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+              } catch (e) {
+                console.error('[Grading Email Error] Failed to send email:', e.message);
+              }
+            });
+          }
+
+          // 2. WhatsApp to Parent
+          if (row.parent_phone) {
+            const messageBody = `*Aarambh Notification* 📝\n\nDear Parent, your child *${row.student_name}*'s submission for assignment *"${row.assignment_title}"* has been graded.\n\n*Grade:* ${grade}\n*Feedback:* ${feedback || 'No feedback.'}\n\nThank you,\n*Aarambh Institution*`;
+            console.log(`[Auto-SMS] Dispatching grading alert to ${row.parent_phone} via WhatsApp...`);
+            
+            const { client: teacherClient, status: teacherStatus } = getSenderWaClient(req.user.id);
+            if (teacherStatus === 'CONNECTED' && teacherClient) {
+              try {
+                const sanitizedNumber = row.parent_phone.replace(/[^\d]/g, '');
+                const chatId = sanitizedNumber.length <= 10 ? `91${sanitizedNumber}@c.us` : `${sanitizedNumber}@c.us`;
+                await teacherClient.sendMessage(chatId, messageBody);
+                console.log(`[Auto-SMS] Sent grading alert via WhatsApp to ${chatId}`);
+              } catch (e) {
+                console.error('[Auto-SMS] WhatsApp transmission failed:', e.message);
+              }
+            } else {
+              console.log(`[Auto-SMS Fallback] WhatsApp offline. Logged simulated grading SMS: "${messageBody}"`);
+            }
+          }
+
+          // Log action
+          logAction('SUBMISSION_GRADED', `Teacher graded submission ID ${submissionId} for student ${row.student_name}: ${grade}`);
+          res.json({ success: true, message: 'Submission graded successfully' });
+        }
+      );
+    }
+  );
+});
+
+// --- DOUBT CLEARANCE TICKETS ENDPOINTS ---
+
+// Get doubt tickets
+app.get('/api/doubts', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const userRole = req.user.role;
+
+  if (userRole === 'student') {
+    db.all(`SELECT * FROM doubt_tickets WHERE student_id = ? ORDER BY id DESC`, [userId], (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows.map(r => ({
+        id: r.id,
+        studentId: r.student_id,
+        studentName: r.student_name,
+        studentClass: r.student_class,
+        subject: r.subject,
+        description: r.description,
+        status: r.status,
+        timestamp: r.timestamp,
+        reply: r.reply
+      })));
+    });
+  } else {
+    // Admin or Teacher can see all doubt tickets
+    db.all(`SELECT * FROM doubt_tickets ORDER BY id DESC`, [], (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows.map(r => ({
+        id: r.id,
+        studentId: r.student_id,
+        studentName: r.student_name,
+        studentClass: r.student_class,
+        subject: r.subject,
+        description: r.description,
+        status: r.status,
+        timestamp: r.timestamp,
+        reply: r.reply
+      })));
+    });
+  }
+});
+
+// Submit a doubt ticket (Student only)
+app.post('/api/doubts', authenticateToken, (req, res) => {
+  if (req.user.role !== 'student') return res.sendStatus(403);
+  const { subject, description } = req.body;
+  if (!subject || !description) {
+    return res.status(400).json({ error: 'Subject and description are required' });
+  }
+
+  const studentId = req.user.id;
+  
+  // Look up student details to save name and class
+  db.get(`SELECT name, className FROM users WHERE id = ?`, [studentId], (err, userRow) => {
+    if (err || !userRow) return res.status(500).json({ error: 'Student details not found' });
+
+    const timestamp = new Date().toLocaleString();
+    db.run(
+      `INSERT INTO doubt_tickets (student_id, student_name, student_class, subject, description, timestamp) VALUES (?, ?, ?, ?, ?, ?)`,
+      [studentId, userRow.name, userRow.className || 'General', subject, description, timestamp],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        logAction('DOUBT_SUBMITTED', `Student ${userRow.name} submitted doubt ticket #${this.lastID} in ${subject}`);
+        res.json({
+          id: this.lastID,
+          studentId,
+          studentName: userRow.name,
+          studentClass: userRow.className || 'General',
+          subject,
+          description,
+          status: 'Pending',
+          timestamp,
+          reply: null
+        });
+      }
+    );
+  });
+});
+
+// Reply to a doubt ticket (Teacher/Admin only)
+app.post('/api/doubts/:id/reply', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'teacher') return res.sendStatus(403);
+  const { reply } = req.body;
+  const ticketId = req.params.id;
+  if (!reply) {
+    return res.status(400).json({ error: 'Reply content is required' });
+  }
+
+  db.run(
+    `UPDATE doubt_tickets SET reply = ?, status = 'Resolved' WHERE id = ?`,
+    [reply, ticketId],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ error: 'Doubt ticket not found' });
+
+      logAction('DOUBT_RESOLVED', `User ${req.user.name} resolved doubt ticket #${ticketId}`);
+      res.json({ success: true, message: 'Reply submitted and ticket marked as Resolved' });
+    }
+  );
+});
+
+// --- EVENTS ENDPOINTS ---
+
+// Get all calendar events
+app.get('/api/events', authenticateToken, (req, res) => {
+  db.all(`SELECT * FROM calendar_events ORDER BY date ASC, time ASC`, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// Add a new calendar event (Admin only)
+app.post('/api/events', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const { title, date, time, type, description } = req.body;
+  if (!title || !date || !type) {
+    return res.status(400).json({ error: 'title, date, and type are required' });
+  }
+
+  db.run(
+    `INSERT INTO calendar_events (title, date, time, type, description) VALUES (?, ?, ?, ?, ?)`,
+    [title, date, time || '', type, description || ''],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      logAction('EVENT_CREATED', `Admin created event: ${title} on ${date}`);
+      res.json({ id: this.lastID, title, date, time, type, description });
+    }
+  );
+});
+
+// Delete calendar event (Admin only)
+app.delete('/api/events/:id', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const eventId = parseInt(req.params.id);
+  db.run(`DELETE FROM calendar_events WHERE id = ?`, [eventId], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    logAction('EVENT_DELETED', `Admin deleted event ID: ${eventId}`);
+    res.json({ success: true, message: 'Event deleted successfully' });
+  });
+});
+
 // Check WhatsApp Status
-app.get('/api/whatsapp/status', (req, res) => {
-  res.json({ status: waStatus, qr: waQrDataUrl });
+app.get('/api/whatsapp/status', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  if (!waClients[userId]) {
+    initializeUserWaClient(userId);
+  }
+  res.json({
+    status: waStatuses[userId] || 'DISCONNECTED',
+    qr: waQrDataUrls[userId] || null
+  });
 });
 
 // Restart WhatsApp Client (Re-generate QR code)
 app.post('/api/whatsapp/restart', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const userId = req.user.id;
   try {
-    console.log('[WhatsApp] Re-initializing WhatsApp Web client...');
-    waStatus = 'INITIALIZING';
-    waQrDataUrl = null;
-    
-    if (waClient) {
+    console.log(`[WhatsApp User ${userId}] Re-initializing WhatsApp Web client...`);
+    if (waClients[userId]) {
       try {
-        await waClient.destroy();
+        await waClients[userId].destroy();
       } catch (err) {
         console.error('Error destroying old client:', err);
       }
+      delete waClients[userId];
     }
     
-    waClient = new Client({
-      authStrategy: new LocalAuth(),
-      puppeteer: {
-        headless: true,
-        executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      }
-    });
-
-    waClient.on('qr', async (qr) => {
-      waStatus = 'AWAITING_SCAN';
-      waQrDataUrl = await qrcode.toDataURL(qr);
-      console.log('[WhatsApp] QR Code re-generated.');
-    });
-
-    waClient.on('ready', () => {
-      waStatus = 'CONNECTED';
-      waQrDataUrl = null;
-      console.log('[WhatsApp] Connected and ready!');
-    });
-
-    waClient.on('disconnected', (reason) => {
-      waStatus = 'DISCONNECTED';
-      waQrDataUrl = null;
-      console.log('[WhatsApp] Client disconnected:', reason);
-    });
-
-    waClient.initialize().catch(err => {
-      console.error('Init error:', err);
-    });
-    
+    initializeUserWaClient(userId);
     res.json({ success: true, message: 'WhatsApp Web is restarting...' });
   } catch (e) {
     console.error(e);
@@ -1198,17 +2091,18 @@ app.post('/api/whatsapp/restart', authenticateToken, async (req, res) => {
 });
 
 // Send message via SMS (cellular) or Auto-WhatsApp
-app.post('/api/sms', async (req, res) => {
+app.post('/api/sms', authenticateToken, async (req, res) => {
   const { to, message, channel } = req.body;
   
   // 1. Try sending via WhatsApp Robot if selected
-  if ((channel === 'Auto-WhatsApp' || channel === 'WhatsApp') && waStatus === 'CONNECTED' && waClient) {
+  const { client, status } = getSenderWaClient(req.user.id);
+  if ((channel === 'Auto-WhatsApp' || channel === 'WhatsApp') && status === 'CONNECTED' && client) {
     try {
       let phone = to.replace(/\D/g, '');
       if (phone.length === 10) phone = `91${phone}`; // default to India if 10 digits
       const chatId = `${phone}@c.us`;
       
-      await waClient.sendMessage(chatId, message);
+      await client.sendMessage(chatId, message);
       console.log(`[REAL WA SENT] Delivered to ${chatId}`);
       
       return res.json({ 
@@ -1433,6 +2327,53 @@ app.put('/api/users/profile', authenticateToken, (req, res) => {
   });
 });
 
+// Update Profile Preferences (Notification toggles & Language)
+app.put('/api/users/profile/preferences', authenticateToken, (req, res) => {
+  const { emailAlerts, smsAlerts, language } = req.body;
+  db.run(
+    `UPDATE users SET email_alerts = ?, sms_alerts = ?, language = ? WHERE id = ?`,
+    [emailAlerts ? 1 : 0, smsAlerts ? 1 : 0, language || 'English', req.user.id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, email_alerts: emailAlerts ? 1 : 0, sms_alerts: smsAlerts ? 1 : 0, language: language || 'English' });
+    }
+  );
+});
+
+// Update Profile Password
+app.put('/api/users/profile/password', authenticateToken, (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Current password and new password are required' });
+  
+  db.get(`SELECT password FROM users WHERE id = ?`, [req.user.id], async (err, row) => {
+    if (err || !row) return res.status(500).json({ error: 'User not found' });
+    
+    const match = await bcrypt.compare(currentPassword, row.password);
+    if (!match) return res.status(400).json({ error: 'Incorrect current password' });
+    
+    const hashed = await bcrypt.hash(newPassword, 10);
+    db.run(`UPDATE users SET password = ? WHERE id = ?`, [hashed, req.user.id], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      logAction('PASSWORD_CHANGED', `User ID ${req.user.id} updated password`);
+      res.json({ success: true });
+    });
+  });
+});
+
+// Direct Database Backup Download
+app.get('/api/admin/backup/download', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const dbFile = path.resolve(__dirname, 'aarambh.db');
+  res.download(dbFile, 'aarambh_backup.db', (err) => {
+    if (err) {
+      console.error('Backup download error:', err);
+      res.status(500).send('Failed to download backup database.');
+    } else {
+      logAction('BACKUP_DOWNLOADED', 'Admin downloaded SQLite database backup file directly.');
+    }
+  });
+});
+
 // Email Database Backup
 app.post('/api/admin/backup', authenticateToken, (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
@@ -1443,7 +2384,11 @@ app.post('/api/admin/backup', authenticateToken, (req, res) => {
     }
     
     if (!transporter) {
-      return res.status(500).json({ error: 'Email service is offline.' });
+      return res.status(200).json({ 
+        success: false, 
+        error: 'Email service is offline or unverified. You can download the backup file directly.', 
+        downloadUrl: '/admin/backup/download' 
+      });
     }
     
     try {
@@ -1466,7 +2411,11 @@ app.post('/api/admin/backup', authenticateToken, (req, res) => {
       res.json({ success: true, previewUrl });
     } catch (e) {
       console.error(e);
-      res.status(500).json({ error: 'Failed to send email: ' + e.message });
+      res.status(200).json({ 
+        success: false, 
+        error: 'SMTP Email dispatch failed (' + e.message + '). Direct download is available below.', 
+        downloadUrl: '/admin/backup/download' 
+      });
     }
   });
 });
@@ -1516,7 +2465,11 @@ app.post('/api/admin/report', authenticateToken, (req, res) => {
           `;
           
           if (!transporter) {
-            return res.status(500).json({ error: 'Email service is offline.' });
+            return res.status(200).json({ 
+              success: false, 
+              error: 'Email service is offline or unverified. Previewing report content below.', 
+              reportHtml 
+            });
           }
           
           try {
@@ -1536,10 +2489,14 @@ app.post('/api/admin/report', authenticateToken, (req, res) => {
             const previewUrl = nodemailer.getTestMessageUrl(info);
             console.log(`[Weekly Report Emailed] Preview: ${previewUrl}`);
             logAction('REPORT_EMAILED', `Admin triggered weekly operational report emailed to ${adminUser.email}`);
-            res.json({ success: true, previewUrl });
+            res.json({ success: true, previewUrl, reportHtml });
           } catch(e) {
             console.error(e);
-            res.status(500).json({ error: 'Failed to send report: ' + e.message });
+            res.status(200).json({ 
+              success: false, 
+              error: 'SMTP Email dispatch failed (' + e.message + '). Previewing report content below.', 
+              reportHtml 
+            });
           }
         });
       });

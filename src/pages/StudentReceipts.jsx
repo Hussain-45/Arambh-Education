@@ -7,7 +7,7 @@ import { exportToPDF } from '../utils/exportUtils';
 import FeeReceiptModal from '../components/FeeReceiptModal';
 
 const StudentReceipts = () => {
-  const { loggedInUser, fees, recordFeePayment } = useContext(AppContext);
+  const { loggedInUser, fees, recordFeePayment, students } = useContext(AppContext);
   const [selectedPendingId, setSelectedPendingId] = useState('');
   
   // Receipt modal states
@@ -19,7 +19,24 @@ const StudentReceipts = () => {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  const myFeesList = loggedInUser ? fees.filter(f => f.studentId === loggedInUser.id) : [];
+  const getJoiningMonthIndex = (regDateStr) => {
+    if (!regDateStr) return 0;
+    const parts = regDateStr.split('-');
+    if (parts.length >= 2) {
+      const monthNum = parseInt(parts[1], 10);
+      if (!isNaN(monthNum) && monthNum >= 1 && monthNum <= 12) {
+        return monthNum - 1;
+      }
+    }
+    return 0;
+  };
+
+  const studentProfile = students.find(s => s.id === loggedInUser?.id);
+  const regDate = studentProfile?.registrationDate || loggedInUser?.registrationDate || loggedInUser?.registration_date;
+  const joiningMonthIndex = getJoiningMonthIndex(regDate);
+  const myFeesList = loggedInUser 
+    ? fees.filter(f => f.studentId === loggedInUser.id && monthsOrder.indexOf(f.month) >= joiningMonthIndex) 
+    : [];
   const sortedFees = [...myFeesList].sort((a, b) => monthsOrder.indexOf(a.month) - monthsOrder.indexOf(b.month));
 
   const pendingFees = sortedFees.filter(f => f.status !== 'Paid');

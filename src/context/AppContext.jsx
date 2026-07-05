@@ -82,24 +82,142 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
-  // Load state from localStorage
+  const fetchDataFromServer = async () => {
+    if (!authToken) return;
+    try {
+      const headers = { 'Authorization': `Bearer ${authToken}` };
+
+      // Load classes
+      const clsRes = await fetch('http://localhost:5000/api/classes');
+      if (clsRes.ok) {
+        const clsData = await clsRes.json();
+        setClasses(clsData);
+      }
+
+      // Load teachers
+      const tRes = await fetch('http://localhost:5000/api/teachers', { headers });
+      if (tRes.ok) {
+        const tData = await tRes.json();
+        setTeachers(tData);
+      }
+
+      // Load students
+      const sRes = await fetch('http://localhost:5000/api/students', { headers });
+      if (sRes.ok) {
+        const sData = await sRes.json();
+        setStudents(sData);
+      }
+      
+      // Load fees
+      const fRes = await fetch('http://localhost:5000/api/fees', { headers });
+      if (fRes.ok) {
+        const fData = await fRes.json();
+        setFees(fData);
+      }
+
+      // Load expenses
+      const expRes = await fetch('http://localhost:5000/api/expenses', { headers });
+      if (expRes.ok) {
+        const expData = await expRes.json();
+        setExpenses(expData);
+      }
+
+      // Load assignments
+      const assnRes = await fetch('http://localhost:5000/api/assignments', { headers });
+      if (assnRes.ok) {
+        const assnData = await assnRes.json();
+        setAssignments(assnData);
+      }
+
+      // Load library materials
+      const libRes = await fetch('http://localhost:5000/api/library', { headers });
+      if (libRes.ok) {
+        const libData = await libRes.json();
+        setLibrary(libData);
+      }
+
+      // Load announcements
+      const annRes = await fetch('http://localhost:5000/api/announcements', { headers });
+      if (annRes.ok) {
+        const annData = await annRes.json();
+        setAnnouncements(annData);
+      }
+
+      // Load registration requests
+      const reqRes = await fetch('http://localhost:5000/api/admin/requests', { headers });
+      if (reqRes.ok) {
+        const reqData = await reqRes.json();
+        setRegistrationRequests(reqData);
+      }
+
+      // Load audit logs history
+      const histRes = await fetch('http://localhost:5000/api/admin/history', { headers });
+      if (histRes.ok) {
+        const histData = await histRes.json();
+        setHistory(histData);
+      }
+
+      // Load attendance logs
+      const attRes = await fetch('http://localhost:5000/api/attendance', { headers });
+      if (attRes.ok) {
+        const attData = await attRes.json();
+        const mappedData = attData.map(a => ({
+          ...a,
+          studentId: a.student_id || a.studentId,
+          student_id: a.student_id || a.studentId
+        }));
+        setAttendance(mappedData);
+      }
+
+      // Load submissions
+      const subRes = await fetch('http://localhost:5000/api/submissions', { headers });
+      if (subRes.ok) {
+        const subData = await subRes.json();
+        setSubmissions(subData);
+      }
+
+      // Load calendar events
+      const evRes = await fetch('http://localhost:5000/api/events', { headers });
+      if (evRes.ok) {
+        const evData = await evRes.json();
+        setCalendarEvents(evData);
+      }
+
+      // Load doubt tickets
+      const doubtsRes = await fetch('http://localhost:5000/api/doubts', { headers });
+      if (doubtsRes.ok) {
+        const doubtsData = await doubtsRes.json();
+        setDoubtTickets(doubtsData);
+      }
+    } catch (err) {
+      console.error('Error fetching data from server', err);
+    }
+  };
+
+  // Sync state from server when authenticated, otherwise read fallback from localStorage
   useEffect(() => {
-    setClasses(JSON.parse(localStorage.getItem('aarambh_classes') || '[]'));
-    setStudents(JSON.parse(localStorage.getItem('aarambh_students') || '[]'));
-    setTeachers(JSON.parse(localStorage.getItem('aarambh_teachers') || '[]'));
-    setFees(JSON.parse(localStorage.getItem('aarambh_fees') || '[]'));
-    setLibrary(JSON.parse(localStorage.getItem('aarambh_library') || '[]'));
-    setAssignments(JSON.parse(localStorage.getItem('aarambh_assignments') || '[]'));
-    setAnnouncements(JSON.parse(localStorage.getItem('aarambh_announcements') || '[]'));
-    setRegistrationRequests(JSON.parse(localStorage.getItem('aarambh_requests') || '[]'));
-    setHistory(JSON.parse(localStorage.getItem('aarambh_history') || '[]'));
+    if (isAuthenticated && authToken) {
+      fetchDataFromServer();
+    } else {
+      setClasses(JSON.parse(localStorage.getItem('aarambh_classes') || '[]'));
+      setStudents(JSON.parse(localStorage.getItem('aarambh_students') || '[]'));
+      setTeachers(JSON.parse(localStorage.getItem('aarambh_teachers') || '[]'));
+      setFees(JSON.parse(localStorage.getItem('aarambh_fees') || '[]'));
+      setLibrary(JSON.parse(localStorage.getItem('aarambh_library') || '[]'));
+      setAssignments(JSON.parse(localStorage.getItem('aarambh_assignments') || '[]'));
+      setAnnouncements(JSON.parse(localStorage.getItem('aarambh_announcements') || '[]'));
+      setRegistrationRequests(JSON.parse(localStorage.getItem('aarambh_requests') || '[]'));
+      setHistory(JSON.parse(localStorage.getItem('aarambh_history') || '[]'));
+      setExpenses(JSON.parse(localStorage.getItem('aarambh_expenses') || '[]'));
+      setAttendance(JSON.parse(localStorage.getItem('aarambh_attendance') || '[]'));
+      setCalendarEvents(JSON.parse(localStorage.getItem('aarambh_calendar') || '[]'));
+    }
     setMessages(JSON.parse(localStorage.getItem('aarambh_messages') || '[]'));
-    setExpenses(JSON.parse(localStorage.getItem('aarambh_expenses') || '[]'));
     setDoubtTickets(JSON.parse(localStorage.getItem('aarambh_doubt_tickets') || '[]'));
     setSubmissions(JSON.parse(localStorage.getItem('aarambh_submissions') || '[]'));
     setPendingUploads(JSON.parse(localStorage.getItem('aarambh_pending_uploads') || '[]'));
     setNotifications(JSON.parse(localStorage.getItem('aarambh_notifications') || '[]'));
-  }, []);
+  }, [isAuthenticated, authToken]);
 
   // UI Toast Logger
   const addToast = (text, type = 'success') => {
@@ -125,133 +243,104 @@ export const AppProvider = ({ children }) => {
 
   // Auth Operations
   const loginAdmin = async (username, password) => {
-    const cleanUsername = (username || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    const cleanPassword = (password || '').trim();
-
-    // Fail-safe credential bypass (allows ANY password for admin/jaspreet)
-    if (cleanUsername === 'admin' || cleanUsername === 'jaspreet') {
-      const defaultAdmin = { id: 1, name: 'System Admin', username: cleanUsername, role: 'admin', email: 'admin@aarambh.edu' };
-      setAuthToken('admin-mock-token');
-      setUserRole('admin');
-      setLoggedInUser(defaultAdmin);
-      addToast(`Welcome back, System Admin!`);
-      return true;
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, role: 'admin' })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAuthToken(data.token);
+        setUserRole(data.user.role);
+        setLoggedInUser(data.user);
+        addToast('Welcome back, Admin!');
+        return { success: true };
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Invalid credentials', 'danger');
+        return { success: false, error: errData.error || 'Invalid credentials' };
+      }
+    } catch (e) {
+      addToast('Connection to authentication server failed', 'danger');
+      return { success: false, error: 'Connection to authentication server failed' };
     }
-
-    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    const admin = users.find(u => {
-      if (u.role !== 'admin') return false;
-      const cleanU = (u.username || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-      const cleanN = (u.name || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-      const cleanE = (u.email || '').trim().toLowerCase();
-      const matchUser = cleanU === cleanUsername || cleanN === cleanUsername || cleanE === cleanUsername;
-      const matchPass = (u.password || '').startsWith('$2b$') || (u.password || '').trim() === cleanPassword;
-      return matchUser && matchPass;
-    });
-    if (admin) {
-      setAuthToken('admin-mock-token');
-      setUserRole('admin');
-      setLoggedInUser(admin);
-      addToast(`Welcome back, ${admin.name}!`);
-      return true;
-    }
-    addToast('Invalid admin credentials', 'danger');
-    return false;
   };
 
   const registerAdmin = async (username, password) => {
-    const cleanUsername = (username || '').trim().toLowerCase();
-    const cleanPassword = (password || '').trim();
-    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    
-    if (users.some(u => (u.username || '').trim().toLowerCase() === cleanUsername)) {
-      addToast('Username already exists', 'danger');
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/register-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAuthToken(data.token);
+        setUserRole(data.user.role);
+        setLoggedInUser(data.user);
+        addToast('Admin registered and logged in successfully!');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Registration failed', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Connection to server failed', 'danger');
       return false;
     }
-    const newUser = { id: Date.now(), name: username, username: cleanUsername, password: cleanPassword, role: 'admin' };
-    const updatedUsers = [...users, newUser];
-    localStorage.setItem('aarambh_users', JSON.stringify(updatedUsers));
-
-    // Auto login on successful registration
-    setAuthToken('admin-mock-token');
-    setUserRole('admin');
-    setLoggedInUser(newUser);
-    addToast('Admin registered and logged in successfully!');
-    return true;
   };
 
   const loginStudent = async (username, param2, param3) => {
-    // Resolve loginStudent(username, password) OR loginStudent(username, phone, password)
     const actualPassword = param3 !== undefined ? param3 : param2;
-    const cleanUsername = (username || '').trim().toLowerCase();
-    const cleanPassword = (actualPassword || '').trim();
-
-    // Fail-safe credential bypass (allows login with new default credentials)
-    if (cleanUsername === 'student@aarambh.edu' && cleanPassword === 'password') {
-      const defaultStudent = { id: 3, name: 'Student User', username: 'student@aarambh.edu', role: 'student', fatherName: 'Parent Name', class: '10th Math', admission_number: 'AES1', parentPhone: '9876543210' };
-      setAuthToken('student-mock-token');
-      setUserRole('student');
-      setLoggedInUser(defaultStudent);
-      addToast(`Logged in successfully!`);
-      return true;
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password: actualPassword, role: 'student' })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAuthToken(data.token);
+        setUserRole(data.user.role);
+        setLoggedInUser(data.user);
+        addToast('Logged in successfully!');
+        return { success: true };
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Invalid credentials', 'danger');
+        return { success: false, error: errData.error || 'Invalid credentials' };
+      }
+    } catch (e) {
+      addToast('Connection to authentication server failed', 'danger');
+      return { success: false, error: 'Connection to authentication server failed' };
     }
-
-    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    const student = users.find(u => {
-      if (u.role !== 'student') return false;
-      const cleanU = (u.username || '').trim().toLowerCase();
-      const cleanN = (u.name || '').trim().toLowerCase();
-      const cleanA = (u.admission_number || '').trim().toLowerCase();
-      const cleanP = (u.parentPhone || '').trim();
-
-      const matchUser = cleanU === cleanUsername || cleanN === cleanUsername || cleanA === cleanUsername || cleanP === cleanUsername;
-      const matchPass = (u.password || '').startsWith('$2b$') || (u.password || '').trim() === cleanPassword;
-      return matchUser && matchPass;
-    });
-    if (student) {
-      setAuthToken('student-mock-token');
-      setUserRole('student');
-      setLoggedInUser(student);
-      addToast(`Logged in successfully!`);
-      return true;
-    }
-    addToast('Invalid student credentials', 'danger');
-    return false;
   };
 
   const loginTeacher = async (username, password) => {
-    const cleanUsername = (username || '').trim().toLowerCase();
-    const cleanPassword = (password || '').trim();
-
-    // Fail-safe credential bypass (allows ANY password for teacher)
-    if (cleanUsername === 'teacher' || cleanUsername === 'teacher@aarambh.edu') {
-      const defaultTeacher = { id: 2, name: 'Teacher User', username: 'teacher@aarambh.edu', role: 'teacher', email: 'teacher@aarambh.edu', assignedClasses: [] };
-      setAuthToken('teacher-mock-token');
-      setUserRole('teacher');
-      setLoggedInUser(defaultTeacher);
-      addToast(`Logged in successfully!`);
-      return true;
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, role: 'teacher' })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAuthToken(data.token);
+        setUserRole(data.user.role);
+        setLoggedInUser(data.user);
+        addToast('Logged in successfully!');
+        return { success: true };
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Invalid credentials', 'danger');
+        return { success: false, error: errData.error || 'Invalid credentials' };
+      }
+    } catch (e) {
+      addToast('Connection to authentication server failed', 'danger');
+      return { success: false, error: 'Connection to authentication server failed' };
     }
-
-    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    const teacher = users.find(u => {
-      if (u.role !== 'teacher') return false;
-      const cleanU = (u.username || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-      const cleanN = (u.name || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-      const cleanE = (u.email || '').trim().toLowerCase();
-      const matchUser = cleanU === cleanUsername || cleanN === cleanUsername || cleanE === cleanUsername;
-      const matchPass = (u.password || '').startsWith('$2b$') || (u.password || '').trim() === cleanPassword;
-      return matchUser && matchPass;
-    });
-    if (teacher) {
-      setAuthToken('teacher-mock-token');
-      setUserRole('teacher');
-      setLoggedInUser(teacher);
-      addToast(`Logged in successfully!`);
-      return true;
-    }
-    addToast('Invalid teacher credentials', 'danger');
-    return false;
   };
 
   const logout = () => {
@@ -323,6 +412,32 @@ export const AppProvider = ({ children }) => {
   };
 
   const approveRequest = async (id, assignedClasses = []) => {
+    if (authToken) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/admin/requests/${id}/approve`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({ assignedClasses })
+        });
+        if (response.ok) {
+          addToast('Registration request approved successfully!', 'success');
+          await fetchDataFromServer();
+          return true;
+        } else {
+          const errData = await response.json();
+          addToast(errData.error || 'Failed to approve request', 'danger');
+          return false;
+        }
+      } catch (err) {
+        console.error(err);
+        addToast('Failed to connect to server', 'danger');
+        return false;
+      }
+    }
+
     const requests = JSON.parse(localStorage.getItem('aarambh_requests') || '[]');
     const req = requests.find(r => r.id === id);
     if (!req) return false;
@@ -438,6 +553,30 @@ export const AppProvider = ({ children }) => {
   };
 
   const rejectRequest = async (id) => {
+    if (authToken) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/admin/requests/${id}/reject`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+        if (response.ok) {
+          addToast('Registration request rejected successfully!', 'success');
+          await fetchDataFromServer();
+          return true;
+        } else {
+          const errData = await response.json();
+          addToast(errData.error || 'Failed to reject request', 'danger');
+          return false;
+        }
+      } catch (err) {
+        console.error(err);
+        addToast('Failed to connect to server', 'danger');
+        return false;
+      }
+    }
+
     const requests = JSON.parse(localStorage.getItem('aarambh_requests') || '[]');
     const req = requests.find(r => r.id === id);
     if (!req) return false;
@@ -496,25 +635,39 @@ export const AppProvider = ({ children }) => {
 
   // Record fee payments
   const recordFeePayment = async (studentId, amount, paymentMode, paymentDate, month) => {
-    const updatedFees = fees.map(f => {
-      if (f.studentId === studentId && f.month === month) {
-        return {
+    try {
+      const response = await fetch(`http://localhost:5000/api/fees/${studentId}/pay`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ amount, paymentMode, paymentDate, month })
+      });
+      if (response.ok) {
+        // Reload all data to get updated fees and logs
+        const resData = await response.json();
+        setFees(prev => prev.map(f => (f.studentId === studentId && f.month === month) ? {
           ...f,
           paid: f.paid + amount,
           status: f.paid + amount >= f.total ? 'Paid' : 'Pending',
           paymentMode,
           paymentDate: paymentDate || new Date().toLocaleDateString()
-        };
+        } : f));
+        
+        const student = students.find(s => s.id === studentId);
+        logActivity('Fee Payment', `Recorded ₹${amount} fee payment for ${student?.name || 'Student'} for the month of ${month}`);
+        addToast('Payment recorded successfully!');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to record payment', 'danger');
+        return false;
       }
-      return f;
-    });
-    setFees(updatedFees);
-    localStorage.setItem('aarambh_fees', JSON.stringify(updatedFees));
-
-    const student = students.find(s => s.id === studentId);
-    logActivity('Fee Payment', `Recorded ₹${amount} fee payment for ${student?.name || 'Student'} for the month of ${month}`);
-    addToast('Payment recorded successfully!');
-    return true;
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
   };
 
   const sendFeeReminders = async () => {
@@ -569,12 +722,26 @@ export const AppProvider = ({ children }) => {
     }
 
     // Local state sync
-    const newRecord = { id: Date.now(), studentId, date, status };
-    const updated = [newRecord, ...attendance.filter(a => !(a.studentId === studentId && a.date === date))];
+    const newRecord = { id: Date.now(), student_id: studentId, studentId, date, status };
+    const updated = [newRecord, ...attendance.filter(a => !((a.student_id === studentId || a.studentId === studentId) && a.date === date))];
     setAttendance(updated);
     localStorage.setItem('aarambh_attendance', JSON.stringify(updated));
     
     addToast(`Marked ${students.find(s => s.id === studentId)?.name || 'Student'} as ${status}`);
+    return true;
+  };
+
+  const triggerMarkAttendance = async (studentId, date, status, force = false) => {
+    if (!force) {
+      const existing = attendance.find(a => (a.student_id === studentId || a.studentId === studentId) && a.date === date);
+      if (existing) {
+        if (existing.status === status) return false;
+        const student = students.find(s => s.id === studentId);
+        const confirmEdit = window.confirm(`Attendance has already been marked as "${existing.status}" for ${student?.name || 'Student'} on ${date}. Do you want to change it to "${status}"?`);
+        if (!confirmEdit) return false;
+      }
+    }
+    await markAttendance(studentId, date, status);
     return true;
   };
 
@@ -586,7 +753,11 @@ export const AppProvider = ({ children }) => {
       });
       if (response.ok) {
         const data = await response.json();
-        addToast(`Sent ${data.sentCount} monthly attendance reports successfully!`, 'success');
+        if (data.success !== false) {
+          addToast(`Sent ${data.sentCount} monthly attendance reports successfully!`, 'success');
+        } else {
+          addToast(data.error || 'Failed to send attendance reports.', 'warning');
+        }
         return data;
       } else {
         const data = await response.json();
@@ -608,7 +779,7 @@ export const AppProvider = ({ children }) => {
   };
 
   // Student Roster Management
-  const addStudent = async (param1, param2, param3, param4, param5, param6) => {
+  const addStudent = async (param1, param2, param3, param4, param5, param6, param7) => {
     let studentData = {};
     if (typeof param1 === 'object' && param1 !== null) {
       studentData = param1;
@@ -619,337 +790,495 @@ export const AppProvider = ({ children }) => {
         parentPhone: param3,
         fatherName: param4,
         email: param5,
-        birthdate: param6
+        birthdate: param6,
+        password: param7
       };
     }
 
-    let id = Date.now();
-    let sequentialAdmissionNumber = `AES${id.toString().slice(-4)}`;
-
     try {
-      const response = await fetch(`${API_URL}/students`, {
+      const response = await fetch('http://localhost:5000/api/students', {
         method: 'POST',
-        headers: authHeaders,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
         body: JSON.stringify({
           name: studentData.name,
-          className: studentData.class,
+          className: studentData.class || studentData.className,
           parentPhone: studentData.parentPhone,
           fatherName: studentData.fatherName,
           email: studentData.email,
-          birthdate: studentData.birthdate
+          birthdate: studentData.birthdate,
+          phone: studentData.phone,
+          motherName: studentData.motherName,
+          gender: studentData.gender,
+          bloodGroup: studentData.bloodGroup,
+          address: studentData.address,
+          discountPercent: studentData.discountPercent,
+          registrationDate: studentData.registrationDate,
+          password: studentData.password
         })
       });
       if (response.ok) {
         const data = await response.json();
-        id = data.id;
-        sequentialAdmissionNumber = data.admission_number;
+        setStudents(prev => [...prev, data]);
+        fetchDataFromServer(); // Refresh fees
+        logActivity('Add Student', `Manually added student ${data.name} (${data.admission_number})`);
+        addToast('Student added successfully!');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to add student', 'danger');
+        return false;
       }
     } catch (e) {
-      // fallback
+      addToast('Server connection failed', 'danger');
+      return false;
     }
-
-    const newStudent = {
-      id,
-      name: studentData.name,
-      class: studentData.class,
-      parentPhone: studentData.parentPhone,
-      fatherName: studentData.fatherName,
-      email: studentData.email,
-      birthdate: studentData.birthdate,
-      username: studentData.username || `stu_${id.toString().slice(-4)}`,
-      admission_number: sequentialAdmissionNumber
-    };
-
-    const updatedStudents = [...students, newStudent];
-    setStudents(updatedStudents);
-    localStorage.setItem('aarambh_students', JSON.stringify(updatedStudents));
-
-    // Register login user credentials
-    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    const newUser = {
-      id,
-      name: studentData.name,
-      username: newStudent.username,
-      password: studentData.password || 'pass',
-      role: 'student',
-      parentPhone: studentData.parentPhone,
-      className: studentData.class,
-      admission_number: newStudent.admission_number,
-      fatherName: studentData.fatherName,
-      email: studentData.email,
-      birthdate: studentData.birthdate
-    };
-    localStorage.setItem('aarambh_users', JSON.stringify([...users, newUser]));
-
-    // Initialize 12 monthly fees
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const newFees = months.map((month, idx) => ({
-      id: id + idx,
-      studentId: id,
-      month,
-      total: studentData.monthlyFee || 1000,
-      paid: 0,
-      status: 'Pending',
-      dueDate: `10/${(idx + 1).toString().padStart(2, '0')}/2026`,
-      paymentMode: null,
-      paymentDate: null
-    }));
-    const updatedFees = [...fees, ...newFees];
-    setFees(updatedFees);
-    localStorage.setItem('aarambh_fees', JSON.stringify(updatedFees));
-
-    logActivity('Add Student', `Manually added student ${studentData.name} to class ${studentData.class}`);
-    addToast('Student added successfully!');
-    return true;
   };
 
   const removeStudent = async (studentId) => {
-    const updatedStudents = students.filter(s => s.id !== studentId);
-    setStudents(updatedStudents);
-    localStorage.setItem('aarambh_students', JSON.stringify(updatedStudents));
-
-    const updatedFees = fees.filter(f => f.studentId !== studentId);
-    setFees(updatedFees);
-    localStorage.setItem('aarambh_fees', JSON.stringify(updatedFees));
-
-    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    const updatedUsers = users.filter(u => u.id !== studentId);
-    localStorage.setItem('aarambh_users', JSON.stringify(updatedUsers));
-
-    logActivity('Remove Student', `Removed student ID: ${studentId} from systems`);
-    addToast('Student removed successfully.');
-    return true;
+    try {
+      const response = await fetch(`http://localhost:5000/api/students/${studentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      if (response.ok) {
+        setStudents(prev => prev.filter(s => s.id !== studentId));
+        setFees(prev => prev.filter(f => f.studentId !== studentId));
+        logActivity('Remove Student', `Removed student ID: ${studentId} from systems`);
+        addToast('Student removed successfully.');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to remove student', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
   };
 
-  const editStudent = async (studentId, name, className, parentPhone, fatherName, email, birthdate) => {
-    const updatedStudents = students.map(s => {
-      if (s.id === studentId) {
-        return {
-          ...s,
-          name,
-          class: className,
-          parentPhone,
-          fatherName,
-          email,
-          birthdate
-        };
-      }
-      return s;
-    });
-    setStudents(updatedStudents);
-    localStorage.setItem('aarambh_students', JSON.stringify(updatedStudents));
+  const editStudent = async (studentId, param1, param2, param3, param4, param5, param6, param7) => {
+    let studentData = {};
+    if (typeof param1 === 'object' && param1 !== null) {
+      studentData = param1;
+    } else {
+      studentData = {
+        name: param1,
+        class: param2,
+        parentPhone: param3,
+        fatherName: param4,
+        email: param5,
+        birthdate: param6,
+        password: param7
+      };
+    }
 
-    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    const updatedUsers = users.map(u => {
-      if (u.id === studentId) {
-        return {
-          ...u,
-          name,
-          email,
-          parentPhone,
-          className,
-          fatherName,
-          birthdate
-        };
+    try {
+      const response = await fetch(`http://localhost:5000/api/students/${studentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          name: studentData.name,
+          className: studentData.class || studentData.className,
+          parentPhone: studentData.parentPhone,
+          fatherName: studentData.fatherName,
+          email: studentData.email,
+          birthdate: studentData.birthdate,
+          phone: studentData.phone,
+          motherName: studentData.motherName,
+          gender: studentData.gender,
+          bloodGroup: studentData.bloodGroup,
+          address: studentData.address,
+          discountPercent: studentData.discountPercent,
+          registrationDate: studentData.registrationDate,
+          password: studentData.password
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStudents(prev => prev.map(s => s.id === studentId ? { ...s, ...data } : s));
+        fetchDataFromServer(); // Refresh fees
+        logActivity('Edit Student', `Updated student details for ${data.name}`);
+        addToast('Student details updated successfully.', 'success');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to update student', 'danger');
+        return false;
       }
-      return u;
-    });
-    localStorage.setItem('aarambh_users', JSON.stringify(updatedUsers));
-
-    logActivity('Edit Student', `Updated student details for ${name} (ID: ${studentId})`);
-    addToast('Student details updated successfully.', 'success');
-    return true;
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
   };
 
   const removeTeacher = async (teacherId) => {
-    const updatedTeachers = teachers.filter(t => t.id !== teacherId);
-    setTeachers(updatedTeachers);
-    localStorage.setItem('aarambh_teachers', JSON.stringify(updatedTeachers));
-
-    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    const updatedUsers = users.filter(u => u.id !== teacherId);
-    localStorage.setItem('aarambh_users', JSON.stringify(updatedUsers));
-
-    logActivity('Remove Teacher', `Removed teacher ID: ${teacherId} from systems`);
-    addToast('Teacher removed successfully.');
-    return true;
-  };
-
-  const addTeacher = async (name, email, username, password, assignedClasses) => {
-    const id = Date.now();
-    const newTeacher = {
-      id,
-      name,
-      email: email || `${username}@aarambh.edu`,
-      username,
-      assignedClasses: assignedClasses || []
-    };
-    const updatedTeachers = [...teachers, newTeacher];
-    setTeachers(updatedTeachers);
-    localStorage.setItem('aarambh_teachers', JSON.stringify(updatedTeachers));
-
-    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    const newUser = {
-      id,
-      name,
-      username,
-      password,
-      role: 'teacher',
-      email: email || `${username}@aarambh.edu`,
-      assignedClasses: assignedClasses || []
-    };
-    localStorage.setItem('aarambh_users', JSON.stringify([...users, newUser]));
-
-    logActivity('Add Teacher', `Added teacher: ${name} with classes: ${(assignedClasses || []).join(', ')}`);
-    addToast(`Teacher ${name} added successfully!`, 'success');
-    return true;
-  };
-
-  const editTeacher = async (teacherId, name, email, username, password, assignedClasses) => {
-    const updatedTeachers = teachers.map(t => {
-      if (t.id === teacherId) {
-        return {
-          ...t,
-          name,
-          email,
-          username,
-          assignedClasses: assignedClasses || []
-        };
-      }
-      return t;
-    });
-    setTeachers(updatedTeachers);
-    localStorage.setItem('aarambh_teachers', JSON.stringify(updatedTeachers));
-
-    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    const updatedUsers = users.map(u => {
-      if (u.id === teacherId) {
-        const updatedUser = {
-          ...u,
-          name,
-          username,
-          email,
-          assignedClasses: assignedClasses || []
-        };
-        if (password) {
-          updatedUser.password = password;
+    try {
+      const response = await fetch(`http://localhost:5000/api/teachers/${teacherId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
         }
-        return updatedUser;
+      });
+      if (response.ok) {
+        setTeachers(prev => prev.filter(t => t.id !== teacherId));
+        logActivity('Remove Teacher', `Removed teacher ID: ${teacherId} from systems`);
+        addToast('Teacher removed successfully.');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to remove teacher', 'danger');
+        return false;
       }
-      return u;
-    });
-    localStorage.setItem('aarambh_users', JSON.stringify(updatedUsers));
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
+  };
 
-    logActivity('Edit Teacher', `Updated teacher details for ${name} (ID: ${teacherId})`);
-    addToast('Teacher details updated successfully.', 'success');
-    return true;
+  const addTeacher = async (name, email, phone, salary, specialization, assignedClasses, password) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/teachers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ name, email, phone, salary, specialization, assignedClasses, password })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTeachers(prev => [...prev, data]);
+        logActivity('Add Teacher', `Added teacher: ${name}`);
+        addToast(`Teacher ${name} added successfully!`, 'success');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to add teacher', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
+  };
+
+  const editTeacher = async (teacherId, name, email, phone, salary, specialization, assignedClasses, password) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/teachers/${teacherId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ name, email, phone, salary, specialization, assignedClasses, password })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTeachers(prev => prev.map(t => t.id === teacherId ? { ...t, ...data } : t));
+        logActivity('Edit Teacher', `Updated teacher details for ${name}`);
+        addToast('Teacher details updated successfully.', 'success');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to update teacher', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
   };
 
 
   // Class Batches Management
   const removeBatch = async (batchId) => {
-    const batch = classes.find(c => c.id === batchId);
-    if (!batch) return false;
-
-    const updatedClasses = classes.filter(c => c.id !== batchId);
-    setClasses(updatedClasses);
-    localStorage.setItem('aarambh_classes', JSON.stringify(updatedClasses));
-
-    logActivity('Remove Batch', `Removed batch: ${batch.name}`);
-    addToast(`Batch ${batch.name} removed successfully.`);
-    return true;
+    try {
+      const response = await fetch(`http://localhost:5000/api/classes/${batchId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      if (response.ok) {
+        setClasses(prev => prev.filter(c => c.id !== batchId));
+        logActivity('Remove Batch', `Removed batch ID: ${batchId}`);
+        addToast('Batch removed successfully.');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to remove batch', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
   };
 
-  const addBatch = async (name, grade, time) => {
-    const newBatch = {
-      id: Date.now(),
-      name,
-      grade,
-      time
-    };
-    const updatedClasses = [...classes, newBatch];
-    setClasses(updatedClasses);
-    localStorage.setItem('aarambh_classes', JSON.stringify(updatedClasses));
+  const addBatch = async (name, grade, time, monthlyFee) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/classes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ name, grade, time, monthlyFee: parseInt(monthlyFee) || 0 })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setClasses(prev => [...prev, data]);
+        logActivity('Add Batch', `Created new batch: ${name} (${grade})`);
+        addToast(`Batch ${name} created successfully!`, 'success');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to create batch', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
+  };
 
-    logActivity('Add Batch', `Created new batch: ${name} (${grade})`);
-    addToast(`Batch ${name} created successfully!`, 'success');
-    return true;
+  const editBatch = async (batchId, name, grade, time, monthlyFee) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/classes/${batchId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ name, grade, time, monthlyFee: parseInt(monthlyFee) || 0 })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setClasses(prev => prev.map(c => c.id === batchId ? data : c));
+        fetchDataFromServer();
+        logActivity('Edit Batch', `Updated batch details for: ${name}`);
+        addToast(`Batch ${name} updated successfully!`, 'success');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to update batch', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
   };
 
   // Academic Assignments
-  const addAssignment = async (title, subject, dueDate) => {
-    const newAssn = {
-      id: Date.now(),
-      title,
-      subject,
-      due_date: dueDate
-    };
-    const updatedAssignments = [...assignments, newAssn];
-    setAssignments(updatedAssignments);
-    localStorage.setItem('aarambh_assignments', JSON.stringify(updatedAssignments));
+  const addAssignment = async (title, subject, dueDate, type = 'PDF', link = '', file = null) => {
+    try {
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('subject', subject);
+      formData.append('dueDate', dueDate);
+      formData.append('type', type);
+      formData.append('link', link || '');
+      if (file) {
+        formData.append('file', file);
+      }
 
-    logActivity('Add Assignment', `Created assignment: ${title} for subject ${subject}`);
-    addToast('Assignment posted successfully!');
-    return true;
+      const response = await fetch('http://localhost:5000/api/assignments', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: formData
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAssignments(prev => [...prev, data]);
+        logActivity('Add Assignment', `Created assignment: ${title} for subject ${subject}`);
+        addToast('Assignment posted successfully!');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to post assignment', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
+  };
+
+  const deleteAssignment = async (assignmentId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/assignments/${assignmentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      if (response.ok) {
+        setAssignments(prev => prev.filter(a => a.id !== assignmentId));
+        // Also remove any submissions associated with this assignment
+        const updatedSubmissions = submissions.filter(s => s.assignmentId !== assignmentId);
+        setSubmissions(updatedSubmissions);
+        localStorage.setItem('aarambh_submissions', JSON.stringify(updatedSubmissions));
+
+        logActivity('Delete Assignment', `Removed assignment ID: ${assignmentId}`);
+        addToast('Assignment deleted successfully', 'success');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to delete assignment', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
   };
 
   // E-Books & Study Materials Library
-  const addLibraryMaterial = async (title, subject, type, link) => {
-    const newMaterial = {
-      id: Date.now(),
-      title,
-      subject,
-      type,
-      link: link || '#'
-    };
-    const updatedLibrary = [...library, newMaterial];
-    setLibrary(updatedLibrary);
-    localStorage.setItem('aarambh_library', JSON.stringify(updatedLibrary));
+  const addLibraryMaterial = async (title, subject, type, link = '', file = null) => {
+    try {
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('subject', subject);
+      formData.append('type', type);
+      formData.append('link', link || '');
+      if (file) {
+        formData.append('file', file);
+      }
 
-    logActivity('Add Library Material', `Added study material ${title} to ${subject} library`);
-    addToast('Library material added successfully!');
-    return true;
+      const response = await fetch('http://localhost:5000/api/library', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: formData
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setLibrary(prev => [...prev, data]);
+        logActivity('Add Library Material', `Added study material ${title} to ${subject} library`);
+        addToast('Library material added successfully!');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to add study material', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
+  };
+
+  const deleteLibraryMaterial = async (materialId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/library/${materialId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      if (response.ok) {
+        setLibrary(prev => prev.filter(l => l.id !== materialId));
+        logActivity('Delete Library Material', `Removed study material ID: ${materialId}`);
+        addToast('Study material deleted successfully', 'success');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to delete study material', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
   };
 
   // Bulletins & Announcements
   const addAnnouncement = async (title, content, targetClass) => {
-    const newAnn = {
-      id: Date.now(),
-      title,
-      content,
-      target_class: targetClass,
-      date: new Date().toLocaleDateString()
-    };
-    const updatedAnnouncements = [newAnn, ...announcements];
-    setAnnouncements(updatedAnnouncements);
-    localStorage.setItem('aarambh_announcements', JSON.stringify(updatedAnnouncements));
-
-    logActivity('Add Announcement', `Published notice: "${title}" to ${targetClass}`);
-    addToast('Announcement published!');
-    return true;
+    try {
+      const response = await fetch('http://localhost:5000/api/announcements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ title, content, targetClass, date: new Date().toLocaleDateString() })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAnnouncements(prev => [data, ...prev]);
+        logActivity('Add Announcement', `Published notice: "${title}" to ${targetClass}`);
+        addToast('Announcement published!');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to publish announcement', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
   };
 
   const deleteAnnouncement = async (id) => {
-    const updatedAnnouncements = announcements.filter(a => a.id !== id);
-    setAnnouncements(updatedAnnouncements);
-    localStorage.setItem('aarambh_announcements', JSON.stringify(updatedAnnouncements));
-
-    logActivity('Delete Announcement', `Removed announcement ID: ${id}`);
-    addToast('Announcement removed.');
-    return true;
+    try {
+      const response = await fetch(`http://localhost:5000/api/announcements/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      if (response.ok) {
+        setAnnouncements(prev => prev.filter(a => a.id !== id));
+        logActivity('Delete Announcement', `Removed announcement ID: ${id}`);
+        addToast('Announcement removed.', 'success');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to remove announcement', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
   };
 
   // Profile Details
   const updateProfile = async (name, email) => {
+    try {
+      const response = await fetch(`${API_URL}/users/profile`, {
+        method: 'PUT',
+        headers: authHeaders,
+        body: JSON.stringify({ name, email })
+      });
+      if (response.ok) {
+        const updatedUser = { ...loggedInUser, name, email };
+        setLoggedInUser(updatedUser);
+        localStorage.setItem('loggedInUser', JSON.stringify(updatedUser));
+        addToast('Profile settings updated successfully!', 'success');
+        return true;
+      }
+    } catch(err) {
+      console.error(err);
+    }
     const updatedUser = { ...loggedInUser, name, email };
     setLoggedInUser(updatedUser);
     localStorage.setItem('loggedInUser', JSON.stringify(updatedUser));
-
-    const users = JSON.parse(localStorage.getItem('aarambh_users') || '[]');
-    const updatedUsers = users.map(u => u.id === loggedInUser.id ? { ...u, name, email } : u);
-    localStorage.setItem('aarambh_users', JSON.stringify(updatedUsers));
-
-    addToast('Profile settings updated successfully!');
+    addToast('Profile settings saved locally!', 'warning');
     return true;
   };
 
@@ -1020,26 +1349,102 @@ export const AppProvider = ({ children }) => {
     return true;
   };
 
-  const fetchHistory = () => {
-    // Audit logs are updated reactively on states
+  const fetchHistory = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/history', {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setHistory(data);
+      }
+    } catch (e) {
+      console.error('Error fetching audit history logs', e);
+    }
   };
 
-  const addDoubtTicket = (subject, description) => {
-    const newTicket = {
-      id: Date.now(),
-      studentId: loggedInUser?.id,
-      studentName: loggedInUser?.name,
-      subject,
-      description,
-      timestamp: new Date().toLocaleString(),
-      status: 'Pending Faculty Review',
-      reply: null
-    };
-    const updated = [newTicket, ...doubtTickets];
-    setDoubtTickets(updated);
-    localStorage.setItem('aarambh_doubt_tickets', JSON.stringify(updated));
-    logActivity('Doubt Clearance', `Submitted ticket for subject ${subject}: ${description.slice(0, 30)}...`);
-    addToast('Doubt ticket submitted successfully.', 'success');
+  const deleteHistoryLog = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/admin/history/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (response.ok) {
+        setHistory(prev => prev.filter(log => log.id !== id));
+        addToast('Log entry deleted successfully.', 'success');
+        return true;
+      }
+    } catch (e) {
+      addToast('Failed to delete log entry', 'danger');
+    }
+    return false;
+  };
+
+  const clearAllHistoryLogs = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/history', {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+      if (response.ok) {
+        setHistory([]);
+        addToast('All audit logs cleared successfully.', 'success');
+        return true;
+      }
+    } catch (e) {
+      addToast('Failed to clear audit logs', 'danger');
+    }
+    return false;
+  };
+
+  const addDoubtTicket = async (subject, description) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/doubts`, {
+        method: 'POST',
+        headers: {
+          ...authHeaders,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ subject, description })
+      });
+      if (response.ok) {
+        const newTicket = await response.json();
+        setDoubtTickets(prev => [newTicket, ...prev]);
+        logActivity('Doubt Clearance', `Submitted ticket for subject ${subject}: ${description.slice(0, 30)}...`);
+        addToast('Doubt ticket submitted successfully.', 'success');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to submit doubt ticket', 'danger');
+      }
+    } catch (e) {
+      addToast('Connection to server failed', 'danger');
+    }
+    return false;
+  };
+
+  const replyToDoubtTicket = async (ticketId, reply) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/doubts/${ticketId}/reply`, {
+        method: 'POST',
+        headers: {
+          ...authHeaders,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reply })
+      });
+      if (response.ok) {
+        setDoubtTickets(prev => prev.map(t => t.id === ticketId ? { ...t, reply, status: 'Resolved' } : t));
+        addToast('Reply submitted successfully!', 'success');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to submit reply', 'danger');
+      }
+    } catch (e) {
+      addToast('Connection to server failed', 'danger');
+    }
+    return false;
   };
 
   const addNotification = (title, text, type = 'announcement') => {
@@ -1074,23 +1479,82 @@ export const AppProvider = ({ children }) => {
     addToast('All notifications marked as read.', 'success');
   };
 
-  const addSubmission = (assignmentId, studentId, link, text, status = 'Submitted') => {
-    const newSubmission = {
-      id: Date.now(),
-      assignmentId,
-      studentId,
-      link,
-      text,
-      status,
-      timestamp: new Date().toLocaleString(),
-      grade: null
-    };
-    const updated = [...submissions, newSubmission];
-    setSubmissions(updated);
-    localStorage.setItem('aarambh_submissions', JSON.stringify(updated));
-    logActivity('Assignment Submit', `Submitted assignment ID ${assignmentId}`);
-    addNotification('Assignment Submitted', `You turned in your work for assignment ID ${assignmentId}`, 'assignment');
-    return newSubmission;
+  const addSubmission = async (assignmentId, studentId, link, text, file = null) => {
+    try {
+      const formData = new FormData();
+      formData.append('assignmentId', assignmentId);
+      formData.append('studentId', studentId);
+      formData.append('link', link || '');
+      formData.append('text', text || '');
+      if (file) {
+        formData.append('file', file);
+      }
+
+      const response = await fetch('http://localhost:5000/api/submissions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSubmissions(prev => {
+          const filtered = prev.filter(s => !(s.assignmentId === assignmentId && s.studentId === studentId));
+          const updated = [...filtered, data];
+          return updated;
+        });
+        logActivity('Assignment Submit', `Submitted assignment ID ${assignmentId}`);
+        addNotification('Assignment Submitted', `You turned in your work for assignment ID ${assignmentId}`, 'assignment');
+        addToast('Assignment submitted successfully!', 'success');
+        return data;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to submit assignment', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addOfflineSubmission(assignmentId, studentId, link, text);
+      return false;
+    }
+  };
+
+  const deleteSubmission = async (submissionId) => {
+    try {
+      // If it is a simulated offline / unsynced submission
+      const isOffline = pendingUploads.some(p => p.id === submissionId);
+      if (isOffline) {
+        const updatedSub = submissions.filter(s => s.id !== submissionId);
+        setSubmissions(updatedSub);
+        localStorage.setItem('aarambh_submissions', JSON.stringify(updatedSub));
+
+        const updatedPending = pendingUploads.filter(p => p.id !== submissionId);
+        setPendingUploads(updatedPending);
+        localStorage.setItem('aarambh_pending_uploads', JSON.stringify(updatedPending));
+
+        addToast('Offline queued submission removed successfully.', 'success');
+        return true;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/submissions/${submissionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      if (response.ok) {
+        setSubmissions(prev => prev.filter(s => s.id !== submissionId));
+        addToast('Submission deleted successfully. You can resubmit now.', 'success');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to delete submission', 'danger');
+      }
+    } catch (e) {
+      addToast('Connection to server failed', 'danger');
+    }
+    return false;
   };
 
   const addOfflineSubmission = (assignmentId, studentId, link, text) => {
@@ -1144,20 +1608,79 @@ export const AppProvider = ({ children }) => {
     addNotification('Sync Success', `[SYNC] Offline assignments synchronized successfully!`, 'success');
   };
 
-  const gradeSubmission = (submissionId, grade, feedback) => {
-    const currentSubs = JSON.parse(localStorage.getItem('aarambh_submissions') || '[]');
-    const updated = currentSubs.map(sub => {
-      if (sub.id === submissionId) {
-        return { ...sub, grade, feedback, status: 'Graded' };
+  const gradeSubmission = async (submissionId, grade, feedback) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/submissions/${submissionId}/grade`, {
+        method: 'PUT',
+        headers: authHeaders,
+        body: JSON.stringify({ grade, feedback })
+      });
+      if (response.ok) {
+        setSubmissions(prev => prev.map(sub => {
+          if (sub.id === submissionId) {
+            return { ...sub, grade, feedback, status: 'Graded' };
+          }
+          return sub;
+        }));
+        addToast(`Successfully graded submission with score ${grade}`, 'success');
+        logActivity('Grade Submission', `Graded submission ID ${submissionId} with score ${grade}`);
+        addNotification('Grade Published', `Your assignment submission was graded: ${grade}`, 'assignment');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to grade submission', 'danger');
+        return false;
       }
-      return sub;
-    });
-    setSubmissions(updated);
-    localStorage.setItem('aarambh_submissions', JSON.stringify(updated));
-    addToast(`Successfully graded submission with score ${grade}`, 'success');
-    logActivity('Grade Submission', `Graded submission ID ${submissionId} with score ${grade}`);
-    addNotification('Grade Published', `Your assignment submission was graded: ${grade}`, 'assignment');
-    return true;
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
+  };
+
+  const addCalendarEvent = async (title, date, time, type, description) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/events', {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ title, date, time, type, description })
+      });
+      if (response.ok) {
+        const newEvent = await response.json();
+        setCalendarEvents(prev => [...prev, newEvent]);
+        logActivity('Add Calendar Event', `Created calendar event: ${title} for ${date}`);
+        addToast('Calendar event created successfully!', 'success');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to create calendar event', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
+  };
+
+  const deleteCalendarEvent = async (eventId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/events/${eventId}`, {
+        method: 'DELETE',
+        headers: authHeaders
+      });
+      if (response.ok) {
+        setCalendarEvents(prev => prev.filter(ev => ev.id !== eventId));
+        logActivity('Delete Calendar Event', `Deleted calendar event ID: ${eventId}`);
+        addToast('Calendar event deleted successfully', 'success');
+        return true;
+      } else {
+        const errData = await response.json();
+        addToast(errData.error || 'Failed to delete calendar event', 'danger');
+        return false;
+      }
+    } catch (e) {
+      addToast('Server connection failed', 'danger');
+      return false;
+    }
   };
 
   const API_URL = 'http://localhost:5000/api';
@@ -1174,11 +1697,12 @@ export const AppProvider = ({ children }) => {
       students, teachers, fees, messages, toasts, classes, expenses, attendance,
       assignments, submissions, calendarEvents, library, history, announcements, registrationRequests, doubtTickets,
       notifications, pendingUploads,
-      sendMessage, recordFeePayment, sendFeeReminders, addToast, addStudent, removeStudent, removeBatch,
+      sendMessage, recordFeePayment, sendFeeReminders, addToast, addStudent, removeStudent, addBatch, editBatch, removeBatch,
       addTeacher, removeTeacher, editStudent, editTeacher,
-      addAssignment, addLibraryMaterial, fetchHistory, updateProfile, addAnnouncement, deleteAnnouncement,
-      addExpense, editExpense, removeExpense, markAttendance, sendMonthlyAttendanceReport, addDoubtTicket,
-      addNotification, markAllNotificationsAsRead, addSubmission, addOfflineSubmission, syncOfflineSubmissions, gradeSubmission, API_URL, authHeaders
+      addAssignment, deleteAssignment, addLibraryMaterial, deleteLibraryMaterial, fetchHistory, updateProfile, addAnnouncement, deleteAnnouncement,
+      addExpense, editExpense, removeExpense, markAttendance, triggerMarkAttendance, sendMonthlyAttendanceReport, addDoubtTicket, replyToDoubtTicket, deleteHistoryLog, clearAllHistoryLogs,
+      addNotification, markAllNotificationsAsRead, addSubmission, deleteSubmission, addOfflineSubmission, syncOfflineSubmissions, gradeSubmission, API_URL, authHeaders,
+      addCalendarEvent, deleteCalendarEvent
     }}>
       {children}
     </AppContext.Provider>

@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { AppContext } from '../context/AppContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import { UserPlus, Download, Mail, Trash2, Edit2, Search } from 'lucide-react';
+import { UserPlus, Download, Mail, Phone, IndianRupee, Briefcase, Award, Trash2, Edit2, Search } from 'lucide-react';
 import { exportToCSV } from '../utils/exportUtils';
 
 const Teachers = () => {
@@ -15,21 +15,25 @@ const Teachers = () => {
 
   // Add Form State
   const [newName, setNewName] = useState('');
-  const [newUsername, setNewUsername] = useState('');
-  const [newPassword, setNewPassword] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newSalary, setNewSalary] = useState('');
+  const [newSpecialization, setNewSpecialization] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [selectedClasses, setSelectedClasses] = useState([]);
 
   // Edit Form State
   const [editName, setEditName] = useState('');
-  const [editUsername, setEditUsername] = useState('');
-  const [editPassword, setEditPassword] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editSalary, setEditSalary] = useState('');
+  const [editSpecialization, setEditSpecialization] = useState('');
+  const [editPassword, setEditPassword] = useState('');
   const [selectedEditClasses, setSelectedEditClasses] = useState([]);
 
   const handleExportCSV = () => {
-    const headers = ['ID', 'Name', 'Username', 'Email', 'Assigned Classes'];
-    const rows = teachers.map(t => [t.id, t.name, t.username, t.email, (t.assignedClasses || []).join(', ')]);
+    const headers = ['Teacher ID', 'Name', 'Email/Login', 'Phone', 'Salary (₹)', 'Specialization', 'Assigned Batches'];
+    const rows = teachers.map(t => [t.teacherIdNumber || 'N/A', t.name, t.email, t.phone || 'N/A', t.salary || 0, t.specialization || 'N/A', (t.assignedClasses || []).join(', ')]);
     exportToCSV('teachers_list', rows, headers);
   };
 
@@ -49,42 +53,58 @@ const Teachers = () => {
     );
   };
 
-  const handleAddTeacher = () => {
-    if (!newName || !newUsername || !newPassword) {
-      addToast('Please fill in all required fields (Name, Username, Password).', 'warning');
+  const handleAddTeacher = async () => {
+    if (!newName || !newEmail || !newPassword) {
+      addToast('Please fill in all required fields (Name, Email/Login, Password).', 'warning');
       return;
     }
 
-    addTeacher(newName, newEmail, newUsername, newPassword, selectedClasses);
-    setShowModal(false);
-
-    // Reset Form
-    setNewName('');
-    setNewUsername('');
-    setNewPassword('');
-    setNewEmail('');
-    setSelectedClasses([]);
+    const success = await addTeacher(newName, newEmail, newPhone, newSalary, newSpecialization, selectedClasses, newPassword);
+    if (success) {
+      setShowModal(false);
+      // Reset Form
+      setNewName('');
+      setNewEmail('');
+      setNewPhone('');
+      setNewSalary('');
+      setNewSpecialization('');
+      setNewPassword('');
+      setSelectedClasses([]);
+    }
   };
 
   const handleOpenEditModal = (teacher) => {
     setEditingTeacher(teacher);
     setEditName(teacher.name || '');
-    setEditUsername(teacher.username || '');
     setEditEmail(teacher.email || '');
+    setEditPhone(teacher.phone || '');
+    setEditSalary(teacher.salary || '');
+    setEditSpecialization(teacher.specialization || '');
     setEditPassword(''); // Do not expose original password
     setSelectedEditClasses(teacher.assignedClasses || []);
     setShowEditModal(true);
   };
 
-  const handleSaveEdit = () => {
-    if (!editName || !editUsername) {
-      addToast('Please fill in all required fields (Name, Username).', 'warning');
+  const handleSaveEdit = async () => {
+    if (!editName || !editEmail) {
+      addToast('Please fill in all required fields (Name, Email/Login).', 'warning');
       return;
     }
 
-    editTeacher(editingTeacher.id, editName, editEmail, editUsername, editPassword || null, selectedEditClasses);
-    setShowEditModal(false);
-    setEditingTeacher(null);
+    const success = await editTeacher(
+      editingTeacher.id, 
+      editName, 
+      editEmail, 
+      editPhone, 
+      editSalary, 
+      editSpecialization, 
+      selectedEditClasses, 
+      editPassword || null
+    );
+    if (success) {
+      setShowEditModal(false);
+      setEditingTeacher(null);
+    }
   };
 
   const handleDeleteTeacher = (id, name) => {
@@ -112,8 +132,9 @@ const Teachers = () => {
 
   const filteredTeachers = teachers.filter(t => 
     (t.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (t.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (t.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+    (t.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (t.phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (t.teacherIdNumber || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -142,7 +163,7 @@ const Teachers = () => {
               <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
               <input 
                 type="text" 
-                placeholder="Search teachers by name, username, email..."
+                placeholder="Search teachers by name, ID, phone, email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="prof-input"
@@ -152,7 +173,7 @@ const Teachers = () => {
           </div>
           
           {/* Card Grid Layout */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
             {filteredTeachers.map((teacher) => (
               <div key={teacher.id} className="prof-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'relative' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -170,7 +191,7 @@ const Teachers = () => {
                       {teacher.name}
                     </h3>
                     <span className="badge badge-warning" style={{ fontSize: '0.75rem', marginTop: '0.25rem', display: 'inline-block' }}>
-                      @{teacher.username}
+                      {teacher.teacherIdNumber || 'No ID Assigned'}
                     </span>
                   </div>
                 </div>
@@ -180,6 +201,24 @@ const Teachers = () => {
                     <Mail size={14} style={{ opacity: 0.6, flexShrink: 0 }} />
                     <span style={{ color: 'var(--text-muted)' }}>Email:</span>
                     <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{teacher.email}</span>
+                  </div>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Phone size={14} style={{ opacity: 0.6, flexShrink: 0 }} />
+                    <span style={{ color: 'var(--text-muted)' }}>Phone:</span>
+                    <span style={{ fontWeight: 600 }}>{teacher.phone || 'N/A'}</span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <IndianRupee size={14} style={{ opacity: 0.6, flexShrink: 0 }} />
+                    <span style={{ color: 'var(--text-muted)' }}>Salary:</span>
+                    <span style={{ fontWeight: 600 }}>₹{(teacher.salary || 0).toLocaleString()} / month</span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Award size={14} style={{ opacity: 0.6, flexShrink: 0 }} />
+                    <span style={{ color: 'var(--text-muted)' }}>Specialization:</span>
+                    <span style={{ fontWeight: 600 }}>{teacher.specialization || 'N/A'}</span>
                   </div>
                   
                   <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '0.6rem', display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -204,17 +243,15 @@ const Teachers = () => {
                       className="prof-btn prof-btn-secondary" 
                       style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
                     >
-                      <Edit2 size={12} style={{ marginRight: '4px' }} /> Edit
+                      <Edit2 size={12} style={{ marginRight: '4px' }} /> Edit Details
                     </button>
-                    {teacher.username !== 'teacher' && (
-                      <button 
-                        onClick={() => handleDeleteTeacher(teacher.id, teacher.name)} 
-                        className="prof-btn prof-btn-secondary" 
-                        style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.2)' }}
-                      >
-                        <Trash2 size={12} /> Remove
-                      </button>
-                    )}
+                    <button 
+                      onClick={() => handleDeleteTeacher(teacher.id, teacher.name)} 
+                      className="prof-btn prof-btn-secondary" 
+                      style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.2)' }}
+                    >
+                      <Trash2 size={12} /> Remove
+                    </button>
                   </div>
                 )}
               </div>
@@ -246,13 +283,13 @@ const Teachers = () => {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Username * (used for login)</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Email Address * (used for login)</label>
                   <input 
-                    type="text" 
-                    placeholder="Username" 
+                    type="email" 
+                    placeholder="name@aarambh.edu" 
                     className="prof-input" 
-                    value={newUsername}
-                    onChange={(e) => setNewUsername(e.target.value)}
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
                   />
                 </div>
 
@@ -268,13 +305,35 @@ const Teachers = () => {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Email Address</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Phone Number</label>
                   <input 
-                    type="email" 
-                    placeholder="Email Address" 
+                    type="text" 
+                    placeholder="10-digit Mobile Number" 
                     className="prof-input" 
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Monthly Salary (₹)</label>
+                  <input 
+                    type="number" 
+                    placeholder="Monthly Salary amount" 
+                    className="prof-input" 
+                    value={newSalary}
+                    onChange={(e) => setNewSalary(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Subject Specialization</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Mathematics, Physics" 
+                    className="prof-input" 
+                    value={newSpecialization}
+                    onChange={(e) => setNewSpecialization(e.target.value)}
                   />
                 </div>
 
@@ -325,14 +384,13 @@ const Teachers = () => {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Username * (used for login)</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Email Address * (used for login)</label>
                   <input 
-                    type="text" 
-                    placeholder="Username" 
+                    type="email" 
+                    placeholder="Email Address" 
                     className="prof-input" 
-                    value={editUsername}
-                    onChange={(e) => setEditUsername(e.target.value)}
-                    disabled={editingTeacher?.username === 'teacher'} // Lock default teacher username
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
                   />
                 </div>
 
@@ -348,13 +406,35 @@ const Teachers = () => {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Email Address</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Phone Number</label>
                   <input 
-                    type="email" 
-                    placeholder="Email Address" 
+                    type="text" 
+                    placeholder="Phone Number" 
                     className="prof-input" 
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Monthly Salary (₹)</label>
+                  <input 
+                    type="number" 
+                    placeholder="Monthly Salary amount" 
+                    className="prof-input" 
+                    value={editSalary}
+                    onChange={(e) => setEditSalary(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Subject Specialization</label>
+                  <input 
+                    type="text" 
+                    placeholder="Specialization" 
+                    className="prof-input" 
+                    value={editSpecialization}
+                    onChange={(e) => setEditSpecialization(e.target.value)}
                   />
                 </div>
 
