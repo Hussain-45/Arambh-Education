@@ -275,7 +275,7 @@ const Settings = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '2rem', alignItems: 'start', marginBottom: '2rem' }}>
             
-            {/* Left Column: Personal, Security, regional, appearance & privacy */}
+            {/* Left Column: Account Details, SMTP, Apps & Privacy */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               
               {/* Profile Card */}
@@ -347,27 +347,78 @@ const Settings = () => {
                 </div>
               </div>
 
-              {/* Regional Settings */}
+              {/* Gmail SMTP Settings (Admin Only) */}
+              {loggedInUser?.role === 'admin' && (
+                <div className="prof-card" style={{ margin: 0 }}>
+                  <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Cloud size={18} /> Email Notification Settings (Gmail SMTP)
+                  </h3>
+                  <form onSubmit={handleSaveSmtpSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label className="prof-label" style={{ marginBottom: '0.4rem', display: 'block' }}>Gmail Address</label>
+                        <input 
+                          type="email" 
+                          value={smtpEmail} 
+                          onChange={e => setSmtpEmail(e.target.value)} 
+                          placeholder="aarambhinstitute46@gmail.com" 
+                          className="prof-input"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="prof-label" style={{ marginBottom: '0.4rem', display: 'block' }}>Gmail App Password / Passkey</label>
+                        <input 
+                          type="password" 
+                          value={smtpPassword} 
+                          onChange={e => setSmtpPassword(e.target.value)} 
+                          placeholder="••••••••••••••••" 
+                          className="prof-input"
+                        />
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      To link your Gmail, you must generate a 16-character <strong>App Password</strong> in your Google Account Security settings instead of using your main account password.
+                    </div>
+                    <button type="submit" className="prof-btn" style={{ alignSelf: 'flex-start' }}>Save SMTP Configuration</button>
+                  </form>
+                </div>
+              )}
+
+              {/* Connected Apps & Integrations */}
               <div className="prof-card" style={{ margin: 0 }}>
                 <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Globe size={18} /> Regional Settings
+                  <Cloud size={18} /> Connected Apps & Integrations
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                
+                <div className="flex-between" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Display Language</label>
-                    <select className="prof-input" value={language} onChange={e => handleLanguageChange(e.target.value)}>
-                      <option value="English">English</option>
-                      <option value="Hindi">Hindi</option>
-                      <option value="Spanish">Spanish</option>
-                      <option value="French">French</option>
-                    </select>
+                    <p style={{ margin: 0, fontWeight: 500 }}>Google Drive Sync</p>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Automatically backup Library materials and Assignments</p>
                   </div>
+                  <button 
+                    onClick={() => setDriveConnected(!driveConnected)} 
+                    className={`prof-btn ${driveConnected ? 'prof-btn-outline' : ''}`}
+                    style={{ padding: '0.5rem 1rem' }}
+                  >
+                    {driveConnected ? 'Disconnect' : 'Connect'}
+                  </button>
+                </div>
+
+                <div className="flex-between" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Timezone</label>
-                    <select className="prof-input" disabled>
-                      <option>Asia/Kolkata (IST)</option>
-                    </select>
+                    <p style={{ margin: 0, fontWeight: 500 }}>Zoom Integration</p>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Generate live class links directly from the calendar</p>
                   </div>
+                  <button className="prof-btn" style={{ padding: '0.5rem 1rem' }}>Connect</button>
+                </div>
+
+                <div className="flex-between">
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500 }}>WhatsApp Business API</p>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Send automated fee reminders via WhatsApp</p>
+                  </div>
+                  <button className="prof-btn" style={{ padding: '0.5rem 1rem' }}>Connect</button>
                 </div>
               </div>
 
@@ -425,44 +476,6 @@ const Settings = () => {
                 <WhatsAppStatus />
               )}
 
-              {/* Gmail SMTP Settings (Admin Only) */}
-              {loggedInUser?.role === 'admin' && (
-                <div className="prof-card" style={{ margin: 0 }}>
-                  <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Cloud size={18} /> Email Notification Settings (Gmail SMTP)
-                  </h3>
-                  <form onSubmit={handleSaveSmtpSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                      <div>
-                        <label className="prof-label" style={{ marginBottom: '0.4rem', display: 'block' }}>Gmail Address</label>
-                        <input 
-                          type="email" 
-                          value={smtpEmail} 
-                          onChange={e => setSmtpEmail(e.target.value)} 
-                          placeholder="aarambhinstitute46@gmail.com" 
-                          className="prof-input"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="prof-label" style={{ marginBottom: '0.4rem', display: 'block' }}>Gmail App Password / Passkey</label>
-                        <input 
-                          type="password" 
-                          value={smtpPassword} 
-                          onChange={e => setSmtpPassword(e.target.value)} 
-                          placeholder="••••••••••••••••" 
-                          className="prof-input"
-                        />
-                      </div>
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      To link your Gmail, you must generate a 16-character <strong>App Password</strong> in your Google Account Security settings instead of using your main account password.
-                    </div>
-                    <button type="submit" className="prof-btn" style={{ alignSelf: 'flex-start' }}>Save SMTP Configuration</button>
-                  </form>
-                </div>
-              )}
-
               {/* Database Backups & Reports (Admin Only) */}
               {loggedInUser?.role === 'admin' && (
                 <div className="prof-card" style={{ margin: 0 }}>
@@ -506,43 +519,6 @@ const Settings = () => {
                 </div>
               )}
 
-              {/* Connected Apps & Integrations */}
-              <div className="prof-card" style={{ margin: 0 }}>
-                <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Cloud size={18} /> Connected Apps & Integrations
-                </h3>
-                
-                <div className="flex-between" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 500 }}>Google Drive Sync</p>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Automatically backup Library materials and Assignments</p>
-                  </div>
-                  <button 
-                    onClick={() => setDriveConnected(!driveConnected)} 
-                    className={`prof-btn ${driveConnected ? 'prof-btn-outline' : ''}`}
-                    style={{ padding: '0.5rem 1rem' }}
-                  >
-                    {driveConnected ? 'Disconnect' : 'Connect'}
-                  </button>
-                </div>
-
-                <div className="flex-between" style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 500 }}>Zoom Integration</p>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Generate live class links directly from the calendar</p>
-                  </div>
-                  <button className="prof-btn" style={{ padding: '0.5rem 1rem' }}>Connect</button>
-                </div>
-
-                <div className="flex-between">
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 500 }}>WhatsApp Business API</p>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Send automated fee reminders via WhatsApp</p>
-                  </div>
-                  <button className="prof-btn" style={{ padding: '0.5rem 1rem' }}>Connect</button>
-                </div>
-              </div>
-
               {/* Notification Preferences */}
               <div className="prof-card" style={{ margin: 0 }}>
                 <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -582,6 +558,30 @@ const Settings = () => {
                       </label>
                     </>
                   )}
+                </div>
+              </div>
+
+              {/* Regional Settings */}
+              <div className="prof-card" style={{ margin: 0 }}>
+                <h3 style={{ margin: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Globe size={18} /> Regional Settings
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Display Language</label>
+                    <select className="prof-input" value={language} onChange={e => handleLanguageChange(e.target.value)}>
+                      <option value="English">English</option>
+                      <option value="Hindi">Hindi</option>
+                      <option value="Spanish">Spanish</option>
+                      <option value="French">French</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Timezone</label>
+                    <select className="prof-input" disabled>
+                      <option>Asia/Kolkata (IST)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
