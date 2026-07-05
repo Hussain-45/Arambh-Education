@@ -143,7 +143,7 @@ const Chatbot = () => {
           display: 'flex', justifyContent: 'space-between', alignItems: 'center'
         }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Aarambh AI</h3>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Aarambh Education AI</h3>
             <p style={{ margin: 0, fontSize: '0.75rem', opacity: 0.8 }}>Student Support Bot</p>
           </div>
           <X size={20} style={{ cursor: 'pointer' }} onClick={() => setIsOpen(false)} />

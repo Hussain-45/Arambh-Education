@@ -76,7 +76,7 @@ const FeeReceiptModal = ({ isOpen, onClose, fee, student, className }) => {
         {/* Receipt Container */}
         <div ref={receiptRef} style={{ padding: '10px', position: 'relative', zIndex: 1, color: isDark ? '#cbd5e1' : 'var(--text-main)' }}>
           <div style={{ textAlign: 'center', borderBottom: isDark ? '2px solid rgba(255, 255, 255, 0.15)' : '2px solid var(--primary-text, #4A90E2)', paddingBottom: '15px', marginBottom: '20px' }}>
-            <h2 style={{ color: isDark ? '#60a5fa' : 'var(--primary-text, #4A90E2)', margin: 0, fontSize: '24px', fontWeight: 'bold' }}>Aarambh Tuition Center</h2>
+            <h2 style={{ color: isDark ? '#60a5fa' : 'var(--primary-text, #4A90E2)', margin: 0, fontSize: '24px', fontWeight: 'bold' }}>Aarambh Education</h2>
             <p style={{ color: isDark ? '#94a3b8' : 'var(--text-muted, #666)', margin: '5px 0 0 0', fontSize: '13px' }}>123, Aarambh Building, Model Town, India</p>
             <p style={{ color: isDark ? '#94a3b8' : 'var(--text-muted, #666)', margin: '2px 0 0 0', fontSize: '12px' }}>Email: aarambhinstitute46@gmail.com</p>
           </div>

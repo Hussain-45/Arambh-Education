@@ -55,8 +55,8 @@ const Sidebar = () => {
           <img src={logoImg} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)' }}>AARAMBH</h2>
-          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase' }}>Institution</div>
+          <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', letterSpacing: '0.05em' }}>AARAMBH</h2>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2em', marginTop: '0.1rem' }}>EDUCATION</div>
         </div>
       </div>
       

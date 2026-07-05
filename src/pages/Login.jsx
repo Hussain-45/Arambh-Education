@@ -202,7 +202,7 @@ const Login = () => {
               style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
             />
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 900, margin: 0, color: 'white', letterSpacing: '-0.02em' }}>Arambh Education</h1>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 900, margin: 0, color: 'white', letterSpacing: '-0.02em' }}>Aarambh Education</h1>
           <p style={{ color: '#d97706', fontSize: '0.75rem', fontWeight: 900, marginTop: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Learn • Grow • Succeed</p>
         </div>
 
