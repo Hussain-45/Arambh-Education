@@ -1954,7 +1954,7 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
-      isAuthenticated, userRole, loggedInUser,
+      isAuthenticated, userRole, loggedInUser, authToken,
       loginAdmin, registerAdmin, loginStudent, loginTeacher, logout, requestRegistration, approveRequest, rejectRequest,
       theme, setTheme, sidebarCollapsed, setSidebarCollapsed,
       students, teachers, fees, messages, toasts, classes, expenses, attendance,
