@@ -3,23 +3,23 @@
 /* Professional Theme CSS */
 
 :root, body.theme-light {
-  --bg-main: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 100%);
-  --bg-card: rgba(241, 245, 249, 0.55);
-  --bg-sidebar: rgba(241, 245, 249, 0.75);
+  --bg-main: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-sidebar: rgba(255, 255, 255, 0.95);
   --text-main: #0f172a;
-  --text-muted: #475569;
+  --text-muted: #64748b;
   
   --primary: rgba(37, 99, 235, 0.08);
-  --primary-text: #2563eb;
+  --primary-text: #1e40af;
   --primary-hover: rgba(37, 99, 235, 0.15);
   --secondary: rgba(15, 23, 42, 0.04);
   --secondary-hover: rgba(15, 23, 42, 0.08);
   
-  --border-color: rgba(15, 23, 42, 0.06);
+  --border-color: rgba(15, 23, 42, 0.08);
   
-  --shadow-glass: 0 8px 32px 0 rgba(148, 163, 184, 0.08);
-  --shadow-glass-hover: 0 12px 40px 0 rgba(148, 163, 184, 0.15);
-  --glow-color: rgba(37, 99, 235, 0.1);
+  --shadow-glass: 0 8px 30px rgba(0, 0, 0, 0.03);
+  --shadow-glass-hover: 0 12px 36px rgba(0, 0, 0, 0.06);
+  --glow-color: rgba(37, 99, 235, 0.15);
   
   --success: #059669;
   --warning: #d97706;
@@ -36,36 +36,36 @@
 }
 
 body.theme-dark {
-  --bg-main: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-  --bg-card: rgba(15, 23, 42, 0.45);
-  --bg-sidebar: rgba(15, 23, 42, 0.65);
-  --text-main: #f1f5f9;
-  --text-muted: #cbd5e1;
+  --bg-main: linear-gradient(135deg, #090b0f 0%, #0e121a 100%);
+  --bg-card: rgba(22, 26, 38, 0.85);
+  --bg-sidebar: rgba(14, 18, 27, 0.95);
+  --text-main: #ffffff;
+  --text-muted: #8a99ad;
   
-  --primary: rgba(96, 165, 250, 0.12);
-  --primary-text: #60a5fa;
-  --primary-hover: rgba(96, 165, 250, 0.2);
-  --secondary: rgba(255, 255, 255, 0.05);
-  --secondary-hover: rgba(255, 255, 255, 0.1);
+  --primary: rgba(59, 130, 246, 0.12);
+  --primary-text: #3b82f6;
+  --primary-hover: rgba(59, 130, 246, 0.2);
+  --secondary: rgba(255, 255, 255, 0.04);
+  --secondary-hover: rgba(255, 255, 255, 0.08);
   
-  --border-color: rgba(255, 255, 255, 0.08);
+  --border-color: rgba(255, 255, 255, 0.05);
   
-  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-  --shadow-glass-hover: 0 12px 40px 0 rgba(31, 38, 135, 0.12);
-  --glow-color: rgba(96, 165, 250, 0.3);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  --shadow-glass-hover: 0 12px 40px 0 rgba(0, 0, 0, 0.7);
+  --glow-color: rgba(59, 130, 246, 0.3);
   
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
 
   /* Receipt Modal / Popups (Dark Theme) */
-  --modal-bg: #1e293b;
-  --modal-border: rgba(255, 255, 255, 0.1);
-  --bg-muted: rgba(255, 255, 255, 0.04);
-  --table-border: rgba(255, 255, 255, 0.1);
-  --text-success: #34d399;
+  --modal-bg: #161a26;
+  --modal-border: rgba(255, 255, 255, 0.08);
+  --bg-muted: rgba(255, 255, 255, 0.03);
+  --table-border: rgba(255, 255, 255, 0.05);
+  --text-success: #10b981;
   --text-danger: #f87171;
-  --shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 25px 60px rgba(0, 0, 0, 0.8);
 }
 
 * {
