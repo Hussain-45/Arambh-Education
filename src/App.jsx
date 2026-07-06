@@ -33,6 +33,9 @@ import Flashcards from './pages/Flashcards';
 import Leaderboard from './pages/Leaderboard';
 import StudyPlanner from './pages/StudyPlanner';
 import BatchChat from './pages/BatchChat';
+import Certificates from './pages/Certificates';
+import AdmissionsCRM from './pages/AdmissionsCRM';
+import SupportTickets from './pages/SupportTickets';
 
 // Admin Protected Route
 const AdminRoute = ({ children }) => {
@@ -118,6 +121,9 @@ const AppLayout = () => {
         <Route path="/leaderboard" element={<StudentRoute><Leaderboard /></StudentRoute>} />
         <Route path="/study-planner" element={<StudentRoute><StudyPlanner /></StudentRoute>} />
         <Route path="/batch-chat" element={<AuthRoute allowedRoles={['admin', 'teacher', 'student']}><BatchChat /></AuthRoute>} />
+        <Route path="/certificates" element={<AuthRoute allowedRoles={['admin', 'teacher']}><Certificates /></AuthRoute>} />
+        <Route path="/admissions-crm" element={<AuthRoute allowedRoles={['admin', 'teacher']}><AdmissionsCRM /></AuthRoute>} />
+        <Route path="/tickets" element={<AuthRoute allowedRoles={['admin', 'teacher', 'student']}><SupportTickets /></AuthRoute>} />
 
         <Route path="*" element={<Navigate to={isAuthenticated ? getDashboardRoute() : "/login"} replace />} />
       </Routes>

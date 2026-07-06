@@ -329,6 +329,34 @@ const db = new sqlite3.Database(dbPath, (err) => {
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
       )`);
 
+      // Admissions CRM Leads table
+      db.run(`CREATE TABLE IF NOT EXISTS leads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_name TEXT NOT NULL,
+        parent_name TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        email TEXT,
+        grade TEXT,
+        status TEXT DEFAULT 'New',
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`);
+
+      // Support Tickets table
+      db.run(`CREATE TABLE IF NOT EXISTS support_tickets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        user_name TEXT NOT NULL,
+        user_role TEXT NOT NULL,
+        title TEXT NOT NULL,
+        category TEXT NOT NULL,
+        description TEXT NOT NULL,
+        status TEXT DEFAULT 'Open',
+        admin_reply TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`);
+
       // Seed a default admin if no users exist
       db.get(`SELECT COUNT(*) as count FROM users`, (err, row) => {
         if (!err && row && row.count === 0) {

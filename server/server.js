@@ -2625,6 +2625,124 @@ app.post('/api/batches/:className/messages', authenticateToken, (req, res) => {
   );
 });
 
+// --- Admissions CRM Leads Endpoints ---
+app.get('/api/leads', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'teacher') {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  db.all(`SELECT * FROM leads ORDER BY id DESC`, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.post('/api/leads', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'teacher') {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  const { student_name, parent_name, phone, email, grade, status, notes } = req.body;
+  if (!student_name || !parent_name || !phone) {
+    return res.status(400).json({ error: 'Student Name, Parent Name, and Phone are required' });
+  }
+  db.run(
+    `INSERT INTO leads (student_name, parent_name, phone, email, grade, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [student_name, parent_name, phone, email || null, grade || null, status || 'New', notes || null],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, leadId: this.lastID });
+    }
+  );
+});
+
+app.put('/api/leads/:id/status', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'teacher') {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  const { status } = req.body;
+  if (!status) return res.status(400).json({ error: 'Status is required' });
+  db.run(
+    `UPDATE leads SET status = ? WHERE id = ?`,
+    [status, req.params.id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+app.put('/api/leads/:id/notes', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'teacher') {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  const { notes } = req.body;
+  db.run(
+    `UPDATE leads SET notes = ? WHERE id = ?`,
+    [notes, req.params.id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+app.delete('/api/leads/:id', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'teacher') {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  db.run(`DELETE FROM leads WHERE id = ?`, [req.params.id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+
+// --- Support Desk & Ticketing System Endpoints ---
+app.get('/api/tickets', authenticateToken, (req, res) => {
+  if (req.user.role === 'admin' || req.user.role === 'teacher') {
+    db.all(`SELECT * FROM support_tickets ORDER BY id DESC`, [], (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    });
+  } else {
+    db.all(`SELECT * FROM support_tickets WHERE user_id = ? ORDER BY id DESC`, [req.user.id], (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    });
+  }
+});
+
+app.post('/api/tickets', authenticateToken, (req, res) => {
+  const { title, category, description } = req.body;
+  if (!title || !category || !description) {
+    return res.status(400).json({ error: 'Title, Category, and Description are required' });
+  }
+  db.run(
+    `INSERT INTO support_tickets (user_id, user_name, user_role, title, category, description, status) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [req.user.id, req.user.name, req.user.role, title, category, description, 'Open'],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, ticketId: this.lastID });
+    }
+  );
+});
+
+app.put('/api/tickets/:id/reply', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'teacher') {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  const { reply, status } = req.body;
+  if (!reply || !status) {
+    return res.status(400).json({ error: 'Reply and Status are required' });
+  }
+  db.run(
+    `UPDATE support_tickets SET admin_reply = ?, status = ? WHERE id = ?`,
+    [reply, status, req.params.id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
 // --- Parent WhatsApp Alerts Endpoint ---
 app.post('/api/admin/send-whatsapp-progress', authenticateToken, (req, res) => {
   const { studentId, parentPhone } = req.body;

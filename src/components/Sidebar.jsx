@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { LayoutDashboard, Users, BookOpen, CheckSquare, Settings, LogOut, IndianRupee, MessageSquare, Calendar, ClipboardList, Clock, Trophy, GraduationCap, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, CheckSquare, Settings, LogOut, IndianRupee, MessageSquare, Calendar, ClipboardList, Clock, Trophy, GraduationCap, Sparkles, UserPlus, LifeBuoy, Award } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logoImg from '../assets/image_7cc2c3.jpg';
@@ -76,6 +76,9 @@ const Sidebar = () => {
             <SidebarItem icon={MessageSquare} label="Announcements" active={path === '/messages'} onClick={() => navigate('/messages')} />
             <SidebarItem icon={Calendar} label="Events" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
             <SidebarItem icon={ClipboardList} label="Requests" active={path === '/requests'} onClick={() => navigate('/requests')} />
+            <SidebarItem icon={UserPlus} label="Admissions CRM" active={path === '/admissions-crm'} onClick={() => navigate('/admissions-crm')} />
+            <SidebarItem icon={LifeBuoy} label="Support Desk" active={path === '/tickets'} onClick={() => navigate('/tickets')} />
+            <SidebarItem icon={Award} label="Credentials Gen" active={path === '/certificates'} onClick={() => navigate('/certificates')} />
             <SidebarItem icon={Clock} label="System History" active={path === '/history'} onClick={() => navigate('/history')} />
           </>
         )}
@@ -86,6 +89,9 @@ const Sidebar = () => {
             <SidebarItem icon={LayoutDashboard} label="Dashboard" active={path === '/teacher-dashboard'} onClick={() => navigate('/teacher-dashboard')} />
             <SidebarItem icon={Trophy} label="Quizzes & Exams" active={path === '/quizzes'} onClick={() => navigate('/quizzes')} />
             <SidebarItem icon={MessageSquare} label="Batch Chat" active={path === '/batch-chat'} onClick={() => navigate('/batch-chat')} />
+            <SidebarItem icon={UserPlus} label="Admissions CRM" active={path === '/admissions-crm'} onClick={() => navigate('/admissions-crm')} />
+            <SidebarItem icon={LifeBuoy} label="Support Desk" active={path === '/tickets'} onClick={() => navigate('/tickets')} />
+            <SidebarItem icon={Award} label="Credentials Gen" active={path === '/certificates'} onClick={() => navigate('/certificates')} />
             <SidebarItem icon={GraduationCap} label="Syllabus Tracker" active={path === '/syllabus'} onClick={() => navigate('/syllabus')} />
             <SidebarItem icon={MessageSquare} label="Announcements" active={path === '/messages'} onClick={() => navigate('/messages')} />
             <SidebarItem icon={BookOpen} label="My Batches" active={path === '/classes'} onClick={() => navigate('/classes')} />
@@ -109,6 +115,7 @@ const Sidebar = () => {
             <SidebarItem icon={GraduationCap} label="Syllabus Progress" active={path === '/syllabus'} onClick={() => navigate('/syllabus')} />
             <SidebarItem icon={Calendar} label="Events" active={path === '/calendar'} onClick={() => navigate('/calendar')} />
             <SidebarItem icon={BookOpen} label="Study Material" active={path === '/library'} onClick={() => navigate('/library')} />
+            <SidebarItem icon={LifeBuoy} label="Support Desk" active={path === '/tickets'} onClick={() => navigate('/tickets')} />
           </>
         )}
       </div>

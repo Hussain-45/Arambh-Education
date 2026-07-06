@@ -1960,7 +1960,7 @@ export const AppProvider = ({ children }) => {
       students, teachers, fees, messages, toasts, classes, expenses, attendance,
       assignments, submissions, calendarEvents, library, history, announcements, registrationRequests, doubtTickets,
       notifications, pendingUploads, quizzes, quizAttempts, syllabus,
-      sendMessage, recordFeePayment, sendFeeReminders, addToast, addStudent, removeStudent, addBatch, editBatch, removeBatch,
+      sendMessage, recordFeePayment, sendFeeReminders, addToast, showToast: addToast, addStudent, removeStudent, addBatch, editBatch, removeBatch,
       submitUpiPayment, verifyUpiPayment, createQuiz, submitQuizAnswers, deleteQuiz,
       addSyllabusTopic, updateSyllabusTopicStatus, deleteSyllabusTopic,
       addTeacher, removeTeacher, editStudent, editTeacher,
