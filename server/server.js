@@ -3006,6 +3006,8 @@ app.get('/api/quizzes-attempts', authenticateToken, (req, res) => {
       }
     );
   }
+});
+
 // --- SYLLABUS & LESSON PROGRESS TRACKER ENDPOINTS ---
 
 // Get all syllabus items
