@@ -7,7 +7,7 @@ import { exportToCSV } from '../utils/exportUtils';
 import { generateStudentReportCard } from '../utils/reportGenerator';
 
 const Students = () => {
-  const { students, classes, addToast, addStudent, removeStudent, editStudent, userRole, loggedInUser, attendance, quizAttempts, assignments, submissions } = useContext(AppContext);
+  const { students, classes, addToast, addStudent, removeStudent, editStudent, userRole, loggedInUser, attendance, quizAttempts, assignments, submissions, apiBaseUrl, authToken } = useContext(AppContext);
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -168,6 +168,34 @@ const Students = () => {
   const handleDeleteStudent = (id, name) => {
     if (window.confirm(`Are you sure you want to remove Student: ${name}?`)) {
       removeStudent(id);
+    }
+  };
+
+  const sendWhatsAppReport = async (student) => {
+    if (!student.parentPhone) {
+      addToast('No parent phone number registered for this student.', 'warning');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${apiBaseUrl || 'http://localhost:5000'}/api/admin/send-whatsapp-progress`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ studentId: student.id, parentPhone: student.parentPhone })
+      });
+      
+      const data = await response.json();
+      if (response.ok && data.success) {
+        addToast(data.message || 'WhatsApp Progress Report sent successfully!', 'success');
+      } else {
+        addToast(data.error || 'Failed to send WhatsApp report.', 'error');
+      }
+    } catch (e) {
+      console.error(e);
+      addToast('Connection error. Failed to send WhatsApp report.', 'error');
     }
   };
 
@@ -339,6 +367,16 @@ const Students = () => {
                   >
                     <Download size={12} /> Report Card
                   </button>
+                  {userRole === 'admin' && (
+                    <button 
+                      onClick={() => sendWhatsAppReport(student)} 
+                      className="prof-btn" 
+                      style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', borderColor: 'rgba(34, 197, 94, 0.3)', background: 'rgba(34, 197, 94, 0.05)', color: '#16a34a' }}
+                      title="Send Weekly Progress to Parent via WhatsApp"
+                    >
+                      💬 Parent Alert
+                    </button>
+                  )}
                   {userRole === 'admin' && (
                     <>
                       <button 

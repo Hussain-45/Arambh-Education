@@ -85,6 +85,7 @@ const Sidebar = () => {
           <>
             <SidebarItem icon={LayoutDashboard} label="Dashboard" active={path === '/teacher-dashboard'} onClick={() => navigate('/teacher-dashboard')} />
             <SidebarItem icon={Trophy} label="Quizzes & Exams" active={path === '/quizzes'} onClick={() => navigate('/quizzes')} />
+            <SidebarItem icon={MessageSquare} label="Batch Chat" active={path === '/batch-chat'} onClick={() => navigate('/batch-chat')} />
             <SidebarItem icon={GraduationCap} label="Syllabus Tracker" active={path === '/syllabus'} onClick={() => navigate('/syllabus')} />
             <SidebarItem icon={MessageSquare} label="Announcements" active={path === '/messages'} onClick={() => navigate('/messages')} />
             <SidebarItem icon={BookOpen} label="My Batches" active={path === '/classes'} onClick={() => navigate('/classes')} />
@@ -101,6 +102,7 @@ const Sidebar = () => {
             <SidebarItem icon={BookOpen} label="My Assignments" active={path === '/assignments'} onClick={() => navigate('/assignments')} />
             <SidebarItem icon={Trophy} label="Quizzes & Exams" active={path === '/quizzes'} onClick={() => navigate('/quizzes')} />
             <SidebarItem icon={Sparkles} label="AI Study Tutor" active={path === '/study-companion'} onClick={() => navigate('/study-companion')} />
+            <SidebarItem icon={MessageSquare} label="Batch Chat" active={path === '/batch-chat'} onClick={() => navigate('/batch-chat')} />
             <SidebarItem icon={BookOpen} label="AI Flashcards" active={path === '/flashcards'} onClick={() => navigate('/flashcards')} />
             <SidebarItem icon={Trophy} label="Leaderboard" active={path === '/leaderboard'} onClick={() => navigate('/leaderboard')} />
             <SidebarItem icon={Clock} label="AI Study Planner" active={path === '/study-planner'} onClick={() => navigate('/study-planner')} />

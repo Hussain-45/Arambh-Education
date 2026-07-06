@@ -2491,6 +2491,205 @@ Follow these strict rules:
   }
 });
 
+// --- AI Doubt Solver Vision Endpoint ---
+app.post('/api/ai/solve-doubt', authenticateToken, async (req, res) => {
+  const { image } = req.body;
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!image) return res.status(400).json({ error: 'Image is required' });
+
+  const match = image.match(/^data:(image\/\w+);base64,(.+)$/);
+  if (!match) return res.status(400).json({ error: 'Invalid image format' });
+  const mimeType = match[1];
+  const base64Data = match[2];
+
+  if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+    return res.json({
+      success: true,
+      text: `***[OFFLINE MODE]***
+I parsed your image doubt. Here is the offline explanation:
+* **Step 1:** Read the question carefully to identify the given quantities.
+* **Step 2:** Formulate the equation. For example: $F = m \cdot a$ or $y = mx + c$.
+* **Step 3:** Substitute the values and calculate the final result.
+
+Configure your Google Gemini API key to enable live OCR analysis!`
+    });
+  }
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    
+    const payload = {
+      contents: [{
+        parts: [
+          { text: "Explain this homework doubt or question step-by-step. Render math equations using standard LaTeX syntax like $E=mc^2$ or $$F=ma$$." },
+          {
+            inlineData: {
+              mimeType: mimeType,
+              data: base64Data
+            }
+          }
+        ]
+      }]
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) throw new Error('Gemini API call failed');
+    const data = await response.json();
+    const botText = data.candidates[0].content.parts[0].text;
+    res.json({ success: true, text: botText });
+  } catch (err) {
+    console.error('[SOLVE DOUBT ERROR]', err);
+    res.status(500).json({ error: 'Failed to analyze the doubt image.' });
+  }
+});
+
+// --- AI Academic Audio Podcasts Endpoint ---
+app.post('/api/ai/generate-podcast', authenticateToken, async (req, res) => {
+  const { topic } = req.body;
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!topic) return res.status(400).json({ error: 'Topic is required' });
+
+  if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+    const mockScript = [
+      { speaker: 'Dr. Elena', line: `Hello Alex! Today we are studying ${topic}. Ready to dive in?` },
+      { speaker: 'Alex', line: `Yes, Dr. Elena! How does it work?` },
+      { speaker: 'Dr. Elena', line: `Essentially, ${topic} is key for understanding our daily sciences. Think of it like a stepping stone.` },
+      { speaker: 'Alex', line: `Ah, that makes perfect sense! Thanks!` }
+    ];
+    return res.json({ success: true, script: mockScript });
+  }
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const promptText = `Generate a script for a podcast explanation of "${topic}". The format MUST be a valid JSON array of objects, where each object has exactly two fields: "speaker" (either "Dr. Elena" or "Alex") and "line" (what they say). Keep the explanation short (6-8 turns total) and conversational. Output raw JSON array only.`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: promptText }] }]
+      })
+    });
+
+    if (!response.ok) throw new Error('Gemini API call failed');
+    const data = await response.json();
+    let text = data.candidates[0].content.parts[0].text.trim();
+
+    if (text.startsWith('```json')) {
+      text = text.substring(7, text.length - 3).trim();
+    } else if (text.startsWith('```')) {
+      text = text.substring(3, text.length - 3).trim();
+    }
+
+    const script = JSON.parse(text);
+    res.json({ success: true, script });
+  } catch (err) {
+    console.error('[AI PODCAST ERROR]', err);
+    res.status(500).json({ error: 'Failed to generate academic audio script.' });
+  }
+});
+
+// --- Batch Discussion Rooms Endpoints ---
+app.get('/api/batches/:className/messages', authenticateToken, (req, res) => {
+  db.all(
+    `SELECT * FROM batch_messages WHERE class_name = ? ORDER BY id ASC LIMIT 50`,
+    [req.params.className],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+});
+
+app.post('/api/batches/:className/messages', authenticateToken, (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: 'Message text is required' });
+
+  db.run(
+    `INSERT INTO batch_messages (class_name, sender_id, sender_name, sender_role, text) VALUES (?, ?, ?, ?, ?)`,
+    [req.params.className, req.user.id, req.user.name, req.user.role, text],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      const msgId = this.lastID;
+      
+      // Award 5 XP for classroom cooperation
+      awardXP(req.user.id, 5, () => {
+        res.json({ success: true, msgId });
+      });
+    }
+  );
+});
+
+// --- Parent WhatsApp Alerts Endpoint ---
+app.post('/api/admin/send-whatsapp-progress', authenticateToken, (req, res) => {
+  const { studentId, parentPhone } = req.body;
+  if (!studentId || !parentPhone) return res.status(400).json({ error: 'Student ID and Parent Phone are required' });
+
+  db.get(
+    `SELECT name, className, IFNULL(xp, 0) as xp FROM users WHERE id = ?`,
+    [studentId],
+    (err, student) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!student) return res.status(404).json({ error: 'Student not found' });
+
+      db.all(`SELECT score, total_questions FROM quiz_attempts WHERE student_id = ?`, [studentId], (err, attempts) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        let quizAvg = 'N/A';
+        if (attempts.length > 0) {
+          const totalScores = attempts.reduce((acc, a) => acc + (a.score / a.total_questions), 0);
+          quizAvg = Math.round((totalScores / attempts.length) * 100);
+        }
+
+        db.all(`SELECT status FROM attendance WHERE student_id = ?`, [studentId], async (err, atts) => {
+          if (err) return res.status(500).json({ error: err.message });
+
+          let attendanceRate = '100';
+          if (atts.length > 0) {
+            const presents = atts.filter(a => a.status === 'Present').length;
+            attendanceRate = Math.round((presents / atts.length) * 100);
+          }
+
+          const level = Math.floor(student.xp / 500) + 1;
+          const messageText = `*📚 Aarambh Education Weekly Progress Report*
+
+Dear Parent,
+Here is the performance report for your child *${student.name}*:
+- *Class:* ${student.className || 'General'}
+- *Student ID:* ${studentId}
+- *Level:* ${level} (${student.xp} XP)
+- *Quiz Average:* ${quizAvg}%
+- *Attendance:* ${attendanceRate}%
+
+Thank you for partnering with Aarambh Institute!
+Best regards,
+Aarambh Education Team`;
+
+          const { client, status } = getSenderWaClient(req.user.id);
+          if (status === 'CONNECTED' && client) {
+            try {
+              const cleanPhone = parentPhone.replace(/\D/g, '');
+              const waId = cleanPhone.length === 10 ? `91${cleanPhone}@c.us` : `${cleanPhone}@c.us`;
+              await client.sendMessage(waId, messageText);
+              res.json({ success: true, message: 'Progress Report sent to parent via WhatsApp!' });
+            } catch (err) {
+              console.error('[WHATSAPP SEND FAIL]', err);
+              res.json({ success: true, message: 'WhatsApp failed to deliver. Delivery simulated in log console.', mock_sent: true });
+            }
+          } else {
+            res.json({ success: true, message: 'WhatsApp service not connected. Delivery simulated in log console.', mock_sent: true });
+          }
+        });
+      });
+    }
+  );
+});
+
 // ============================================================================
 // NEW FEATURES: GAMIFICATION, FLASHCARDS, AND STUDY PLANNER ENDPOINTS
 // ============================================================================

@@ -318,6 +318,17 @@ const db = new sqlite3.Database(dbPath, (err) => {
         FOREIGN KEY(student_id) REFERENCES users(id) ON DELETE CASCADE
       )`);
 
+      // Batch classroom discussion messages table
+      db.run(`CREATE TABLE IF NOT EXISTS batch_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        class_name TEXT NOT NULL,
+        sender_id INTEGER NOT NULL,
+        sender_name TEXT NOT NULL,
+        sender_role TEXT NOT NULL,
+        text TEXT NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`);
+
       // Seed a default admin if no users exist
       db.get(`SELECT COUNT(*) as count FROM users`, (err, row) => {
         if (!err && row && row.count === 0) {
