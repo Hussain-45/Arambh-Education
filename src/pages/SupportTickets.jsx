@@ -301,20 +301,18 @@ export default function SupportTickets() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
             padding: '1rem'
           }}>
-            <div style={{
-              background: 'var(--secondary)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '16px',
+            <div className="prof-card" style={{
               width: '100%',
               maxWidth: '500px',
-              padding: '1.5rem',
               display: 'flex',
               flexDirection: 'column',
               gap: '1.25rem'
@@ -332,7 +330,7 @@ export default function SupportTickets() {
                     value={title}
                     onChange={e => setTitle(e.target.value)}
                     placeholder="Short summary of the problem"
-                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)', outline: 'none', fontSize: '0.85rem' }}
+                    className="prof-input"
                   />
                 </div>
 
@@ -341,7 +339,7 @@ export default function SupportTickets() {
                   <select
                     value={category}
                     onChange={e => setCategory(e.target.value)}
-                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)', outline: 'none', fontSize: '0.85rem' }}
+                    className="prof-input"
                   >
                     <option value="Technical">Technical (App / Login / Loading)</option>
                     <option value="Finance">Finance (Fees / Dues / Invoices)</option>
@@ -358,21 +356,22 @@ export default function SupportTickets() {
                     onChange={e => setDescription(e.target.value)}
                     rows={4}
                     placeholder="Provide details about what went wrong, including error statements or times..."
-                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)', outline: 'none', resize: 'none', fontSize: '0.85rem' }}
+                    className="prof-input"
+                    style={{ resize: 'none' }}
                   />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <div className="flex-between" style={{ marginTop: '0.5rem' }}>
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    style={{ padding: '0.65rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'none', color: 'var(--text-main)', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}
+                    className="prof-btn prof-btn-secondary"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    style={{ padding: '0.65rem 1.25rem', borderRadius: '8px', border: 'none', background: 'var(--primary-text)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
+                    className="prof-btn"
                   >
                     Submit Ticket
                   </button>
@@ -390,20 +389,18 @@ export default function SupportTickets() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
             padding: '1rem'
           }}>
-            <div style={{
-              background: 'var(--secondary)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '16px',
+            <div className="prof-card" style={{
               width: '100%',
               maxWidth: '500px',
-              padding: '1.5rem',
               display: 'flex',
               flexDirection: 'column',
               gap: '1.25rem'
@@ -428,7 +425,8 @@ export default function SupportTickets() {
                     onChange={e => setReplyText(e.target.value)}
                     rows={4}
                     placeholder="Type the response details for the user..."
-                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)', outline: 'none', resize: 'none', fontSize: '0.85rem' }}
+                    className="prof-input"
+                    style={{ resize: 'none' }}
                   />
                 </div>
 
@@ -437,27 +435,28 @@ export default function SupportTickets() {
                   <select
                     value={ticketStatus}
                     onChange={e => setTicketStatus(e.target.value)}
-                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)', outline: 'none', fontSize: '0.85rem' }}
+                    className="prof-input"
                   >
                     <option value="Resolved">Mark as Resolved</option>
                     <option value="In Progress">Mark as In Progress</option>
                   </select>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <div className="flex-between" style={{ marginTop: '0.5rem' }}>
                   <button
                     type="button"
                     onClick={() => {
                       setShowReplyModal(false);
                       setSelectedTicket(null);
                     }}
-                    style={{ padding: '0.65rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'none', color: 'var(--text-main)', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}
+                    className="prof-btn prof-btn-secondary"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    style={{ padding: '0.65rem 1.25rem', borderRadius: '8px', border: 'none', background: 'var(--primary-text)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                    className="prof-btn"
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
                   >
                     <Send size={14} />
                     Send Response

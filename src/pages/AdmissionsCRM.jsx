@@ -363,20 +363,18 @@ export default function AdmissionsCRM() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
             padding: '1rem'
           }}>
-            <div style={{
-              background: 'var(--secondary)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '16px',
+            <div className="prof-card" style={{
               width: '100%',
               maxWidth: '500px',
-              padding: '1.5rem',
               display: 'flex',
               flexDirection: 'column',
               gap: '1.25rem'
@@ -395,7 +393,7 @@ export default function AdmissionsCRM() {
                       value={studentName}
                       onChange={e => setStudentName(e.target.value)}
                       placeholder="Student full name"
-                      style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)', outline: 'none', fontSize: '0.85rem' }}
+                      className="prof-input"
                     />
                   </div>
                   <div>
@@ -406,7 +404,7 @@ export default function AdmissionsCRM() {
                       value={parentName}
                       onChange={e => setParentName(e.target.value)}
                       placeholder="Father/Mother name"
-                      style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)', outline: 'none', fontSize: '0.85rem' }}
+                      className="prof-input"
                     />
                   </div>
                 </div>
@@ -420,7 +418,7 @@ export default function AdmissionsCRM() {
                       value={phone}
                       onChange={e => setPhone(e.target.value)}
                       placeholder="e.g. 9876543210"
-                      style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)', outline: 'none', fontSize: '0.85rem' }}
+                      className="prof-input"
                     />
                   </div>
                   <div>
@@ -430,7 +428,7 @@ export default function AdmissionsCRM() {
                       value={email}
                       onChange={e => setEmail(e.target.value)}
                       placeholder="e.g. parent@email.com"
-                      style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)', outline: 'none', fontSize: '0.85rem' }}
+                      className="prof-input"
                     />
                   </div>
                 </div>
@@ -443,7 +441,7 @@ export default function AdmissionsCRM() {
                       value={grade}
                       onChange={e => setGrade(e.target.value)}
                       placeholder="e.g. 10th - Science"
-                      style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)', outline: 'none', fontSize: '0.85rem' }}
+                      className="prof-input"
                     />
                   </div>
                 </div>
@@ -455,21 +453,22 @@ export default function AdmissionsCRM() {
                     onChange={e => setNotes(e.target.value)}
                     rows={3}
                     placeholder="Walked in checking syllabus... Demo session set for Tuesday..."
-                    style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)', outline: 'none', resize: 'none', fontSize: '0.85rem' }}
+                    className="prof-input"
+                    style={{ resize: 'none' }}
                   />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <div className="flex-between" style={{ marginTop: '0.5rem' }}>
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    style={{ padding: '0.65rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'none', color: 'var(--text-main)', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}
+                    className="prof-btn prof-btn-secondary"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    style={{ padding: '0.65rem 1.25rem', borderRadius: '8px', border: 'none', background: 'var(--primary-text)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
+                    className="prof-btn"
                   >
                     Add Lead
                   </button>
@@ -487,25 +486,23 @@ export default function AdmissionsCRM() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
             padding: '1rem'
           }}>
-            <div style={{
-              background: 'var(--secondary)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '16px',
+            <div className="prof-card" style={{
               width: '100%',
               maxWidth: '500px',
-              padding: '1.5rem',
               display: 'flex',
               flexDirection: 'column',
               gap: '1.25rem'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'start', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>
                     Inquiry Information
@@ -555,21 +552,22 @@ export default function AdmissionsCRM() {
                     value={selectedLead.notes || ''}
                     onChange={e => setSelectedLead(prev => ({ ...prev, notes: e.target.value }))}
                     rows={4}
-                    style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-main)', outline: 'none', resize: 'none', fontSize: '0.85rem' }}
+                    className="prof-input"
+                    style={{ resize: 'none' }}
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+              <div className="flex-between" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: '0.5rem' }}>
                 <button
                   onClick={() => setShowDetailModal(false)}
-                  style={{ padding: '0.65rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'none', color: 'var(--text-main)', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}
+                  className="prof-btn prof-btn-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveNotes}
-                  style={{ padding: '0.65rem 1.25rem', borderRadius: '8px', border: 'none', background: 'var(--primary-text)', color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem' }}
+                  className="prof-btn"
                 >
                   Save Notes
                 </button>
