@@ -276,7 +276,8 @@ app.post('/api/auth/login', (req, res) => {
           email: row.email, 
           email_alerts: row.email_alerts !== 0 ? 1 : 0, 
           sms_alerts: row.sms_alerts !== 0 ? 1 : 0, 
-          language: row.language || 'English' 
+          language: row.language || 'English',
+          photo: row.photo
         } 
       });
     });
@@ -314,7 +315,8 @@ app.post('/api/auth/login', (req, res) => {
             assignedClasses: row.assignedClasses,
             email_alerts: row.email_alerts !== 0 ? 1 : 0, 
             sms_alerts: row.sms_alerts !== 0 ? 1 : 0, 
-            language: row.language || 'English'
+            language: row.language || 'English',
+            photo: row.photo
           } 
         });
       });
@@ -356,7 +358,8 @@ app.post('/api/auth/login', (req, res) => {
           registrationDate: row.registrationDate,
           email_alerts: row.email_alerts !== 0 ? 1 : 0, 
           sms_alerts: row.sms_alerts !== 0 ? 1 : 0, 
-          language: row.language || 'English'
+          language: row.language || 'English',
+          photo: row.photo
         } 
       });
     });
@@ -622,7 +625,7 @@ app.delete('/api/classes/:id', authenticateToken, (req, res) => {
 
 // Get all students
 app.get('/api/students', authenticateToken, (req, res) => {
-  db.all(`SELECT id, name, parentPhone, className as class, password, fatherName, admission_number, email, phone, motherName, gender, bloodGroup, address, discountPercent, registrationDate FROM users WHERE role = 'student'`, [], (err, rows) => {
+  db.all(`SELECT id, name, parentPhone, className as class, password, fatherName, admission_number, email, phone, motherName, gender, bloodGroup, address, discountPercent, registrationDate, photo FROM users WHERE role = 'student'`, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
@@ -631,7 +634,7 @@ app.get('/api/students', authenticateToken, (req, res) => {
 // Add a student (Admin only)
 app.post('/api/students', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const { name, className, parentPhone, fatherName, email, birthdate, phone, motherName, gender, bloodGroup, address, discountPercent, registrationDate, password } = req.body;
+  const { name, className, parentPhone, fatherName, email, birthdate, phone, motherName, gender, bloodGroup, address, discountPercent, registrationDate, password, photo } = req.body;
   
   const studentPassword = password || 'password';
   const hashedPassword = await bcrypt.hash(studentPassword, 10);
@@ -659,8 +662,8 @@ app.post('/api/students', authenticateToken, async (req, res) => {
       }
       const admissionNumber = `AES-${nextNum.toString().padStart(2, '0')}`;
       
-      db.run(`INSERT INTO users (name, role, className, parentPhone, password, admission_number, fatherName, email, birthdate, phone, motherName, gender, bloodGroup, address, discountPercent, registrationDate, login_approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`, 
-        [formattedName, 'student', className, parentPhone, hashedPassword, admissionNumber, formattedFatherName, email || null, birthdate || null, phone || null, motherName || null, gender || null, bloodGroup || null, address || null, discountVal, regDate], 
+      db.run(`INSERT INTO users (name, role, className, parentPhone, password, admission_number, fatherName, email, birthdate, phone, motherName, gender, bloodGroup, address, discountPercent, registrationDate, login_approved, photo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`, 
+        [formattedName, 'student', className, parentPhone, hashedPassword, admissionNumber, formattedFatherName, email || null, birthdate || null, phone || null, motherName || null, gender || null, bloodGroup || null, address || null, discountVal, regDate, photo || null], 
         function(err) {
           if (err) return res.status(500).json({ error: err.message });
           const newUserId = this.lastID;
@@ -704,7 +707,8 @@ app.post('/api/students', authenticateToken, async (req, res) => {
             bloodGroup,
             address,
             discountPercent: discountVal,
-            registrationDate: regDate
+            registrationDate: regDate,
+            photo: photo || null
           });
       });
     });
@@ -715,15 +719,15 @@ app.post('/api/students', authenticateToken, async (req, res) => {
 app.put('/api/students/:id', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   const studentId = parseInt(req.params.id);
-  const { name, className, parentPhone, fatherName, email, birthdate, phone, motherName, gender, bloodGroup, address, discountPercent, registrationDate, password } = req.body;
+  const { name, className, parentPhone, fatherName, email, birthdate, phone, motherName, gender, bloodGroup, address, discountPercent, registrationDate, password, photo } = req.body;
   
   const discountVal = parseInt(discountPercent) || 0;
   const formattedName = name ? name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : name;
   const formattedFatherName = fatherName ? fatherName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') : null;
 
   const updateStudentDb = (hashedPassword) => {
-    let query = `UPDATE users SET name = ?, className = ?, parentPhone = ?, fatherName = ?, email = ?, birthdate = ?, phone = ?, motherName = ?, gender = ?, bloodGroup = ?, address = ?, discountPercent = ?, registrationDate = ?`;
-    let params = [formattedName, className, parentPhone, formattedFatherName, email, birthdate, phone, motherName, gender, bloodGroup, address, discountVal, registrationDate];
+    let query = `UPDATE users SET name = ?, className = ?, parentPhone = ?, fatherName = ?, email = ?, birthdate = ?, phone = ?, motherName = ?, gender = ?, bloodGroup = ?, address = ?, discountPercent = ?, registrationDate = ?, photo = ?`;
+    let params = [formattedName, className, parentPhone, formattedFatherName, email, birthdate, phone, motherName, gender, bloodGroup, address, discountVal, registrationDate, photo];
 
     if (hashedPassword) {
       query += `, password = ?`;
@@ -756,7 +760,8 @@ app.put('/api/students/:id', authenticateToken, async (req, res) => {
             bloodGroup,
             address,
             discountPercent: discountVal,
-            registrationDate
+            registrationDate,
+            photo
           });
         });
       });
@@ -989,7 +994,7 @@ app.post('/api/admin/attendance-report', authenticateToken, async (req, res) => 
 
 // Get all teachers
 app.get('/api/teachers', authenticateToken, (req, res) => {
-  db.all(`SELECT id, name, username, password, email, phone, salary, specialization, admission_number as teacherIdNumber FROM users WHERE role = 'teacher'`, [], (err, rows) => {
+  db.all(`SELECT id, name, username, password, email, phone, salary, specialization, admission_number as teacherIdNumber, photo FROM users WHERE role = 'teacher'`, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     
     // Get assigned classes for each
@@ -1010,7 +1015,7 @@ app.get('/api/teachers', authenticateToken, (req, res) => {
 // Add a teacher (Admin only)
 app.post('/api/teachers', authenticateToken, (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const { name, email, phone, salary, specialization, assignedClasses, password } = req.body;
+  const { name, email, phone, salary, specialization, assignedClasses, password, photo } = req.body;
   const teacherSalary = parseInt(salary) || 0;
   const teacherPassword = password || '1526'; // Default default password if not provided
 
@@ -1031,8 +1036,8 @@ app.post('/api/teachers', authenticateToken, (req, res) => {
     bcrypt.hash(teacherPassword, 10, (err, hash) => {
       if (err) return res.status(500).json({ error: 'Password hashing failed' });
 
-      db.run(`INSERT INTO users (name, username, password, role, email, phone, salary, specialization, admission_number, login_approved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
-        [name, email, hash, 'teacher', email, phone, teacherSalary, specialization, teacherIdStr],
+      db.run(`INSERT INTO users (name, username, password, role, email, phone, salary, specialization, admission_number, login_approved, photo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
+        [name, email, hash, 'teacher', email, phone, teacherSalary, specialization, teacherIdStr, photo || null],
         function(err) {
           if (err) return res.status(500).json({ error: err.message });
           const teacherId = this.lastID;
@@ -1054,7 +1059,8 @@ app.post('/api/teachers', authenticateToken, (req, res) => {
             salary: teacherSalary,
             specialization,
             teacherIdNumber: teacherIdStr,
-            assignedClasses: assignedClasses || []
+            assignedClasses: assignedClasses || [],
+            photo: photo || null
           });
         }
       );
@@ -1066,12 +1072,12 @@ app.post('/api/teachers', authenticateToken, (req, res) => {
 app.put('/api/teachers/:id', authenticateToken, (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   const teacherId = parseInt(req.params.id);
-  const { name, email, phone, salary, specialization, assignedClasses, password } = req.body;
+  const { name, email, phone, salary, specialization, assignedClasses, password, photo } = req.body;
   const teacherSalary = parseInt(salary) || 0;
 
   const updateTeacher = (hashedPassword) => {
-    let query = `UPDATE users SET name = ?, username = ?, email = ?, phone = ?, salary = ?, specialization = ?`;
-    let params = [name, email, email, phone, teacherSalary, specialization];
+    let query = `UPDATE users SET name = ?, username = ?, email = ?, phone = ?, salary = ?, specialization = ?, photo = ?`;
+    let params = [name, email, email, phone, teacherSalary, specialization, photo];
 
     if (hashedPassword) {
       query += `, password = ?`;
@@ -1103,7 +1109,8 @@ app.put('/api/teachers/:id', authenticateToken, (req, res) => {
           phone,
           salary: teacherSalary,
           specialization,
-          assignedClasses: assignedClasses || []
+          assignedClasses: assignedClasses || [],
+          photo
         });
       });
     });
@@ -3209,12 +3216,23 @@ app.delete('/api/announcements/:id', authenticateToken, (req, res) => {
 
 // Update Profile Details (Admin and others)
 app.put('/api/users/profile', authenticateToken, (req, res) => {
-  const { name, email } = req.body;
+  const { name, email, photo } = req.body;
   if (!name) return res.status(400).json({ error: 'Name is required' });
   
-  db.run(`UPDATE users SET name = ?, email = ? WHERE id = ?`, [name, email, req.user.id], function(err) {
+  let query = `UPDATE users SET name = ?, email = ?`;
+  let params = [name, email];
+  
+  if (photo !== undefined) {
+    query += `, photo = ?`;
+    params.push(photo);
+  }
+  
+  query += ` WHERE id = ?`;
+  params.push(req.user.id);
+  
+  db.run(query, params, function(err) {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true, name, email });
+    res.json({ success: true, name, email, photo });
   });
 });
 

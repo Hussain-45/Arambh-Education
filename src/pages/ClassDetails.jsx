@@ -153,10 +153,31 @@ const ClassDetails = () => {
                 {classStudents.map(student => (
                   <tr key={student.id}>
                     <td><span className="badge badge-secondary">{student.admission_number || `#${student.id}`}</span></td>
-                    <td style={{ fontWeight: 500 }}>{student.name}</td>
+                    <td style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {student.photo ? (
+                        <img 
+                          src={student.photo} 
+                          alt={student.name} 
+                          style={{ 
+                            width: '24px', height: '24px', borderRadius: '50%', 
+                            objectFit: 'cover', border: '1px solid var(--border-color)'
+                          }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: '24px', height: '24px', borderRadius: '50%',
+                          background: 'var(--primary)', color: 'white',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '0.65rem', fontWeight: 'bold'
+                        }}>
+                          {student.name ? student.name.charAt(0).toUpperCase() : 'S'}
+                        </div>
+                      )}
+                      <span>{student.name}</span>
+                    </td>
                     <td style={{ color: 'var(--text-muted)' }}>{student.fatherName || '—'}</td>
                     <td style={{ color: 'var(--text-muted)' }}>{student.parentPhone}</td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td>
                       <button className="prof-btn prof-btn-secondary" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', background: 'transparent', padding: '0.3rem 0.6rem', fontSize: '0.8rem' }} onClick={() => { if(window.confirm('Remove this student?')) removeStudent(student.id); }}>
                         Remove
                       </button>
@@ -197,7 +218,28 @@ const ClassDetails = () => {
                   const s = classStudents.find(st => st.id === fee.studentId);
                   return (
                     <tr key={fee.id}>
-                      <td>{s?.name}</td>
+                      <td style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {s?.photo ? (
+                          <img 
+                            src={s.photo} 
+                            alt={s.name} 
+                            style={{ 
+                              width: '24px', height: '24px', borderRadius: '50%', 
+                              objectFit: 'cover', border: '1px solid var(--border-color)'
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '24px', height: '24px', borderRadius: '50%',
+                            background: 'var(--primary)', color: 'white',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '0.65rem', fontWeight: 'bold'
+                          }}>
+                            {s?.name ? s.name.charAt(0).toUpperCase() : 'S'}
+                          </div>
+                        )}
+                        <span>{s?.name}</span>
+                      </td>
                       <td>Rs. {fee.total}</td>
                       <td>Rs. {fee.paid}</td>
                       <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>

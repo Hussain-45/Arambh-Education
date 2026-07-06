@@ -80,19 +80,39 @@ export const generateStudentReportCard = (student, attendance, attempts, assignm
 
   // Column 2
   doc.setFont('helvetica', 'bold');
-  doc.text('Role/ID:', 115, 55);
+  doc.text('Role/ID:', 105, 55);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Student (ID: ${student.id})`, 138, 55);
+  doc.text(`Student (ID: ${student.admission_number || student.id})`, 128, 55);
 
   doc.setFont('helvetica', 'bold');
-  doc.text('Email Address:', 115, 61);
+  doc.text('Email Address:', 105, 61);
   doc.setFont('helvetica', 'normal');
-  doc.text(student.email || 'N/A', 138, 61);
+  doc.text(student.email || 'N/A', 128, 61);
 
   doc.setFont('helvetica', 'bold');
-  doc.text('Phone Number:', 115, 67);
+  doc.text('Phone Number:', 105, 67);
   doc.setFont('helvetica', 'normal');
-  doc.text(student.phone || student.parentPhone || 'N/A', 138, 67);
+  doc.text(student.phone || student.parentPhone || 'N/A', 128, 67);
+
+  // Student Photo inside profile block
+  if (student.photo) {
+    try {
+      doc.addImage(student.photo, 'JPEG', 170, 51, 20, 22);
+    } catch (e) {
+      // Fallback in case of invalid base64 image encoding
+      doc.setFillColor(230, 235, 240);
+      doc.rect(170, 51, 20, 22, 'F');
+      doc.setFontSize(6);
+      doc.setTextColor(148, 163, 184);
+      doc.text('PHOTO ERR', 180, 63, { align: 'center' });
+    }
+  } else {
+    doc.setFillColor(230, 235, 240);
+    doc.rect(170, 51, 20, 22, 'F');
+    doc.setFontSize(6);
+    doc.setTextColor(148, 163, 184);
+    doc.text('NO PHOTO', 180, 63, { align: 'center' });
+  }
 
   // --- COMPUTE SUMMARY STATS ---
   // Attendance calculations

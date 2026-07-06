@@ -1042,7 +1042,7 @@ export const AppProvider = ({ children }) => {
   };
 
   // Student Roster Management
-  const addStudent = async (param1, param2, param3, param4, param5, param6, param7) => {
+  const addStudent = async (param1, param2, param3, param4, param5, param6, param7, param8) => {
     let studentData = {};
     if (typeof param1 === 'object' && param1 !== null) {
       studentData = param1;
@@ -1054,7 +1054,8 @@ export const AppProvider = ({ children }) => {
         fatherName: param4,
         email: param5,
         birthdate: param6,
-        password: param7
+        password: param7,
+        photo: param8
       };
     }
 
@@ -1079,7 +1080,8 @@ export const AppProvider = ({ children }) => {
           address: studentData.address,
           discountPercent: studentData.discountPercent,
           registrationDate: studentData.registrationDate,
-          password: studentData.password
+          password: studentData.password,
+          photo: studentData.photo
         })
       });
       if (response.ok) {
@@ -1125,7 +1127,7 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const editStudent = async (studentId, param1, param2, param3, param4, param5, param6, param7) => {
+  const editStudent = async (studentId, param1, param2, param3, param4, param5, param6, param7, param8) => {
     let studentData = {};
     if (typeof param1 === 'object' && param1 !== null) {
       studentData = param1;
@@ -1137,7 +1139,8 @@ export const AppProvider = ({ children }) => {
         fatherName: param4,
         email: param5,
         birthdate: param6,
-        password: param7
+        password: param7,
+        photo: param8
       };
     }
 
@@ -1162,7 +1165,8 @@ export const AppProvider = ({ children }) => {
           address: studentData.address,
           discountPercent: studentData.discountPercent,
           registrationDate: studentData.registrationDate,
-          password: studentData.password
+          password: studentData.password,
+          photo: studentData.photo
         })
       });
       if (response.ok) {
@@ -1207,7 +1211,7 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const addTeacher = async (name, email, phone, salary, specialization, assignedClasses, password) => {
+  const addTeacher = async (name, email, phone, salary, specialization, assignedClasses, password, photo) => {
     try {
       const response = await fetch('http://localhost:5000/api/teachers', {
         method: 'POST',
@@ -1215,7 +1219,7 @@ export const AppProvider = ({ children }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify({ name, email, phone, salary, specialization, assignedClasses, password })
+        body: JSON.stringify({ name, email, phone, salary, specialization, assignedClasses, password, photo })
       });
       if (response.ok) {
         const data = await response.json();
@@ -1234,7 +1238,7 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const editTeacher = async (teacherId, name, email, phone, salary, specialization, assignedClasses, password) => {
+  const editTeacher = async (teacherId, name, email, phone, salary, specialization, assignedClasses, password, photo) => {
     try {
       const response = await fetch(`http://localhost:5000/api/teachers/${teacherId}`, {
         method: 'PUT',
@@ -1242,7 +1246,7 @@ export const AppProvider = ({ children }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify({ name, email, phone, salary, specialization, assignedClasses, password })
+        body: JSON.stringify({ name, email, phone, salary, specialization, assignedClasses, password, photo })
       });
       if (response.ok) {
         const data = await response.json();
@@ -1521,15 +1525,15 @@ export const AppProvider = ({ children }) => {
   };
 
   // Profile Details
-  const updateProfile = async (name, email) => {
+  const updateProfile = async (name, email, photo) => {
     try {
       const response = await fetch(`${API_URL}/users/profile`, {
         method: 'PUT',
         headers: authHeaders,
-        body: JSON.stringify({ name, email })
+        body: JSON.stringify({ name, email, photo })
       });
       if (response.ok) {
-        const updatedUser = { ...loggedInUser, name, email };
+        const updatedUser = { ...loggedInUser, name, email, photo };
         setLoggedInUser(updatedUser);
         localStorage.setItem('loggedInUser', JSON.stringify(updatedUser));
         addToast('Profile settings updated successfully!', 'success');
@@ -1538,7 +1542,7 @@ export const AppProvider = ({ children }) => {
     } catch(err) {
       console.error(err);
     }
-    const updatedUser = { ...loggedInUser, name, email };
+    const updatedUser = { ...loggedInUser, name, email, photo };
     setLoggedInUser(updatedUser);
     localStorage.setItem('loggedInUser', JSON.stringify(updatedUser));
     addToast('Profile settings saved locally!', 'warning');

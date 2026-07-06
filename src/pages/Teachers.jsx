@@ -21,6 +21,7 @@ const Teachers = () => {
   const [newSpecialization, setNewSpecialization] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [selectedClasses, setSelectedClasses] = useState([]);
+  const [newPhoto, setNewPhoto] = useState('');
 
   // Edit Form State
   const [editName, setEditName] = useState('');
@@ -30,6 +31,18 @@ const Teachers = () => {
   const [editSpecialization, setEditSpecialization] = useState('');
   const [editPassword, setEditPassword] = useState('');
   const [selectedEditClasses, setSelectedEditClasses] = useState([]);
+  const [editPhoto, setEditPhoto] = useState('');
+
+  const handlePhotoChange = (e, callback) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        callback(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleExportCSV = () => {
     const headers = ['Teacher ID', 'Name', 'Email/Login', 'Phone', 'Salary (₹)', 'Specialization', 'Assigned Batches'];
@@ -59,7 +72,7 @@ const Teachers = () => {
       return;
     }
 
-    const success = await addTeacher(newName, newEmail, newPhone, newSalary, newSpecialization, selectedClasses, newPassword);
+    const success = await addTeacher(newName, newEmail, newPhone, newSalary, newSpecialization, selectedClasses, newPassword, newPhoto);
     if (success) {
       setShowModal(false);
       // Reset Form
@@ -70,6 +83,7 @@ const Teachers = () => {
       setNewSpecialization('');
       setNewPassword('');
       setSelectedClasses([]);
+      setNewPhoto('');
     }
   };
 
@@ -82,6 +96,7 @@ const Teachers = () => {
     setEditSpecialization(teacher.specialization || '');
     setEditPassword(''); // Do not expose original password
     setSelectedEditClasses(teacher.assignedClasses || []);
+    setEditPhoto(teacher.photo || '');
     setShowEditModal(true);
   };
 
@@ -99,11 +114,13 @@ const Teachers = () => {
       editSalary, 
       editSpecialization, 
       selectedEditClasses, 
-      editPassword || null
+      editPassword || null,
+      editPhoto
     );
     if (success) {
       setShowEditModal(false);
       setEditingTeacher(null);
+      setEditPhoto('');
     }
   };
 
@@ -177,15 +194,28 @@ const Teachers = () => {
             {filteredTeachers.map((teacher) => (
               <div key={teacher.id} className="prof-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'relative' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ 
-                    width: '48px', height: '48px', borderRadius: '50%', 
-                    background: getAvatarGradient(teacher.name), color: '#ffffff', 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                    fontWeight: 700, fontSize: '1.1rem', flexShrink: 0,
-                    boxShadow: '0 4px 10px rgba(0,0,0,0.15)'
-                  }}>
-                    {getInitials(teacher.name)}
-                  </div>
+                  {teacher.photo ? (
+                    <img 
+                      src={teacher.photo} 
+                      alt={teacher.name} 
+                      style={{ 
+                        width: '48px', height: '48px', borderRadius: '50%', 
+                        objectFit: 'cover', flexShrink: 0,
+                        boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+                        border: '2px solid var(--primary)'
+                      }}
+                    />
+                  ) : (
+                    <div style={{ 
+                      width: '48px', height: '48px', borderRadius: '50%', 
+                      background: getAvatarGradient(teacher.name), color: '#ffffff', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                      fontWeight: 700, fontSize: '1.1rem', flexShrink: 0,
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.15)'
+                    }}>
+                      {getInitials(teacher.name)}
+                    </div>
+                  )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {teacher.name}
@@ -271,6 +301,28 @@ const Teachers = () => {
               <h3>Add New Teacher</h3>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--bg-main)', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                    {newPhoto ? (
+                      <img src={newPhoto} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No Photo</span>
+                    )}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Profile Photo</label>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => handlePhotoChange(e, setNewPhoto)} 
+                      style={{ fontSize: '0.8rem', width: '100%' }}
+                    />
+                    {newPhoto && (
+                      <button onClick={() => setNewPhoto('')} style={{ fontSize: '0.75rem', color: 'var(--danger)', border: 'none', background: 'none', cursor: 'pointer', padding: 0, marginTop: '4px' }}>Remove Photo</button>
+                    )}
+                  </div>
+                </div>
+
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Full Name *</label>
                   <input 
@@ -372,6 +424,28 @@ const Teachers = () => {
               <h3>Edit Teacher Details</h3>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--bg-main)', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                    {editPhoto ? (
+                      <img src={editPhoto} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No Photo</span>
+                    )}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Profile Photo</label>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => handlePhotoChange(e, setEditPhoto)} 
+                      style={{ fontSize: '0.8rem', width: '100%' }}
+                    />
+                    {editPhoto && (
+                      <button onClick={() => setEditPhoto('')} style={{ fontSize: '0.75rem', color: 'var(--danger)', border: 'none', background: 'none', cursor: 'pointer', padding: 0, marginTop: '4px' }}>Remove Photo</button>
+                    )}
+                  </div>
+                </div>
+
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Full Name *</label>
                   <input 

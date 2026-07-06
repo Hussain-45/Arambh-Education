@@ -32,7 +32,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
         registrationDate TEXT,
         salary INTEGER DEFAULT 0,
         specialization TEXT,
-        login_approved INTEGER DEFAULT 1
+        login_approved INTEGER DEFAULT 1,
+        photo TEXT
       )`);
 
       // Migration: Ensure all columns exist on users table
@@ -41,7 +42,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
         'gender TEXT', 'bloodGroup TEXT', 'address TEXT', 'discountPercent INTEGER DEFAULT 0',
         'registrationDate TEXT', 'salary INTEGER DEFAULT 0', 'specialization TEXT',
         'email_alerts INTEGER DEFAULT 1', 'sms_alerts INTEGER DEFAULT 0', 'language TEXT DEFAULT \'English\'',
-        'login_approved INTEGER DEFAULT 1'
+        'login_approved INTEGER DEFAULT 1', 'photo TEXT'
       ];
       userCols.forEach(col => {
         db.run(`ALTER TABLE users ADD COLUMN ${col}`, (err) => {

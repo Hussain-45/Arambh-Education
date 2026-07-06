@@ -272,20 +272,34 @@ const Header = () => {
           onClick={() => setShowProfileMenu(!showProfileMenu)} 
           title="Account Settings"
         >
-          <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            background: 'var(--primary-text)',
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 700,
-            fontSize: '0.85rem'
-          }}>
-            {getInitials()}
-          </div>
+          {loggedInUser?.photo ? (
+            <img 
+              src={loggedInUser.photo} 
+              alt={loggedInUser.name || 'User'} 
+              style={{ 
+                width: '36px', 
+                height: '36px', 
+                borderRadius: '50%', 
+                objectFit: 'cover',
+                border: '2px solid var(--primary)'
+              }} 
+            />
+          ) : (
+            <div style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              background: 'var(--primary-text)',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: '0.85rem'
+            }}>
+              {getInitials()}
+            </div>
+          )}
           <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', textTransform: 'capitalize' }}>{userRole}</span>
 
           {showProfileMenu && (

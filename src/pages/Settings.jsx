@@ -155,13 +155,26 @@ const Settings = () => {
   // Profile States
   const [profileName, setProfileName] = useState(loggedInUser?.name || '');
   const [profileEmail, setProfileEmail] = useState(loggedInUser?.email || '');
+  const [profilePhoto, setProfilePhoto] = useState(loggedInUser?.photo || '');
 
   useEffect(() => {
     if (loggedInUser) {
       setProfileName(loggedInUser.name || '');
       setProfileEmail(loggedInUser.email || '');
+      setProfilePhoto(loggedInUser.photo || '');
     }
   }, [loggedInUser]);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePhoto(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSavePreferences = () => {
     addToast('Preferences saved successfully!', 'success');
@@ -197,7 +210,7 @@ const Settings = () => {
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     if (!profileName) return;
-    const success = await updateProfile(profileName, profileEmail);
+    const success = await updateProfile(profileName, profileEmail, profilePhoto);
     if (success) {
       // Nothing else to do, AppContext toast handles message
     }
@@ -284,6 +297,28 @@ const Settings = () => {
                   <User size={18} /> Profile Information
                 </h3>
                 <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--bg-main)', border: '1px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                      {profilePhoto ? (
+                        <img src={profilePhoto} alt="Profile preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>No Photo</span>
+                      )}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Upload New Photo</label>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handlePhotoChange} 
+                        style={{ fontSize: '0.8rem' }}
+                      />
+                      {profilePhoto && (
+                        <button type="button" onClick={() => setProfilePhoto('')} style={{ fontSize: '0.75rem', color: 'var(--danger)', border: 'none', background: 'none', cursor: 'pointer', padding: 0, marginTop: '4px', display: 'block' }}>Remove Photo</button>
+                      )}
+                    </div>
+                  </div>
+
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div>
                       <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Full Name</label>

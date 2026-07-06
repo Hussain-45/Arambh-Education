@@ -48,9 +48,17 @@ const Profile = () => {
             {/* Left side: Credentials Card */}
             <div className="lg:col-span-1 rounded-2xl border border-slate-800 bg-slate-950/40 p-6 backdrop-blur-md flex flex-col gap-4 shadow-lg">
               <div className="flex flex-col items-center border-b border-slate-900 pb-5">
-                <div className="w-20 h-20 rounded-full bg-sky-500/10 text-sky-400 border-2 border-sky-500/20 flex items-center justify-center text-3xl font-black mb-3">
-                  {loggedInUser?.name ? loggedInUser.name.charAt(0).toUpperCase() : 'U'}
-                </div>
+                {loggedInUser?.photo ? (
+                  <img 
+                    src={loggedInUser.photo} 
+                    alt={loggedInUser.name || 'User'} 
+                    className="w-20 h-20 rounded-full object-cover border-2 border-sky-500/20 mb-3"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-sky-500/10 text-sky-400 border-2 border-sky-500/20 flex items-center justify-center text-3xl font-black mb-3">
+                    {loggedInUser?.name ? loggedInUser.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                )}
                 <h3 className="text-base font-extrabold text-slate-200">{loggedInUser?.name}</h3>
                 <span className="text-[10px] font-black uppercase tracking-widest text-sky-400 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/20 mt-1.5">{loggedInUser?.role}</span>
               </div>

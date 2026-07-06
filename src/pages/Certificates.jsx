@@ -238,10 +238,20 @@ export default function Certificates() {
       doc.setFillColor(255, 255, 255);
       doc.rect(x + (cardW - 25) / 2, y + 25, 25, 28, 'FD');
       
-      // Placeholder text in Photo Box
-      doc.setTextColor(148, 163, 184);
-      doc.setFontSize(6);
-      doc.text('STUDENT\nPHOTO', x + cardW / 2, y + 37, { align: 'center' });
+      if (student.photo) {
+        try {
+          doc.addImage(student.photo, 'JPEG', x + (cardW - 25) / 2, y + 25, 25, 28);
+        } catch (e) {
+          doc.setTextColor(148, 163, 184);
+          doc.setFontSize(6);
+          doc.text('PHOTO\nERROR', x + cardW / 2, y + 37, { align: 'center' });
+        }
+      } else {
+        // Placeholder text in Photo Box
+        doc.setTextColor(148, 163, 184);
+        doc.setFontSize(6);
+        doc.text('STUDENT\nPHOTO', x + cardW / 2, y + 37, { align: 'center' });
+      }
 
       // Student Identity text details
       doc.setTextColor(30, 41, 59);
