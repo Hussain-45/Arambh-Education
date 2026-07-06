@@ -165,6 +165,10 @@ const AdminDashboard = () => {
                   <span>Mark Attendance</span>
                   <ArrowRight size={16} />
                 </button>
+                <button onClick={() => navigate('/fees')} className="dashboard-action-btn">
+                  <span>Manage Fees & Payments</span>
+                  <ArrowRight size={16} />
+                </button>
                 <button onClick={() => navigate('/students')} className="dashboard-action-btn">
                   <span>Add New Student</span>
                   <Plus size={16} />
