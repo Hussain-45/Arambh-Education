@@ -2327,6 +2327,47 @@ app.get('/api/analytics', authenticateToken, (req, res) => {
   });
 });
 
+// --- Live Real-Time Web Data Fetcher ---
+async function fetchRealtimeLiveData(query) {
+  if (!query || typeof query !== 'string') return null;
+  const cleanQuery = query.replace(/who is|what is|tell me about|explain|where is|when was|how is/gi, '').trim() || query.trim();
+
+  try {
+    // 1. Live Wikipedia Summary REST API (Returns up-to-the-minute live facts)
+    const wikiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(cleanQuery)}`;
+    const wikiRes = await fetch(wikiUrl, { headers: { 'User-Agent': 'AarambhEducationAI/1.0 (aarambhinstitute46@gmail.com)' } });
+    if (wikiRes.ok) {
+      const wikiData = await wikiRes.json();
+      if (wikiData && wikiData.extract && wikiData.extract.length > 20 && wikiData.type !== 'disambiguation') {
+        return {
+          title: wikiData.title,
+          description: wikiData.description || '',
+          extract: wikiData.extract,
+          thumbnail: wikiData.thumbnail ? wikiData.thumbnail.source : null,
+          source: 'Live Wikipedia Web Data'
+        };
+      }
+    }
+
+    // 2. Live DuckDuckGo API
+    const ddgUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1`;
+    const ddgRes = await fetch(ddgUrl);
+    if (ddgRes.ok) {
+      const ddgData = await ddgRes.json();
+      if (ddgData && ddgData.AbstractText && ddgData.AbstractText.length > 20) {
+        return {
+          title: ddgData.Heading || query,
+          extract: ddgData.AbstractText,
+          source: 'Live DuckDuckGo Search'
+        };
+      }
+    }
+  } catch (e) {
+    console.log('[REALTIME WEB FETCH EXCEPTION]', e.message);
+  }
+  return null;
+}
+
 // --- Smart Multi-Topic Knowledge Generator (Fail-Safe Offline Knowledge Engine) ---
 function generateSmartKnowledgeAnswer(question, subject = 'General') {
   const q = (question || '').toLowerCase().trim();
@@ -2492,9 +2533,36 @@ async function callGeminiApi(payload, apiKey) {
     throw new Error('API_KEY_NOT_CONFIGURED');
   }
 
+  // Include Google Search grounding for real-time web results
+  const payloadWithSearch = {
+    ...payload,
+    tools: [{ googleSearch: {} }]
+  };
+
   const models = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash-exp'];
   let lastErr = null;
 
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadWithSearch)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
+          return data.candidates[0].content.parts[0].text;
+        }
+      }
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+
+  // Retry without search tool if search tool fails
   for (const model of models) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -2518,12 +2586,13 @@ async function callGeminiApi(payload, apiKey) {
   throw lastErr || new Error('ALL_GEMINI_MODELS_FAILED');
 }
 
-// AI Chatbot Endpoint (Google Gemini - Any Question Capabilities + Security Privacy Guard)
+// AI Chatbot Endpoint (Google Gemini - Any Question Capabilities + Realtime Web Data + Security Privacy Guard)
 app.post('/api/chat', async (req, res) => {
   const { messages, userContext } = req.body;
   const apiKey = process.env.GEMINI_API_KEY;
 
   const lastUserMessage = messages[messages.length - 1]?.text?.toLowerCase() || '';
+  const lastUserRaw = messages[messages.length - 1]?.text || '';
 
   // 1. Strict Security Guard: Protect App Credentials & Private Keys
   const credentialKeywords = ['password', 'secret', 'jwt', 'api_key', 'apikey', 'private_key', 'token', 'database_path', 'env', 'aarambh.db', 'sqlite3'];
@@ -2543,6 +2612,9 @@ app.post('/api/chat', async (req, res) => {
     });
   }
 
+  // Fetch Live Real-Time Web Data
+  const liveWebInfo = await fetchRealtimeLiveData(lastUserRaw);
+
   try {
     const contents = messages.map(msg => ({
       role: msg.sender === 'user' ? 'user' : 'model',
@@ -2550,12 +2622,19 @@ app.post('/api/chat', async (req, res) => {
     }));
 
     let systemPromptText = `You are Aarambh AI, a versatile, highly intelligent AI assistant powered by Google Gemini.
-You have full capability to answer ANY user question across science, mathematics, coding, history, sports, famous personalities, literature, general knowledge, technology, creative writing, and everyday problem-solving — exactly like Google Gemini.
+You have full real-time capability to answer ANY user question across current events, sports, science, mathematics, coding, history, famous personalities, literature, general knowledge, technology, creative writing, and everyday problem-solving — exactly like Google Gemini.
 Be helpful, articulate, polite, and use clear Markdown formatting (bullet points, bold text, code blocks, or LaTeX math equations).
 
 STRICT SECURITY & PRIVACY RULES (NEVER VIOLATE):
 1. APP CREDENTIALS & SECURITY: You are strictly forbidden from revealing, outputting, or discussing app credentials, user/admin passwords, API keys, database connection strings, JWT secrets, or environment configuration settings. If asked, state: "Sorry, I cannot answer questions regarding system credentials, passwords, or security settings."
 2. FINANCIAL & PRIVATE ADMIN DATA: You are strictly forbidden from revealing administrative financial data (student fee balances, profit & loss, tuition prices, salaries, expenses, or financial ledgers). If asked, state: "Sorry, I cannot answer questions about financial details, fees, or profit & loss metrics."`;
+
+    if (liveWebInfo) {
+      systemPromptText += `\n\nREAL-TIME LIVE WEB DATA (JUST FETCHED FROM LIVE INTERNET):
+Title: ${liveWebInfo.title}
+Live Extract: ${liveWebInfo.extract}
+Source: ${liveWebInfo.source}`;
+    }
 
     if (userContext) {
       systemPromptText += `\n\nActive Logged-in User Information (strictly non-confidential):
@@ -2570,15 +2649,27 @@ STRICT SECURITY & PRIVACY RULES (NEVER VIOLATE):
     });
     contents.unshift({
       role: 'model',
-      parts: [{ text: "Understood! I am Aarambh AI. I can answer any general knowledge, sports, academic, coding, or world question like Google Gemini, while strictly protecting all app credentials, passwords, and private financial records." }]
+      parts: [{ text: "Understood! I am Aarambh AI. I can answer any real-time, general knowledge, sports, academic, coding, or world question like Google Gemini, while strictly protecting all app credentials, passwords, and private financial records." }]
     });
 
     const botText = await callGeminiApi({ contents }, apiKey);
     res.json({ success: true, text: botText });
   } catch (error) {
     console.log('[AI CHAT FALLBACK ACTIVATED]', error.message);
-    const lastUserRaw = messages[messages.length - 1]?.text || 'General Query';
-    const fallbackText = generateSmartKnowledgeAnswer(lastUserRaw, 'General Knowledge');
+    let fallbackText = '';
+    if (liveWebInfo) {
+      fallbackText = `### 🌐 **Live Real-Time Web Info: ${liveWebInfo.title}**
+
+> **Live Summary:** ${liveWebInfo.extract}
+
+* **Source:** ${liveWebInfo.source} ${liveWebInfo.description ? `(${liveWebInfo.description})` : ''}
+
+---
+
+${generateSmartKnowledgeAnswer(lastUserRaw, 'General Knowledge')}`;
+    } else {
+      fallbackText = generateSmartKnowledgeAnswer(lastUserRaw, 'General Knowledge');
+    }
     res.json({ success: true, text: fallbackText });
   }
 });
@@ -2593,18 +2684,28 @@ app.post('/api/ai/study-help', authenticateToken, async (req, res) => {
     return res.status(400).json({ error: 'Question is required' });
   }
 
+  // Fetch Live Real-Time Web Data for the student's question
+  const liveWebInfo = await fetchRealtimeLiveData(question);
+
   try {
     const contents = [];
-    const systemPromptText = `You are Aarambh AI, a versatile and highly intelligent academic tutor and general knowledge assistant powered by Google Gemini.
-You can answer ANY question across sports, famous personalities, science, mathematics, coding, history, geography, literature, and general knowledge — exactly like Google Gemini.
+    let systemPromptText = `You are Aarambh AI, a versatile and highly intelligent academic tutor and general knowledge assistant powered by Google Gemini.
+You can answer ANY question across sports, real-time current events, famous personalities, science, mathematics, coding, history, geography, literature, and general knowledge — exactly like Google Gemini.
 Follow these rules:
-1. Provide accurate, rich, detailed, and engaging answers.
-2. If asked about a person, athlete, celebrity, or historical figure (e.g. "Who is Rohit Sharma?"), provide a comprehensive biography with their career highlights, records, and accomplishments.
+1. Provide accurate, up-to-date, rich, detailed, and engaging answers.
+2. If asked about a person, athlete, celebrity, or historical figure (e.g. "Who is Rohit Sharma?"), provide a comprehensive biography with their career highlights, records, recent achievements, and accomplishments.
 3. Render all mathematical equations, chemical formulas, and code snippets in clean Markdown format (e.g. LaTeX notation like $E=mc^2$ or code fences).
 4. Politely refuse to answer any app security settings (passwords, API keys) or private administrative finances (fee ledgers, profit & loss).`;
 
+    if (liveWebInfo) {
+      systemPromptText += `\n\nREAL-TIME LIVE WEB DATA (JUST FETCHED FROM LIVE INTERNET):
+Title: ${liveWebInfo.title}
+Live Extract: ${liveWebInfo.extract}
+Source: ${liveWebInfo.source}`;
+    }
+
     contents.push({ role: 'user', parts: [{ text: `System Prompt: ${systemPromptText}` }] });
-    contents.push({ role: 'model', parts: [{ text: `Understood! I am Aarambh AI. I can answer any question on sports, science, math, history, coding, or general knowledge like Google Gemini!` }] });
+    contents.push({ role: 'model', parts: [{ text: `Understood! I am Aarambh AI. I can answer any real-time question on sports, science, math, history, coding, or general knowledge like Google Gemini!` }] });
 
     if (history && Array.isArray(history)) {
       history.forEach(msg => {
@@ -2621,7 +2722,20 @@ Follow these rules:
     res.json({ success: true, text: botText });
   } catch (error) {
     console.log('[AI STUDY TUTOR FALLBACK ACTIVATED]', error.message);
-    const fallbackText = generateSmartKnowledgeAnswer(question, subject);
+    let fallbackText = '';
+    if (liveWebInfo) {
+      fallbackText = `### 🌐 **Live Real-Time Web Information: ${liveWebInfo.title}**
+
+> **Up-to-Date Live Summary:** ${liveWebInfo.extract}
+
+* **Live Source:** ${liveWebInfo.source} ${liveWebInfo.description ? `(${liveWebInfo.description})` : ''}
+
+---
+
+${generateSmartKnowledgeAnswer(question, subject)}`;
+    } else {
+      fallbackText = generateSmartKnowledgeAnswer(question, subject);
+    }
     res.json({ success: true, text: fallbackText });
   }
 });
