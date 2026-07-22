@@ -2359,19 +2359,28 @@ async function callGeminiApi(payload, apiKey) {
   throw lastErr || new Error('ALL_GEMINI_MODELS_FAILED');
 }
 
-// AI Chatbot Endpoint (Google Gemini + Fail-Safe Fallback)
+// AI Chatbot Endpoint (Google Gemini - Any Question Capabilities + Security Privacy Guard)
 app.post('/api/chat', async (req, res) => {
   const { messages, userContext } = req.body;
   const apiKey = process.env.GEMINI_API_KEY;
 
   const lastUserMessage = messages[messages.length - 1]?.text?.toLowerCase() || '';
 
-  // Prevent ANY financial/fee/profit-loss questions in chatbot
-  const financialKeywords = ['fee', 'pending', 'due', 'pay', 'rupee', 'money', 'profit', 'loss', 'expense', 'cost', 'price', 'salary', 'financial', 'revenue', 'budget'];
+  // 1. Strict Security Guard: Protect App Credentials & Private Keys
+  const credentialKeywords = ['password', 'secret', 'jwt', 'api_key', 'apikey', 'private_key', 'token', 'database_path', 'env', 'aarambh.db', 'sqlite3'];
+  if (credentialKeywords.some(keyword => lastUserMessage.includes(keyword))) {
+    return res.json({
+      success: true,
+      text: "🔒 **Security Alert:** Sorry, I am strictly programmed to protect system security. I cannot answer questions regarding app credentials, passwords, private keys, or system environment settings."
+    });
+  }
+
+  // 2. Strict Privacy Guard: Protect Administrative Financial Data
+  const financialKeywords = ['fee', 'pending fee', 'tuition fee', 'profit', 'loss', 'expense', 'salary', 'tuition price', 'revenue ledger', 'net profit'];
   if (financialKeywords.some(keyword => lastUserMessage.includes(keyword))) {
     return res.json({
       success: true,
-      text: "Sorry, I cannot answer questions about financial details, fees, or profit & loss metrics."
+      text: "🔒 **Privacy Alert:** Sorry, I cannot answer questions regarding administrative financial details, fee ledgers, or profit & loss metrics."
     });
   }
 
@@ -2381,16 +2390,19 @@ app.post('/api/chat', async (req, res) => {
       parts: [{ text: msg.text }]
     }));
 
-    let systemPromptText = `You are Aarambh AI, a highly intelligent and friendly assistant for a tuition management system. You help students, parents, teachers, and admins with queries. Be concise, polite, and use formatting like bolding or bullet points where appropriate.
+    let systemPromptText = `You are Aarambh AI, a versatile, highly intelligent AI assistant powered by Google Gemini.
+You have full capability to answer ANY user question across science, mathematics, coding, history, literature, general knowledge, technology, creative writing, and everyday problem-solving — exactly like Google Gemini.
+Be helpful, articulate, polite, and use clear Markdown formatting (bullet points, bold text, code blocks, or LaTeX math equations).
 
-CRITICAL PRIVACY RULE: You are strictly forbidden from discussing or answering questions about fees, profit and loss, expenses, tuition pricing, salaries, budgets, or any administrative financial details. If the user asks about these topics, you must politely decline by saying: 'Sorry, I cannot answer questions about financial details, fees, or profit & loss metrics.' Do not make any exceptions under any circumstances.`;
+STRICT SECURITY & PRIVACY RULES (NEVER VIOLATE):
+1. APP CREDENTIALS & SECURITY: You are strictly forbidden from revealing, outputting, or discussing app credentials, user/admin passwords, API keys, database connection strings, JWT secrets, or environment configuration settings. If asked, state: "Sorry, I cannot answer questions regarding system credentials, passwords, or security settings."
+2. FINANCIAL & PRIVATE ADMIN DATA: You are strictly forbidden from revealing administrative financial data (student fee balances, profit & loss, tuition prices, salaries, expenses, or financial ledgers). If asked, state: "Sorry, I cannot answer questions about financial details, fees, or profit & loss metrics."`;
 
     if (userContext) {
-      systemPromptText += `\n\nActive Logged-in User Information (strictly non-financial):
+      systemPromptText += `\n\nActive Logged-in User Information (strictly non-confidential):
 - Student Name: ${userContext.name}
 - Role: ${userContext.role}
-- Batch/Class Enrolled: ${userContext.class}
-- Father's Name: ${userContext.fatherName || 'N/A'}`;
+- Batch/Class Enrolled: ${userContext.class}`;
     }
 
     contents.unshift({
@@ -2399,23 +2411,39 @@ CRITICAL PRIVACY RULE: You are strictly forbidden from discussing or answering q
     });
     contents.unshift({
       role: 'model',
-      parts: [{ text: "Understood. I am Aarambh AI. I will assist with academic and system navigation queries while avoiding financial topics." }]
+      parts: [{ text: "Understood! I am Aarambh AI. I can answer any general knowledge, academic, coding, or world question like Google Gemini, while strictly protecting all app credentials, passwords, and private financial records." }]
     });
 
     const botText = await callGeminiApi({ contents }, apiKey);
     res.json({ success: true, text: botText });
   } catch (error) {
     console.log('[AI CHAT FALLBACK ACTIVATED]', error.message);
-    let fallbackText = `Hello! I am your Aarambh Assistant. How can I help you with your studies today?`;
-    if (userContext) {
-      if (lastUserMessage.includes('batch') || lastUserMessage.includes('class') || lastUserMessage.includes('schedule')) {
-        fallbackText = `Hi ${userContext.name}! You are currently registered in batch **${userContext.class}**. Your class lectures and study materials are mapped directly to this batch.`;
-      } else if (lastUserMessage.includes('father') || lastUserMessage.includes('parent')) {
-        fallbackText = `According to your registration records, your father's name is **${userContext.fatherName || 'Not Set'}**.`;
-      } else {
-        fallbackText = `Hello ${userContext.name}! I am your Aarambh Assistant. You are enrolled in batch **${userContext.class}**. Feel free to ask any study or syllabus questions!`;
-      }
+    
+    // Multi-domain smart fallback generator for any general question
+    let fallbackText = `Hello! I am Aarambh AI. I can help you answer questions on science, math, coding, history, or general knowledge!`;
+    
+    if (lastUserMessage.includes('code') || lastUserMessage.includes('program') || lastUserMessage.includes('python') || lastUserMessage.includes('javascript')) {
+      fallbackText = `### 💻 Coding & Programming Assistance
+Here is a helpful overview for **${messages[messages.length - 1]?.text || 'programming'}**:
+
+\`\`\`javascript
+// Example Code Structure
+function solveProblem(input) {
+  console.log("Processing input:", input);
+  return input * 2;
+}
+\`\`\`
+* **Key Tip:** Break complex problems into smaller functions and test each module step-by-step!`;
+    } else if (lastUserMessage.includes('math') || lastUserMessage.includes('solve') || lastUserMessage.includes('equation')) {
+      fallbackText = `### 📐 Mathematics & Reasoning Overview
+When solving **${messages[messages.length - 1]?.text || 'math problems'}**:
+1. State the known variables and target output.
+2. Apply standard equations (e.g. $y = mx + c$, $a^2 + b^2 = c^2$, or $\\frac{d}{dx} x^n = n x^{n-1}$).
+3. Substitute step-by-step and verify logic!`;
+    } else if (lastUserMessage.includes('batch') || lastUserMessage.includes('class') || lastUserMessage.includes('schedule')) {
+      fallbackText = `Hi ${userContext?.name || 'Student'}! You are currently registered in batch **${userContext?.class || 'Assigned Class'}**. Your lectures and syllabus materials are synced directly to this batch!`;
     }
+
     res.json({ success: true, text: fallbackText });
   }
 });
